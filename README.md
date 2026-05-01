@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации.
 
-**Status:** MVP / в разработке
+**Status:** MVP — все 22 функциональных требования (FR-01..FR-22) и 13 приёмочных сценариев (AT-01..AT-13) из ТЗ v3.0 закрыты. 113 unit/integration-тестов, регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Назначение
 
@@ -14,6 +14,35 @@ Offline-first desktop-приложение для расчётов погруз�
 - **Statement of Facts** / Standard Time Sheet — хронологический журнал событий рейса.
 
 Предметная область: судоходство, перевалка/трансшипмент, погрузка/выгрузка на рейде или в порту.
+
+## Покрытие ТЗ
+
+| FR | Возможность | Где реализовано |
+|---|---|---|
+| FR-01 | Управление рейсами | `VoyageService`, `VoyagePage`, `NewVoyageForm` |
+| FR-02 | Справочники (vessels/holds/cargoes/cranes) | `ReferenceService`, `ReferencePage` |
+| FR-03 | План погрузки | `CargoLotService.add` (lot + layer + auto SF в `hold_cargo_parameters`) |
+| FR-04 | Факт операций (loading/discharging/SOF) | `CargoLotService`, `OgvService.discharge`, `SofService` |
+| FR-05 | Расчёты Load Plan + регрессия | `CalculationService` (single SQL + pure formulas), `fixtures/kavkaz-iv.ts` |
+| FR-06 | Крановые поправки | `CraneCorrectionService.findCoefficient/correctWeight`, `CraneCorrectionPanel` |
+| FR-07 | SOF | `SofService` (24:00 как конец суток, валидация интервалов), `SofPanel` |
+| FR-08 | Контроль ошибок | CHECK constraints, AT-05 overload, overlap warning, negative remain |
+| FR-09 | Отчёты XLSX | `DocumentEngine.generateLoadPlan` — 4 листа: SOF / vessel / OGV / CRANE CORR. |
+| FR-10 | Аудит изменений | SQL триггеры (`0002_audit_triggers.sql`), `AuditLogService`, `AuditLogPanel` |
+| FR-11 | Многоязычность RU/EN | `src/i18n/`, `LanguageSwitcher`, ~190 ключей с en/ru parity |
+| FR-12 | Импорт Excel | `ImportService.parseLoadPlan/applyImport`, `ImportPanel` |
+| FR-13 | Офлайн-режим | вся бизнес-логика и БД локально, без backend |
+| FR-14 | Локальные бэкапы | `BackupService` JSON envelope (15 таблиц), `BackupPanel` |
+| FR-15 | Импорт/экспорт проекта | `BackupService.exportToJson/importFromJson` |
+| FR-16 | Настраиваемое название судна | sheet name берётся из `vessels.name`, проверено тестом |
+| FR-17 | LIFO выгрузка | pure `dischargeFromHold` + `OgvService.discharge` (транзакционно) |
+| FR-18 | Отчёт по происхождению груза | `OgvService.availableBySource`, OGV-лист в экспорте |
+| FR-19 | Protein для пшеницы | dropdown 10.5/11.5/12.5/13.5 в `AddLotForm` (только когда cargo wheat) |
+| FR-20 | SF на уровне трюма/партии | `hold_cargo_parameters`, `CargoLotService.add` использует SF лота |
+| FR-21 | OGV ↔ основной модуль | `OgvService.discharge` транзакционно обновляет `cargo_layers` |
+| FR-22 | Разделение ввода и расчёта | формулы только в `src/calc/`, экспорт без формул Excel |
+
+Все 13 AT (AT-01..AT-13) покрыты автоматическими тестами.
 
 ## Ключевые возможности (MVP)
 
