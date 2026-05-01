@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HoldTable } from '../components/HoldTable';
 import { NewVoyageForm } from '../components/NewVoyageForm';
+import { SofPanel } from '../components/SofPanel';
 import { VoyageTotals } from '../components/VoyageTotals';
 import { getDb } from '../db';
 import { seedKavkazDemo } from '../seedDemo';
@@ -12,8 +13,15 @@ import { CargoLotService } from '../services/CargoLotService';
 import { listHoldLots, type HoldLotView } from '../services/HoldLotsView';
 import { OgvService } from '../services/OgvService';
 import { ReferenceService, type Cargo, type Vessel } from '../services/ReferenceService';
+import {
+  SofService,
+  type CreateSofEventInput,
+  type SofEvent,
+} from '../services/SofService';
 import { VoyageService } from '../services/VoyageService';
 import type { AddLotInput, DischargeInput, Voyage } from '../services/types';
+
+type SubTab = 'holds' | 'sof';
 
 interface ReadyState {
   voyages: Voyage[];
@@ -24,6 +32,8 @@ interface ReadyState {
   lotsByHold: Record<string, HoldLotView[]>;
   expandedHoldId: string | null;
   showNewVoyage: boolean;
+  subTab: SubTab;
+  sofEvents: SofEvent[];
 }
 
 type LoadState =
@@ -31,15 +41,18 @@ type LoadState =
   | { kind: 'error'; message: string }
   | ({ kind: 'ready' } & ReadyState);
 
+interface RefreshOpts {
+  selectedId?: string | null;
+  expandedHoldId?: string | null;
+  showNewVoyage?: boolean;
+  subTab?: SubTab;
+}
+
 export function VoyagePage() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
 
-  async function refresh(opts?: {
-    selectedId?: string | null;
-    expandedHoldId?: string | null;
-    showNewVoyage?: boolean;
-  }): Promise<void> {
+  async function refresh(opts?: RefreshOpts): Promise<void> {
     const db = await getDb();
     const voyages = await db.select<Voyage>(
       `SELECT * FROM voyages ORDER BY created_at DESC`,
@@ -48,9 +61,13 @@ export function VoyagePage() {
     const [vessels, cargoes] = await Promise.all([ref.listVessels(), ref.listCargoes()]);
 
     const target = opts?.selectedId ?? voyages[0]?.id ?? null;
+    const subTab: SubTab = opts?.subTab ?? 'holds';
+
     let calc: VoyageCalcResult | null = null;
+    let sofEvents: SofEvent[] = [];
     if (target) {
       calc = await new CalculationService(db).calculate(target);
+      sofEvents = await new SofService(db).list(target);
     }
 
     const expandedHoldId = opts?.expandedHoldId ?? null;
@@ -69,6 +86,8 @@ export function VoyagePage() {
       lotsByHold,
       expandedHoldId,
       showNewVoyage: opts?.showNewVoyage ?? false,
+      subTab,
+      sofEvents,
     });
   }
 
@@ -113,6 +132,8 @@ export function VoyagePage() {
     lotsByHold,
     expandedHoldId,
     showNewVoyage,
+    subTab,
+    sofEvents,
   } = state;
   const selected = voyages.find((v) => v.id === selectedId) ?? null;
 
@@ -126,7 +147,11 @@ export function VoyagePage() {
               value={selectedId ?? ''}
               onChange={(e) =>
                 void withBusy(() =>
-                  refresh({ selectedId: e.target.value, expandedHoldId: null }),
+                  refresh({
+                    selectedId: e.target.value,
+                    expandedHoldId: null,
+                    subTab,
+                  }),
                 )
               }
               disabled={busy}
@@ -139,7 +164,7 @@ export function VoyagePage() {
             </select>
           )}
           <button
-            onClick={() => void refresh({ selectedId, showNewVoyage: true })}
+            onClick={() => void refresh({ selectedId, showNewVoyage: true, subTab })}
             disabled={busy}
             className="secondary"
           >
@@ -171,7 +196,7 @@ export function VoyagePage() {
               await refresh({ selectedId: v.id, showNewVoyage: false });
             });
           }}
-          onCancel={() => void refresh({ selectedId, showNewVoyage: false })}
+          onCancel={() => void refresh({ selectedId, showNewVoyage: false, subTab })}
         />
       )}
 
@@ -199,7 +224,7 @@ export function VoyagePage() {
                   void withBusy(async () => {
                     const db = await getDb();
                     await new VoyageService(db).close(selected.id);
-                    await refresh({ selectedId: selected.id });
+                    await refresh({ selectedId: selected.id, subTab });
                   })
                 }
                 disabled={busy}
@@ -210,8 +235,30 @@ export function VoyagePage() {
             )}
           </section>
 
-          <section>
-            <h3>Holds</h3>
+          <nav className="subtabs">
+            <button
+              type="button"
+              onClick={() =>
+                void refresh({ selectedId: selected.id, subTab: 'holds' })
+              }
+              className={`subtab ${subTab === 'holds' ? 'active' : ''}`}
+              disabled={busy}
+            >
+              Holds
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void refresh({ selectedId: selected.id, subTab: 'sof' })
+              }
+              className={`subtab ${subTab === 'sof' ? 'active' : ''}`}
+              disabled={busy}
+            >
+              SOF ({sofEvents.length})
+            </button>
+          </nav>
+
+          {subTab === 'holds' && (
             <HoldTable
               holds={calc.holds}
               voyage_id={selected.id}
@@ -222,6 +269,7 @@ export function VoyagePage() {
                 void refresh({
                   selectedId: selected.id,
                   expandedHoldId: holdId,
+                  subTab: 'holds',
                 })
               }
               onAddLot={async (input: AddLotInput) => {
@@ -231,6 +279,7 @@ export function VoyagePage() {
                   await refresh({
                     selectedId: selected.id,
                     expandedHoldId: input.hold_id,
+                    subTab: 'holds',
                   });
                 });
               }}
@@ -241,13 +290,37 @@ export function VoyagePage() {
                   await refresh({
                     selectedId: selected.id,
                     expandedHoldId: input.hold_id,
+                    subTab: 'holds',
                   });
                 });
               }}
               busy={busy}
               voyageOpen={selected.status === 'open'}
             />
-          </section>
+          )}
+
+          {subTab === 'sof' && (
+            <SofPanel
+              voyage_id={selected.id}
+              events={sofEvents}
+              voyageOpen={selected.status === 'open'}
+              busy={busy}
+              onAdd={async (input: CreateSofEventInput) => {
+                await withBusy(async () => {
+                  const db = await getDb();
+                  await new SofService(db).create(input);
+                  await refresh({ selectedId: selected.id, subTab: 'sof' });
+                });
+              }}
+              onDelete={async (id) => {
+                await withBusy(async () => {
+                  const db = await getDb();
+                  await new SofService(db).delete(id);
+                  await refresh({ selectedId: selected.id, subTab: 'sof' });
+                });
+              }}
+            />
+          )}
         </>
       )}
     </main>

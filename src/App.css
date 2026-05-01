@@ -379,3 +379,89 @@ tr.expansion td {
   padding: 0.2rem 0.55rem;
   font-size: 0.88rem;
 }
+
+.subtabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.subtab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.5rem 0.85rem;
+  color: var(--text-muted);
+}
+
+.subtab:hover {
+  color: var(--text);
+}
+
+.subtab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.sof-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.sof-panel h3 {
+  margin: 0 0 0.75rem;
+}
+
+.sof-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.75rem;
+}
+
+.sof-table th,
+.sof-table td {
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.sof-table .num {
+  text-align: right;
+}
+
+.sof-table th {
+  background: var(--bg);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sof-table tr.overlap {
+  background: #fff5e6;
+}
+
+.sof-form {
+  margin-top: 0.5rem;
+}
+
+.warning {
+  background: #fff8e6;
+  border: 1px solid #f0c464;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+  color: #5a4400;
+}
+
+button.danger {
+  color: var(--negative);
+  border-color: #f5c2c7;
+}
