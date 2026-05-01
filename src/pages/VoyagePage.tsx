@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ExportButton } from '../components/ExportButton';
 import { HoldTable } from '../components/HoldTable';
 import { NewVoyageForm } from '../components/NewVoyageForm';
 import { SofPanel } from '../components/SofPanel';
@@ -136,6 +137,9 @@ export function VoyagePage() {
     sofEvents,
   } = state;
   const selected = voyages.find((v) => v.id === selectedId) ?? null;
+  const selectedVessel = selected
+    ? vessels.find((v) => v.id === selected.vessel_id) ?? null
+    : null;
 
   return (
     <main className="container">
@@ -218,21 +222,30 @@ export function VoyagePage() {
               </span>
             </h2>
             <VoyageTotals totals={calc.totals} />
-            {selected.status === 'open' && (
-              <button
-                onClick={() =>
-                  void withBusy(async () => {
-                    const db = await getDb();
-                    await new VoyageService(db).close(selected.id);
-                    await refresh({ selectedId: selected.id, subTab });
-                  })
-                }
-                disabled={busy}
-                className="secondary"
-              >
-                Close voyage
-              </button>
-            )}
+            <div className="voyage-actions">
+              {selectedVessel && (
+                <ExportButton
+                  voyage_id={selected.id}
+                  voyage_no={selected.voyage_no}
+                  vessel_name={selectedVessel.name}
+                />
+              )}
+              {selected.status === 'open' && (
+                <button
+                  onClick={() =>
+                    void withBusy(async () => {
+                      const db = await getDb();
+                      await new VoyageService(db).close(selected.id);
+                      await refresh({ selectedId: selected.id, subTab });
+                    })
+                  }
+                  disabled={busy}
+                  className="secondary"
+                >
+                  Close voyage
+                </button>
+              )}
+            </div>
           </section>
 
           <nav className="subtabs">

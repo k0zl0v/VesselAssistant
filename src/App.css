@@ -494,3 +494,10 @@ hr {
   border-top: 1px solid var(--border);
   margin: 1.25rem 0 0.75rem;
 }
+
+.voyage-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
