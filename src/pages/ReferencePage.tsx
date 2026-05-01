@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { CraneCorrectionPanel } from '../components/CraneCorrectionPanel';
 import { getDb } from '../db';
 import {
   ReferenceService,
   type Cargo,
+  type Crane,
   type Hold,
   type Vessel,
 } from '../services/ReferenceService';
@@ -10,6 +12,7 @@ import {
 export function ReferencePage() {
   const [vessels, setVessels] = useState<Vessel[]>([]);
   const [cargoes, setCargoes] = useState<Cargo[]>([]);
+  const [cranes, setCranes] = useState<Crane[]>([]);
   const [holdsByVessel, setHoldsByVessel] = useState<Record<string, Hold[]>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,13 +20,18 @@ export function ReferencePage() {
   async function refresh(): Promise<void> {
     const db = await getDb();
     const ref = new ReferenceService(db);
-    const [vs, cs] = await Promise.all([ref.listVessels(), ref.listCargoes()]);
+    const [vs, cs, cr] = await Promise.all([
+      ref.listVessels(),
+      ref.listCargoes(),
+      ref.listCranes(),
+    ]);
     const holds: Record<string, Hold[]> = {};
     for (const v of vs) {
       holds[v.id] = await ref.listHolds(v.id);
     }
     setVessels(vs);
     setCargoes(cs);
+    setCranes(cr);
     setHoldsByVessel(holds);
   }
 
@@ -123,6 +131,44 @@ export function ReferencePage() {
           <p className="hint inline">Add a vessel first.</p>
         )}
       </section>
+
+      <section className="reference-block">
+        <h2>Cranes</h2>
+        <table className="ref-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cranes.length === 0 && (
+              <tr>
+                <td colSpan={2} className="hint inline">
+                  No cranes yet.
+                </td>
+              </tr>
+            )}
+            {cranes.map((c) => (
+              <tr key={c.id}>
+                <td>{c.name}</td>
+                <td>{c.notes ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <NewCraneForm
+          busy={busy}
+          onSubmit={(input) =>
+            withBusy(async () => {
+              const db = await getDb();
+              await new ReferenceService(db).createCrane(input);
+            })
+          }
+        />
+      </section>
+
+      <CraneCorrectionPanel cranes={cranes} vessels={vessels} refresh={refresh} />
 
       <section className="reference-block">
         <h2>Cargoes</h2>
@@ -244,6 +290,47 @@ function NewCargoForm({
         value={protein}
         onChange={(e) => setProtein(e.target.value)}
         style={{ width: '8rem' }}
+      />
+      <button type="submit" disabled={busy || !name.trim()}>
+        Add
+      </button>
+    </form>
+  );
+}
+
+function NewCraneForm({
+  onSubmit,
+  busy,
+}: {
+  onSubmit: (input: { name: string; notes?: string | null }) => Promise<void>;
+  busy: boolean;
+}) {
+  const [name, setName] = useState('');
+  const [notes, setNotes] = useState('');
+  return (
+    <form
+      className="form-row"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        await onSubmit({ name: name.trim(), notes: notes.trim() || null });
+        setName('');
+        setNotes('');
+      }}
+    >
+      <strong>Add crane</strong>
+      <input
+        type="text"
+        placeholder="Name (e.g. CRANE # 1)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Notes (optional)"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
       />
       <button type="submit" disabled={busy || !name.trim()}>
         Add

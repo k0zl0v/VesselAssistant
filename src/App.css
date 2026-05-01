@@ -465,3 +465,32 @@ button.danger {
   color: var(--negative);
   border-color: #f5c2c7;
 }
+
+.filter-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.calculator {
+  margin-top: 0.75rem;
+}
+
+.calculator h3 {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25rem 0 0.75rem;
+}

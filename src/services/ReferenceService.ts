@@ -26,6 +26,12 @@ export interface Hold {
   notes: string | null;
 }
 
+export interface Crane {
+  id: string;
+  name: string;
+  notes: string | null;
+}
+
 export class ReferenceService {
   constructor(private readonly db: Db) {}
 
@@ -85,6 +91,20 @@ export class ReferenceService {
       [id, input.vessel_id, input.hold_no, input.volume_m3, input.notes ?? null],
     );
     const rows = await this.db.select<Hold>(`SELECT * FROM holds WHERE id = ?`, [id]);
+    return rows[0]!;
+  }
+
+  async listCranes(): Promise<Crane[]> {
+    return await this.db.select<Crane>(`SELECT * FROM cranes ORDER BY name`);
+  }
+
+  async createCrane(input: { name: string; notes?: string | null }): Promise<Crane> {
+    const id = crypto.randomUUID();
+    await this.db.execute(
+      `INSERT INTO cranes (id, name, notes) VALUES (?, ?, ?)`,
+      [id, input.name, input.notes ?? null],
+    );
+    const rows = await this.db.select<Crane>(`SELECT * FROM cranes WHERE id = ?`, [id]);
     return rows[0]!;
   }
 }
