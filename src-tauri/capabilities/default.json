@@ -12,8 +12,18 @@
     "sql:allow-select",
     "dialog:default",
     "dialog:allow-save",
+    "dialog:allow-open",
     {
       "identifier": "fs:allow-write-file",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
       "allow": [
         { "path": "$DOWNLOAD/**" },
         { "path": "$DOCUMENT/**" },

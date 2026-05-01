@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { CalculationService } from './CalculationService';
+import { SofService } from './SofService';
 import { VoyageService } from './VoyageService';
 import type { Db } from './db';
 
@@ -21,12 +22,12 @@ const TOTAL_FILL: ExcelJS.Fill = {
  *
  * Excel output rules (TZ §6 FR-22, §8 rule 16, excel-export skill):
  *  - No formulas — only computed values.
- *  - All numeric cells use number format "0.000" (3 decimals).
+ *  - All numeric cells use number format "0.000" (3 decimals)
+ *    or "0.0" for percentages.
  *  - Sheet name and headers use the actual vessel name; "KAVKAZ IV"
  *    is never hard-coded.
- *  - Original `KAVKAZ IV` Excel structure is approximated: a header
- *    block (vessel / voyage / ports), the per-hold table, and a
- *    totals row.
+ *  - The workbook mirrors the original template with four sheets
+ *    in this order: SOF, (vessel name), OGV, CRANE CORR.
  */
 export class DocumentEngine {
   constructor(private readonly db: Db) {}
@@ -52,11 +53,113 @@ export class DocumentEngine {
     const portNames = new Map(portRows.map((p, i) => [i, p.name]));
 
     const calc = await new CalculationService(this.db).calculate(voyage_id);
+    const cargoByHold = await this.loadCargoByHold(voyage_id);
 
     const wb = new ExcelJS.Workbook();
     wb.creator = 'VesselAssistant';
     wb.created = new Date();
 
+    // ── Sheet 1: SOF ─────────────────────────────────────────────────
+    await this.buildSofSheet(wb, voyage_id);
+
+    // ── Sheet 2: (vessel name) load plan ─────────────────────────────
+    this.buildLoadPlanSheet(wb, vessel, voyage, portNames, calc, cargoByHold);
+
+    // ── Sheet 3: OGV ─────────────────────────────────────────────────
+    await this.buildOgvSheet(wb, voyage_id);
+
+    // ── Sheet 4: CRANE CORR. ─────────────────────────────────────────
+    await this.buildCraneCorrSheet(wb);
+
+    // Critical: assert no formulas leaked in across ALL sheets.
+    wb.eachSheet((sheet) => {
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          if (
+            cell.value !== null &&
+            typeof cell.value === 'object' &&
+            'formula' in (cell.value as object)
+          ) {
+            throw new Error(
+              `Cell ${sheet.name}!${cell.address} contains a formula — exports must be values only`,
+            );
+          }
+        });
+      });
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  // Sheet builders
+  // ───────────────────────────────────────────────────────────────────
+
+  private async buildSofSheet(
+    wb: ExcelJS.Workbook,
+    voyage_id: string,
+  ): Promise<void> {
+    const sheet = wb.addWorksheet(safeSheetName('SOF'));
+    sheet.columns = [
+      { width: 12 }, // Date
+      { width: 8 },  // From
+      { width: 8 },  // To
+      { width: 16 }, // Category
+      { width: 40 }, // Description
+      { width: 12 }, // Daily Qty
+      { width: 12 }, // Total Qty
+    ];
+
+    const headers = [
+      'Date',
+      'From',
+      'To',
+      'Category',
+      'Description',
+      'Daily Qty',
+      'Total Qty',
+    ];
+    headers.forEach((label, i) => {
+      const cell = sheet.getCell(1, i + 1);
+      cell.value = label;
+      cell.font = { bold: true };
+      cell.fill = HEADER_FILL;
+      cell.alignment = { horizontal: i <= 4 ? 'left' : 'right' };
+      cell.border = { bottom: { style: 'thin' } };
+    });
+
+    const events = await new SofService(this.db).list(voyage_id);
+    let rowNum = 2;
+    for (const ev of events) {
+      const r = sheet.getRow(rowNum);
+      r.getCell(1).value = ev.event_date;
+      r.getCell(2).value = ev.time_from ?? '';
+      r.getCell(3).value = ev.time_to ?? '';
+      r.getCell(4).value = ev.category ?? '';
+      r.getCell(5).value = ev.description ?? '';
+      if (ev.daily_qty !== null && ev.daily_qty !== undefined) {
+        r.getCell(6).value = ev.daily_qty;
+        r.getCell(6).numFmt = NUM_FMT;
+        r.getCell(6).alignment = { horizontal: 'right' };
+      }
+      if (ev.total_qty !== null && ev.total_qty !== undefined) {
+        r.getCell(7).value = ev.total_qty;
+        r.getCell(7).numFmt = NUM_FMT;
+        r.getCell(7).alignment = { horizontal: 'right' };
+      }
+      rowNum++;
+    }
+  }
+
+  private buildLoadPlanSheet(
+    wb: ExcelJS.Workbook,
+    vessel: { name: string; flag: string | null },
+    voyage: { voyage_no: string; status: string },
+    portNames: Map<number, string>,
+    calc: Awaited<ReturnType<CalculationService['calculate']>>,
+    cargoByHold: Map<string, string>,
+  ): void {
     const sheet = wb.addWorksheet(safeSheetName(vessel.name));
 
     sheet.columns = [
@@ -106,25 +209,6 @@ export class DocumentEngine {
       cell.fill = HEADER_FILL;
       cell.border = { bottom: { style: 'thin' } };
     });
-
-    // Look up cargo + protein hints per hold via hold_cargo_parameters.
-    const cargoLines = await this.db.select<{
-      hold_id: string;
-      cargo_name: string;
-      protein_percent: number | null;
-    }>(
-      `SELECT hp.hold_id AS hold_id, c.name AS cargo_name, hp.protein_percent
-         FROM hold_cargo_parameters hp
-         JOIN cargoes c ON c.id = hp.cargo_id
-        WHERE hp.voyage_id = ?`,
-      [voyage_id],
-    );
-    const cargoByHold = new Map<string, string>();
-    for (const r of cargoLines) {
-      const proteinSuffix =
-        r.protein_percent === null ? '' : ` ${r.protein_percent.toFixed(1)}%`;
-      cargoByHold.set(r.hold_id, `${r.cargo_name}${proteinSuffix}`);
-    }
 
     let rowNum = HEADER_ROW + 1;
     for (const h of calc.holds) {
@@ -178,24 +262,174 @@ export class DocumentEngine {
       sheet.getCell(rowNum + i, 2).numFmt = NUM_FMT;
       sheet.getCell(rowNum + i, 2).alignment = { horizontal: 'right' };
     }
+  }
 
-    // Critical: assert no formulas leaked in.
-    sheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        if (
-          cell.value !== null &&
-          typeof cell.value === 'object' &&
-          'formula' in (cell.value as object)
-        ) {
-          throw new Error(
-            `Cell ${cell.address} contains a formula — exports must be values only`,
-          );
-        }
-      });
+  /**
+   * Per-hold cargo display strings (e.g. "WHEAT 11.5%") looked up
+   * from `hold_cargo_parameters` joined to `cargoes`.
+   */
+  private async loadCargoByHold(
+    voyage_id: string,
+  ): Promise<Map<string, string>> {
+    const cargoLines = await this.db.select<{
+      hold_id: string;
+      cargo_name: string;
+      protein_percent: number | null;
+    }>(
+      `SELECT hp.hold_id AS hold_id, c.name AS cargo_name, hp.protein_percent
+         FROM hold_cargo_parameters hp
+         JOIN cargoes c ON c.id = hp.cargo_id
+        WHERE hp.voyage_id = ?`,
+      [voyage_id],
+    );
+    const out = new Map<string, string>();
+    for (const r of cargoLines) {
+      const proteinSuffix =
+        r.protein_percent === null ? '' : ` ${r.protein_percent.toFixed(1)}%`;
+      out.set(r.hold_id, `${r.cargo_name}${proteinSuffix}`);
+    }
+    return out;
+  }
+
+  private async buildOgvSheet(
+    wb: ExcelJS.Workbook,
+    voyage_id: string,
+  ): Promise<void> {
+    const sheet = wb.addWorksheet(safeSheetName('OGV'));
+    sheet.columns = [
+      { width: 12 }, // Date
+      { width: 8 },  // Time From
+      { width: 8 },  // Time To
+      { width: 18 }, // Source Vessel
+      { width: 8 },  // Hold #
+      { width: 14 }, // Discharged Tons
+    ];
+
+    const headers = [
+      'Date',
+      'Time From',
+      'Time To',
+      'Source Vessel',
+      'Hold #',
+      'Discharged Tons',
+    ];
+    headers.forEach((label, i) => {
+      const cell = sheet.getCell(1, i + 1);
+      cell.value = label;
+      cell.font = { bold: true };
+      cell.fill = HEADER_FILL;
+      cell.alignment = { horizontal: i <= 3 ? 'left' : 'right' };
+      cell.border = { bottom: { style: 'thin' } };
     });
 
-    const buffer = await wb.xlsx.writeBuffer();
-    return new Uint8Array(buffer);
+    const rows = await this.db.select<{
+      event_date: string;
+      time_from: string | null;
+      time_to: string | null;
+      source_vessel: string;
+      hold_no: number;
+      discharged_tons: number;
+    }>(
+      `SELECT o.event_date    AS event_date,
+              o.time_from     AS time_from,
+              o.time_to       AS time_to,
+              da.source_vessel AS source_vessel,
+              h.hold_no       AS hold_no,
+              da.discharged_tons AS discharged_tons
+         FROM discharge_allocations da
+         JOIN operations o ON o.id = da.operation_id
+         JOIN holds      h ON h.id = da.hold_id
+        WHERE o.voyage_id = ?
+        ORDER BY o.event_date,
+                 da.source_vessel,
+                 CASE WHEN o.time_from IS NULL THEN 1 ELSE 0 END,
+                 o.time_from,
+                 h.hold_no`,
+      [voyage_id],
+    );
+
+    let rowNum = 2;
+    for (const r of rows) {
+      const row = sheet.getRow(rowNum);
+      row.getCell(1).value = r.event_date;
+      row.getCell(2).value = r.time_from ?? '';
+      row.getCell(3).value = r.time_to ?? '';
+      row.getCell(4).value = r.source_vessel;
+      row.getCell(5).value = r.hold_no;
+      row.getCell(6).value = r.discharged_tons;
+      row.getCell(5).alignment = { horizontal: 'right' };
+      row.getCell(5).numFmt = '0';
+      row.getCell(6).numFmt = NUM_FMT;
+      row.getCell(6).alignment = { horizontal: 'right' };
+      rowNum++;
+    }
+  }
+
+  private async buildCraneCorrSheet(wb: ExcelJS.Workbook): Promise<void> {
+    const sheet = wb.addWorksheet(safeSheetName('CRANE CORR.'));
+    sheet.columns = [
+      { width: 16 }, // Crane
+      { width: 14 }, // Operation Type
+      { width: 12 }, // Side
+      { width: 18 }, // Vessel
+      { width: 12 }, // Valid From
+      { width: 12 }, // Valid To
+      { width: 14 }, // Coefficient
+    ];
+
+    const headers = [
+      'Crane',
+      'Operation Type',
+      'Side',
+      'Vessel',
+      'Valid From',
+      'Valid To',
+      'Coefficient',
+    ];
+    headers.forEach((label, i) => {
+      const cell = sheet.getCell(1, i + 1);
+      cell.value = label;
+      cell.font = { bold: true };
+      cell.fill = HEADER_FILL;
+      cell.alignment = { horizontal: i === 6 ? 'right' : 'left' };
+      cell.border = { bottom: { style: 'thin' } };
+    });
+
+    const rows = await this.db.select<{
+      crane_name: string;
+      operation_type: string;
+      side: string | null;
+      vessel_name: string | null;
+      valid_from: string;
+      valid_to: string | null;
+      coefficient: number;
+    }>(
+      `SELECT cr.name        AS crane_name,
+              cc.operation_type AS operation_type,
+              cc.side        AS side,
+              cc.vessel_name AS vessel_name,
+              cc.valid_from  AS valid_from,
+              cc.valid_to    AS valid_to,
+              cc.coefficient AS coefficient
+         FROM crane_coefficients cc
+         JOIN cranes cr ON cr.id = cc.crane_id
+        ORDER BY cr.name, cc.operation_type, cc.valid_from DESC`,
+    );
+
+    let rowNum = 2;
+    for (const r of rows) {
+      const row = sheet.getRow(rowNum);
+      row.getCell(1).value = r.crane_name;
+      row.getCell(2).value = r.operation_type;
+      row.getCell(3).value = r.side ?? '';
+      row.getCell(4).value = r.vessel_name ?? '';
+      row.getCell(5).value = r.valid_from;
+      row.getCell(6).value = r.valid_to ?? '';
+      row.getCell(7).value = r.coefficient;
+      row.getCell(7).numFmt = NUM_FMT;
+      row.getCell(7).alignment = { horizontal: 'right' };
+      rowNum++;
+    }
   }
 }
 

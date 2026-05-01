@@ -2,8 +2,10 @@ import ExcelJS from 'exceljs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CalculationService } from '../CalculationService';
 import { CargoLotService } from '../CargoLotService';
+import { CraneCorrectionService } from '../CraneCorrectionService';
 import { DocumentEngine } from '../DocumentEngine';
 import { OgvService } from '../OgvService';
+import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
 import { KAVKAZ_IV_HOLDS, KAVKAZ_IV_TOTALS } from '../../fixtures/kavkaz-iv';
 import { openTestDb } from './helpers';
@@ -87,17 +89,29 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
     expect(bytes[1]).toBe(0x4b);
   });
 
-  it('uses the actual vessel name for the sheet, never hard-coded', async () => {
+  it('contains all four sheets in the original template order', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    expect(wb.worksheets).toHaveLength(1);
-    expect(wb.worksheets[0]!.name).toBe('KAVKAZ IV');
+    expect(wb.worksheets).toHaveLength(4);
+    expect(wb.worksheets.map((s) => s.name)).toEqual([
+      'SOF',
+      'KAVKAZ IV',
+      'OGV',
+      'CRANE CORR.',
+    ]);
+  });
+
+  it('uses the actual vessel name for the load plan sheet, never hard-coded', async () => {
+    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
+    const wb = await loadXlsx(bytes);
+    // Load plan is the second sheet now.
+    expect(wb.worksheets[1]!.name).toBe('KAVKAZ IV');
   });
 
   it('writes the per-hold values from CalculationService', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    const sheet = wb.worksheets[0]!;
+    const sheet = wb.getWorksheet('KAVKAZ IV')!;
     const calc = await new CalculationService(db).calculate(voyageId);
 
     // Header row at row 6, hold rows start at 7.
@@ -117,7 +131,7 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
   it('totals row matches Appendix C aggregates', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    const sheet = wb.worksheets[0]!;
+    const sheet = wb.getWorksheet('KAVKAZ IV')!;
     const totalsRowNum = 7 + KAVKAZ_IV_HOLDS.length;
     const totalsRow = sheet.getRow(totalsRowNum);
 
@@ -128,40 +142,171 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
     expect(totalsRow.getCell(9).value).toBeCloseTo(KAVKAZ_IV_TOTALS.total_empty_98, 3);
   });
 
-  it('AT-13: every numeric cell uses 3-decimal format', async () => {
+  it('AT-13: every numeric cell uses 3-decimal format across all sheets', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    const sheet = wb.worksheets[0]!;
 
     let numericCells = 0;
-    sheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        if (typeof cell.value === 'number') {
-          numericCells++;
-          // Allow either "0.000" (default for tonnage / SF / volume / capacity)
-          // or "0.0" (used for empty volume %).
-          expect(cell.numFmt === '0.000' || cell.numFmt === '0.0').toBe(true);
-        }
+    wb.eachSheet((sheet) => {
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          if (typeof cell.value === 'number') {
+            numericCells++;
+            // Allow "0.000" (tonnage / SF / volume / capacity / coefficient),
+            // "0.0" (empty volume %), or "0" (integer Hold # in OGV).
+            expect(
+              cell.numFmt === '0.000' ||
+                cell.numFmt === '0.0' ||
+                cell.numFmt === '0',
+            ).toBe(true);
+          }
+        });
       });
     });
     expect(numericCells).toBeGreaterThan(0);
   });
 
-  it('contains no formula cells (TZ §6 FR-22 / §8 rule 16)', async () => {
+  it('contains no formula cells across all sheets (TZ §6 FR-22 / §8 rule 16)', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    const sheet = wb.worksheets[0]!;
-    sheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        if (
-          cell.value !== null &&
-          typeof cell.value === 'object' &&
-          'formula' in (cell.value as object)
-        ) {
-          throw new Error(`Found formula at ${cell.address}`);
-        }
+    wb.eachSheet((sheet) => {
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          if (
+            cell.value !== null &&
+            typeof cell.value === 'object' &&
+            'formula' in (cell.value as object)
+          ) {
+            throw new Error(`Found formula at ${sheet.name}!${cell.address}`);
+          }
+        });
       });
     });
+  });
+
+  it('SOF sheet contains the events inserted via SofService', async () => {
+    const sof = new SofService(db);
+    await sof.create({
+      voyage_id: voyageId,
+      event_date: '2026-04-30',
+      time_from: '08:00',
+      time_to: '12:00',
+      category: 'Arrival',
+      description: 'Vessel arrived at anchorage',
+    });
+    await sof.create({
+      voyage_id: voyageId,
+      event_date: '2026-05-01',
+      time_from: '06:30',
+      time_to: '08:00',
+      category: 'NOR',
+      description: 'Notice of Readiness tendered',
+      daily_qty: 100,
+      total_qty: 100,
+    });
+
+    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
+    const wb = await loadXlsx(bytes);
+    const sheet = wb.getWorksheet('SOF')!;
+
+    // Header row.
+    expect(sheet.getRow(1).getCell(1).value).toBe('Date');
+    expect(sheet.getRow(1).getCell(1).font?.bold).toBe(true);
+    expect(sheet.getRow(1).getCell(7).value).toBe('Total Qty');
+
+    // Events sorted by (event_date, time_from).
+    const r2 = sheet.getRow(2);
+    expect(r2.getCell(1).value).toBe('2026-04-30');
+    expect(r2.getCell(2).value).toBe('08:00');
+    expect(r2.getCell(4).value).toBe('Arrival');
+    expect(r2.getCell(5).value).toBe('Vessel arrived at anchorage');
+
+    const r3 = sheet.getRow(3);
+    expect(r3.getCell(1).value).toBe('2026-05-01');
+    expect(r3.getCell(2).value).toBe('06:30');
+    expect(r3.getCell(4).value).toBe('NOR');
+    expect(r3.getCell(6).value).toBeCloseTo(100, 3);
+    expect(r3.getCell(7).value).toBeCloseTo(100, 3);
+  });
+
+  it('OGV sheet contains the discharges from the KAVKAZ_IV fixture', async () => {
+    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
+    const wb = await loadXlsx(bytes);
+    const sheet = wb.getWorksheet('OGV')!;
+
+    // Header.
+    expect(sheet.getRow(1).getCell(1).value).toBe('Date');
+    expect(sheet.getRow(1).getCell(4).value).toBe('Source Vessel');
+    expect(sheet.getRow(1).getCell(5).value).toBe('Hold #');
+    expect(sheet.getRow(1).getCell(6).value).toBe('Discharged Tons');
+    expect(sheet.getRow(1).getCell(1).font?.bold).toBe(true);
+
+    // Two discharges in fixture: hold 3 → 1177 t and hold 5 → 824 t,
+    // both dated 2026-05-01, both from source 'AGG'. Sort key is
+    // (event_date, source_vessel, time_from, hold_no), so hold 3 first.
+    const r2 = sheet.getRow(2);
+    expect(r2.getCell(1).value).toBe('2026-05-01');
+    expect(r2.getCell(4).value).toBe('AGG');
+    expect(r2.getCell(5).value).toBe(3);
+    expect(r2.getCell(6).value).toBeCloseTo(1177, 3);
+
+    const r3 = sheet.getRow(3);
+    expect(r3.getCell(1).value).toBe('2026-05-01');
+    expect(r3.getCell(4).value).toBe('AGG');
+    expect(r3.getCell(5).value).toBe(5);
+    expect(r3.getCell(6).value).toBeCloseTo(824, 3);
+
+    // No fourth row.
+    expect(sheet.getRow(4).getCell(1).value).toBeFalsy();
+  });
+
+  it('CRANE CORR. sheet exists with header even when no coefficients seeded', async () => {
+    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
+    const wb = await loadXlsx(bytes);
+    const sheet = wb.getWorksheet('CRANE CORR.')!;
+
+    expect(sheet.getRow(1).getCell(1).value).toBe('Crane');
+    expect(sheet.getRow(1).getCell(2).value).toBe('Operation Type');
+    expect(sheet.getRow(1).getCell(3).value).toBe('Side');
+    expect(sheet.getRow(1).getCell(4).value).toBe('Vessel');
+    expect(sheet.getRow(1).getCell(5).value).toBe('Valid From');
+    expect(sheet.getRow(1).getCell(6).value).toBe('Valid To');
+    expect(sheet.getRow(1).getCell(7).value).toBe('Coefficient');
+    expect(sheet.getRow(1).getCell(1).font?.bold).toBe(true);
+
+    // No data rows.
+    expect(sheet.getRow(2).getCell(1).value).toBeFalsy();
+  });
+
+  it('CRANE CORR. sheet renders seeded coefficients with 0.000 format', async () => {
+    const craneId = crypto.randomUUID();
+    await db.execute(`INSERT INTO cranes (id, name) VALUES (?, ?)`, [
+      craneId,
+      'Liebherr-1',
+    ]);
+    await new CraneCorrectionService(db).create({
+      crane_id: craneId,
+      operation_type: 'discharging',
+      side: 'PORT',
+      vessel_name: 'KAVKAZ IV',
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      coefficient: 1.025,
+    });
+
+    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
+    const wb = await loadXlsx(bytes);
+    const sheet = wb.getWorksheet('CRANE CORR.')!;
+
+    const r2 = sheet.getRow(2);
+    expect(r2.getCell(1).value).toBe('Liebherr-1');
+    expect(r2.getCell(2).value).toBe('discharging');
+    expect(r2.getCell(3).value).toBe('PORT');
+    expect(r2.getCell(4).value).toBe('KAVKAZ IV');
+    expect(r2.getCell(5).value).toBe('2026-01-01');
+    expect(r2.getCell(6).value).toBe('2026-12-31');
+    expect(r2.getCell(7).value).toBeCloseTo(1.025, 3);
+    expect(r2.getCell(7).numFmt).toBe('0.000');
   });
 
   it('throws on unknown voyage id', async () => {
