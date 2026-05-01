@@ -1,5 +1,47 @@
 import type { HoldCapacityInput } from './types';
 
+export interface OverloadCheckInput {
+  hold_volume_m3: number;
+  sf: number;
+  fill_percent: number;
+  current_remain_tons: number;
+  added_tons: number;
+}
+
+export interface OverloadCheckResult {
+  capacity_tons: number;
+  projected_remain_tons: number;
+  overshoot_tons: number;
+  overloads: boolean;
+}
+
+/**
+ * Predicate: would adding `added_tons` to a hold's existing remaining tonnage
+ * push the hold beyond its FillPercent capacity? (TZ §8 rule 2, AT-05.)
+ *
+ * Floating-point tolerance: an overshoot below 1e-6 is treated as no overload
+ * (so adding exactly the remaining capacity does not trip the guard).
+ */
+export function wouldOverload(input: OverloadCheckInput): OverloadCheckResult {
+  const capacity_tons = capacityTons({
+    hold_volume_m3: input.hold_volume_m3,
+    sf: input.sf,
+    fill_percent: input.fill_percent,
+  });
+  const projected_remain_tons = input.current_remain_tons + input.added_tons;
+  const rawOvershoot = projected_remain_tons - capacity_tons;
+  const overloads = rawOvershoot > 1e-6;
+  const overshoot_tons = overloads
+    ? Math.round(rawOvershoot * 1000) / 1000
+    : 0;
+  return {
+    capacity_tons,
+    projected_remain_tons,
+    overshoot_tons,
+    overloads,
+  };
+}
+
 /**
  * Capacity in tons at the configured fill percent.
  * Throws if SF <= 0 — division-by-zero guard (TZ §8 rule 1).

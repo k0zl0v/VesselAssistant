@@ -50,6 +50,13 @@ export interface AddLotInput {
   loaded_tons: number;
   bl_no?: string | null;
   loaded_at?: string;
+  /**
+   * If true, the operator has confirmed they want to load past the
+   * hold's FillPercent capacity (AT-05 / TZ §8 rule 2). Defaults to
+   * false; the service throws an `OVERLOAD:` error when the lot would
+   * overshoot capacity and this flag is unset.
+   */
+  acknowledge_overload?: boolean;
 }
 
 export interface CargoLayerRow {

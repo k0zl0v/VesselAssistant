@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getDb } from '../db';
+import { useT } from '../i18n';
 
 interface Props {
   voyage_id: string;
@@ -12,6 +13,7 @@ interface Props {
 const sanitize = (s: string): string => s.replace(/[^A-Za-z0-9 _.-]/g, '_');
 
 export function ExportButton({ voyage_id, voyage_no, vessel_name }: Props) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,7 @@ export function ExportButton({ voyage_id, voyage_no, vessel_name }: Props) {
     try {
       const defaultName = `Load Plan ${sanitize(vessel_name)} ${sanitize(voyage_no)}.xlsx`;
       const path = await save({
-        title: 'Save Load Plan',
+        title: t('export.dialog.title'),
         defaultPath: defaultName,
         filters: [{ name: 'Excel', extensions: ['xlsx'] }],
       });
@@ -50,7 +52,7 @@ export function ExportButton({ voyage_id, voyage_no, vessel_name }: Props) {
         disabled={busy}
         className="secondary"
       >
-        {busy ? 'Exporting…' : 'Export Load Plan (XLSX)'}
+        {busy ? t('export.exporting') : t('export.button')}
       </button>
       {error && <span className="error inline">{error}</span>}
     </>

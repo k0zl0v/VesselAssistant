@@ -8,16 +8,22 @@ const MIGRATION_PATH = resolve(
   here,
   '../../../src-tauri/migrations/0001_initial_schema.sql',
 );
+const AUDIT_TRIGGERS_PATH = resolve(
+  here,
+  '../../../src-tauri/migrations/0002_audit_triggers.sql',
+);
 
 const migrationSql = readFileSync(MIGRATION_PATH, 'utf8');
+const auditTriggersSql = readFileSync(AUDIT_TRIGGERS_PATH, 'utf8');
 
 /**
- * Open a fresh in-memory SQLite, apply the production migration,
+ * Open a fresh in-memory SQLite, apply the production migrations in order,
  * and return a Db ready for service-level integration tests.
  */
 export async function openTestDb(): Promise<NodeDb> {
   const db = NodeDb.openInMemory();
   await db.execute(migrationSql);
+  await db.execute(auditTriggersSql);
   return db;
 }
 
@@ -27,7 +33,17 @@ export async function openTestDb(): Promise<NodeDb> {
  */
 export async function seedReferenceData(
   db: NodeDb,
-  opts: { vesselName: string; holdNos: number[]; cargoName?: string },
+  opts: {
+    vesselName: string;
+    holdNos: number[];
+    cargoName?: string;
+    /**
+     * Per-hold volume in m³. Default 100_000 — large enough that existing
+     * tests do not trip the AT-05 overload guard. Tests targeting the
+     * guard itself should pass an explicit value (e.g. 1000).
+     */
+    holdVolumeM3?: number;
+  },
 ): Promise<{
   vesselId: string;
   holdIds: string[];
@@ -51,7 +67,7 @@ export async function seedReferenceData(
     holdIds.push(holdId);
     await db.execute(
       `INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES (?, ?, ?, ?)`,
-      [holdId, vesselId, holdNo, 1000],
+      [holdId, vesselId, holdNo, opts.holdVolumeM3 ?? 100_000],
     );
   }
 

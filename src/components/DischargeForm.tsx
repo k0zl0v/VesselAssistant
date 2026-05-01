@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../i18n';
 import type { DischargeInput } from '../services/types';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
+  const t = useT();
   const [tons, setTons] = useState('');
   const [date, setDate] = useState(today());
   const [description, setDescription] = useState('');
@@ -24,7 +26,7 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
         setError(null);
         const tonsNum = Number(tons);
         if (tonsNum <= 0) {
-          setError('Tons must be > 0');
+          setError(t('discharge.error.tons_positive'));
           return;
         }
         try {
@@ -42,12 +44,12 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
         }
       }}
     >
-      <strong>Discharge (LIFO)</strong>
+      <strong>{t('discharge.title')}</strong>
       <input
         type="number"
         step="0.001"
         min="0.001"
-        placeholder="Tons"
+        placeholder={t('discharge.tons_placeholder')}
         value={tons}
         onChange={(e) => setTons(e.target.value)}
         required
@@ -61,12 +63,12 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
       />
       <input
         type="text"
-        placeholder="Description (optional)"
+        placeholder={t('discharge.description_placeholder')}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
       <button type="submit" disabled={busy}>
-        Discharge
+        {t('discharge.submit')}
       </button>
       {error && <span className="error inline">{error}</span>}
     </form>

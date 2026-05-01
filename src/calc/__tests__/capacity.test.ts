@@ -5,6 +5,7 @@ import {
   emptySpace,
   emptyVolumePercent,
   totalEmpty,
+  wouldOverload,
 } from '../capacity';
 
 describe('capacityTons', () => {
@@ -43,6 +44,69 @@ describe('emptyVolumePercent', () => {
 
   it('throws on zero hold volume', () => {
     expect(() => emptyVolumePercent(0, 0)).toThrow(/hold volume/);
+  });
+});
+
+describe('wouldOverload', () => {
+  // KAVKAZ IV Hold 3: volume 10749.8, sf 1.44, fill 0.98
+  // capacity = 10749.8 * 0.98 / 1.44 = 7315.836111...
+  const HOLD = { hold_volume_m3: 10749.8, sf: 1.44, fill_percent: 0.98 };
+
+  it('AT-05: adding tons that exactly reach 98% capacity does NOT overload', () => {
+    // 2825 already loaded; remaining headroom ~ 4490.836 t. Add 4490 → fits.
+    const r = wouldOverload({
+      ...HOLD,
+      current_remain_tons: 2825,
+      added_tons: 4490,
+    });
+    expect(r.overloads).toBe(false);
+    expect(r.overshoot_tons).toBe(0);
+    expect(r.capacity_tons).toBeCloseTo(7315.836, 3);
+  });
+
+  it('AT-05: 1 t too much overshoots by ~0.164 t', () => {
+    const r = wouldOverload({
+      ...HOLD,
+      current_remain_tons: 2825,
+      added_tons: 4491,
+    });
+    expect(r.overloads).toBe(true);
+    expect(r.overshoot_tons).toBeCloseTo(0.164, 3);
+    expect(r.projected_remain_tons).toBeCloseTo(7316, 3);
+  });
+
+  it('throws on SF = 0 (delegates to capacityTons)', () => {
+    expect(() =>
+      wouldOverload({
+        hold_volume_m3: 1000,
+        sf: 0,
+        fill_percent: 0.98,
+        current_remain_tons: 0,
+        added_tons: 100,
+      }),
+    ).toThrow(/SF must be > 0/);
+  });
+
+  it('current already at capacity, added_tons = 0 → no overload', () => {
+    const r = wouldOverload({
+      ...HOLD,
+      current_remain_tons: 7315.836,
+      added_tons: 0,
+    });
+    expect(r.overloads).toBe(false);
+    expect(r.overshoot_tons).toBe(0);
+  });
+
+  it('floating-point edge: 1e-7 t over → not an overload', () => {
+    const r = wouldOverload({
+      hold_volume_m3: 1000,
+      sf: 1.25,
+      fill_percent: 0.98,
+      current_remain_tons: 784,
+      added_tons: 0.0000001,
+    });
+    expect(r.overloads).toBe(false);
+    expect(r.overshoot_tons).toBe(0);
   });
 });
 

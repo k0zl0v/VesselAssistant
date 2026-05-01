@@ -5,6 +5,7 @@ import { NewVoyageForm } from '../components/NewVoyageForm';
 import { SofPanel } from '../components/SofPanel';
 import { VoyageTotals } from '../components/VoyageTotals';
 import { getDb } from '../db';
+import { useT } from '../i18n';
 import { seedKavkazDemo } from '../seedDemo';
 import {
   CalculationService,
@@ -50,6 +51,7 @@ interface RefreshOpts {
 }
 
 export function VoyagePage() {
+  const t = useT();
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
 
@@ -113,13 +115,13 @@ export function VoyagePage() {
   }
 
   if (state.kind === 'loading') {
-    return <main className="container"><p>Loading…</p></main>;
+    return <main className="container"><p>{t('app.loading')}</p></main>;
   }
   if (state.kind === 'error') {
     return (
       <main className="container">
-        <h1>VesselAssistant</h1>
-        <p className="error">Database error: {state.message}</p>
+        <h1>{t('app.brand')}</h1>
+        <p className="error">{t('app.db_error', { message: state.message })}</p>
       </main>
     );
   }
@@ -144,7 +146,7 @@ export function VoyagePage() {
   return (
     <main className="container">
       <header className="topbar">
-        <h1>Voyages</h1>
+        <h1>{t('voyage.title')}</h1>
         <div className="topbar-actions">
           {voyages.length > 0 && (
             <select
@@ -162,7 +164,7 @@ export function VoyagePage() {
             >
               {voyages.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.voyage_no} {v.status === 'closed' ? '(closed)' : ''}
+                  {v.voyage_no} {v.status === 'closed' ? t('voyage.closed_suffix') : ''}
                 </option>
               ))}
             </select>
@@ -172,7 +174,7 @@ export function VoyagePage() {
             disabled={busy}
             className="secondary"
           >
-            New voyage
+            {t('voyage.new')}
           </button>
           <button
             onClick={() =>
@@ -184,7 +186,7 @@ export function VoyagePage() {
             }
             disabled={busy}
           >
-            Seed demo (KAVKAZ IV)
+            {t('voyage.seed_demo')}
           </button>
         </div>
       </header>
@@ -205,20 +207,19 @@ export function VoyagePage() {
       )}
 
       {voyages.length === 0 && !showNewVoyage && (
-        <p className="hint">
-          No voyages yet. Click <em>Seed demo</em> for the KAVKAZ IV baseline,
-          or <em>New voyage</em> if you have already added a vessel in{' '}
-          <strong>Reference</strong>.
-        </p>
+        <p
+          className="hint"
+          dangerouslySetInnerHTML={{ __html: t('voyage.empty_hint') }}
+        />
       )}
 
       {selected && calc && (
         <>
           <section className="voyage-card">
             <h2>
-              Voyage {selected.voyage_no} —{' '}
+              {t('voyage.heading', { voyage_no: selected.voyage_no })}{' '}
               <span className={`status status-${selected.status}`}>
-                {selected.status}
+                {t(selected.status === 'open' ? 'voyage.status.open' : 'voyage.status.closed')}
               </span>
             </h2>
             <VoyageTotals totals={calc.totals} />
@@ -242,7 +243,7 @@ export function VoyagePage() {
                   disabled={busy}
                   className="secondary"
                 >
-                  Close voyage
+                  {t('voyage.close')}
                 </button>
               )}
             </div>
@@ -257,7 +258,7 @@ export function VoyagePage() {
               className={`subtab ${subTab === 'holds' ? 'active' : ''}`}
               disabled={busy}
             >
-              Holds
+              {t('voyage.subtab.holds')}
             </button>
             <button
               type="button"
@@ -267,7 +268,7 @@ export function VoyagePage() {
               className={`subtab ${subTab === 'sof' ? 'active' : ''}`}
               disabled={busy}
             >
-              SOF ({sofEvents.length})
+              {t('voyage.subtab.sof', { count: sofEvents.length })}
             </button>
           </nav>
 

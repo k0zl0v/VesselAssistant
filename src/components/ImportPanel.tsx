@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { getDb } from '../db';
+import { useT } from '../i18n';
 import type { ParsedLoadPlan } from '../services/ImportService';
 
 const fmt = (n: number): string => n.toFixed(3);
 
 export function ImportPanel() {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedLoadPlan | null>(null);
@@ -24,7 +26,7 @@ export function ImportPanel() {
     setAppliedVoyageId(null);
     try {
       const picked = await open({
-        title: 'Select Load Stowage Plan + SOF (.xlsx)',
+        title: t('import.pick_dialog_title'),
         multiple: false,
         directory: false,
         filters: [{ name: 'Excel', extensions: ['xlsx'] }],
@@ -70,11 +72,8 @@ export function ImportPanel() {
 
   return (
     <section className="import-panel">
-      <h3>Import</h3>
-      <p>
-        Read a Load Stowage Plan + SOF workbook and stage the per-hold
-        values for review before applying.
-      </p>
+      <h3>{t('import.title')}</h3>
+      <p>{t('import.intro')}</p>
 
       <div className="actions">
         <button
@@ -82,7 +81,7 @@ export function ImportPanel() {
           onClick={() => void handlePick()}
           disabled={busy}
         >
-          {busy && !parsed ? 'Reading…' : 'Import KAVKAZ IV-style xlsx'}
+          {busy && !parsed ? t('import.reading') : t('import.pick')}
         </button>
       </div>
 
@@ -90,34 +89,33 @@ export function ImportPanel() {
 
       {appliedVoyageId && (
         <p className="success">
-          Imported. Voyage id: <code>{appliedVoyageId}</code>. Switch to the
-          Voyages tab to review it.
+          {t('import.applied', { id: appliedVoyageId })}
         </p>
       )}
 
       {parsed && (
         <div className="import-preview">
-          <h4>Preview</h4>
+          <h4>{t('import.preview.title')}</h4>
           <dl>
-            <dt>Vessel</dt>
+            <dt>{t('import.preview.vessel')}</dt>
             <dd>{parsed.vessel_name}</dd>
-            <dt>Voyage No</dt>
-            <dd>{parsed.voyage_no ?? '(auto)'}</dd>
-            <dt>Loading port</dt>
+            <dt>{t('import.preview.voyage_no')}</dt>
+            <dd>{parsed.voyage_no ?? t('import.preview.voyage_no_auto')}</dd>
+            <dt>{t('import.preview.loading_port')}</dt>
             <dd>{parsed.loading_port ?? '—'}</dd>
-            <dt>Discharging port</dt>
+            <dt>{t('import.preview.discharging_port')}</dt>
             <dd>{parsed.discharging_port ?? '—'}</dd>
           </dl>
 
           <table>
             <thead>
               <tr>
-                <th>Hold</th>
-                <th>Volume m³</th>
-                <th>SF</th>
-                <th>Cargo</th>
-                <th>Loaded</th>
-                <th>Discharged</th>
+                <th>{t('import.preview.col.hold')}</th>
+                <th>{t('import.preview.col.volume_m3')}</th>
+                <th>{t('import.preview.col.sf')}</th>
+                <th>{t('import.preview.col.cargo')}</th>
+                <th>{t('import.preview.col.loaded')}</th>
+                <th>{t('import.preview.col.discharged')}</th>
               </tr>
             </thead>
             <tbody>
@@ -140,7 +138,7 @@ export function ImportPanel() {
               onClick={() => void handleApply()}
               disabled={busy}
             >
-              {busy ? 'Applying…' : 'Apply'}
+              {busy ? t('import.preview.applying') : t('import.preview.apply')}
             </button>
             <button
               type="button"
@@ -148,7 +146,7 @@ export function ImportPanel() {
               disabled={busy}
               className="secondary"
             >
-              Cancel
+              {t('import.preview.cancel')}
             </button>
           </div>
         </div>

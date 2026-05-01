@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CraneCorrectionPanel } from '../components/CraneCorrectionPanel';
 import { getDb } from '../db';
+import { useT } from '../i18n';
 import {
   ReferenceService,
   type Cargo,
@@ -10,6 +11,7 @@ import {
 } from '../services/ReferenceService';
 
 export function ReferencePage() {
+  const t = useT();
   const [vessels, setVessels] = useState<Vessel[]>([]);
   const [cargoes, setCargoes] = useState<Cargo[]>([]);
   const [cranes, setCranes] = useState<Crane[]>([]);
@@ -54,26 +56,26 @@ export function ReferencePage() {
 
   return (
     <main className="container">
-      <h1>Reference data</h1>
+      <h1>{t('reference.title')}</h1>
       {error && <p className="error">{error}</p>}
 
       <section className="reference-block">
-        <h2>Vessels</h2>
+        <h2>{t('reference.vessels.title')}</h2>
         <table className="ref-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Flag</th>
-              <th>Owner</th>
-              <th>IMO</th>
-              <th className="num">Holds</th>
+              <th>{t('reference.vessels.col.name')}</th>
+              <th>{t('reference.vessels.col.flag')}</th>
+              <th>{t('reference.vessels.col.owner')}</th>
+              <th>{t('reference.vessels.col.imo')}</th>
+              <th className="num">{t('reference.vessels.col.holds')}</th>
             </tr>
           </thead>
           <tbody>
             {vessels.length === 0 && (
               <tr>
                 <td colSpan={5} className="hint inline">
-                  No vessels yet.
+                  {t('reference.vessels.empty')}
                 </td>
               </tr>
             )}
@@ -100,7 +102,7 @@ export function ReferencePage() {
       </section>
 
       <section className="reference-block">
-        <h2>Holds (per vessel)</h2>
+        <h2>{t('reference.holds.title')}</h2>
         {vessels.map((v) => (
           <div key={v.id} className="vessel-holds">
             <h3>{v.name}</h3>
@@ -112,7 +114,7 @@ export function ReferencePage() {
                 </li>
               ))}
               {(holdsByVessel[v.id] ?? []).length === 0 && (
-                <li className="hint inline">No holds yet.</li>
+                <li className="hint inline">{t('reference.holds.empty_vessel')}</li>
               )}
             </ul>
             <NewHoldForm
@@ -128,24 +130,24 @@ export function ReferencePage() {
           </div>
         ))}
         {vessels.length === 0 && (
-          <p className="hint inline">Add a vessel first.</p>
+          <p className="hint inline">{t('reference.holds.no_vessels')}</p>
         )}
       </section>
 
       <section className="reference-block">
-        <h2>Cranes</h2>
+        <h2>{t('reference.cranes.title')}</h2>
         <table className="ref-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Notes</th>
+              <th>{t('reference.cranes.col.name')}</th>
+              <th>{t('reference.cranes.col.notes')}</th>
             </tr>
           </thead>
           <tbody>
             {cranes.length === 0 && (
               <tr>
                 <td colSpan={2} className="hint inline">
-                  No cranes yet.
+                  {t('reference.cranes.empty')}
                 </td>
               </tr>
             )}
@@ -171,19 +173,19 @@ export function ReferencePage() {
       <CraneCorrectionPanel cranes={cranes} vessels={vessels} refresh={refresh} />
 
       <section className="reference-block">
-        <h2>Cargoes</h2>
+        <h2>{t('reference.cargoes.title')}</h2>
         <table className="ref-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th className="num">Default protein</th>
+              <th>{t('reference.cargoes.col.name')}</th>
+              <th className="num">{t('reference.cargoes.col.default_protein')}</th>
             </tr>
           </thead>
           <tbody>
             {cargoes.length === 0 && (
               <tr>
                 <td colSpan={2} className="hint inline">
-                  No cargoes yet.
+                  {t('reference.cargoes.empty')}
                 </td>
               </tr>
             )}
@@ -218,6 +220,7 @@ function NewVesselForm({
   onSubmit: (input: { name: string; flag?: string | null }) => Promise<void>;
   busy: boolean;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [flag, setFlag] = useState('');
   return (
@@ -231,22 +234,22 @@ function NewVesselForm({
         setFlag('');
       }}
     >
-      <strong>Add vessel</strong>
+      <strong>{t('reference.vessels.add_title')}</strong>
       <input
         type="text"
-        placeholder="Name"
+        placeholder={t('reference.vessels.name_placeholder')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
       />
       <input
         type="text"
-        placeholder="Flag (optional)"
+        placeholder={t('reference.vessels.flag_placeholder')}
         value={flag}
         onChange={(e) => setFlag(e.target.value)}
       />
       <button type="submit" disabled={busy || !name.trim()}>
-        Add
+        {t('reference.vessels.add')}
       </button>
     </form>
   );
@@ -259,6 +262,7 @@ function NewCargoForm({
   onSubmit: (input: { name: string; default_protein?: number | null }) => Promise<void>;
   busy: boolean;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [protein, setProtein] = useState('');
   return (
@@ -275,10 +279,10 @@ function NewCargoForm({
         setProtein('');
       }}
     >
-      <strong>Add cargo</strong>
+      <strong>{t('reference.cargoes.add_title')}</strong>
       <input
         type="text"
-        placeholder="Name (e.g. WHEAT, SFM)"
+        placeholder={t('reference.cargoes.name_placeholder')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
@@ -286,13 +290,13 @@ function NewCargoForm({
       <input
         type="number"
         step="0.1"
-        placeholder="Default protein %"
+        placeholder={t('reference.cargoes.protein_placeholder')}
         value={protein}
         onChange={(e) => setProtein(e.target.value)}
         style={{ width: '8rem' }}
       />
       <button type="submit" disabled={busy || !name.trim()}>
-        Add
+        {t('reference.cargoes.add')}
       </button>
     </form>
   );
@@ -305,6 +309,7 @@ function NewCraneForm({
   onSubmit: (input: { name: string; notes?: string | null }) => Promise<void>;
   busy: boolean;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   return (
@@ -318,22 +323,22 @@ function NewCraneForm({
         setNotes('');
       }}
     >
-      <strong>Add crane</strong>
+      <strong>{t('reference.cranes.add_title')}</strong>
       <input
         type="text"
-        placeholder="Name (e.g. CRANE # 1)"
+        placeholder={t('reference.cranes.name_placeholder')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
       />
       <input
         type="text"
-        placeholder="Notes (optional)"
+        placeholder={t('reference.cranes.notes_placeholder')}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
       <button type="submit" disabled={busy || !name.trim()}>
-        Add
+        {t('reference.cranes.add')}
       </button>
     </form>
   );
@@ -352,6 +357,7 @@ function NewHoldForm({
   }) => Promise<void>;
   busy: boolean;
 }) {
+  const t = useT();
   const [holdNo, setHoldNo] = useState('');
   const [volume, setVolume] = useState('');
   return (
@@ -367,12 +373,12 @@ function NewHoldForm({
         setVolume('');
       }}
     >
-      <strong>Add hold</strong>
+      <strong>{t('reference.holds.add_title')}</strong>
       <input
         type="number"
         min="1"
         step="1"
-        placeholder="No"
+        placeholder={t('reference.holds.no_placeholder')}
         value={holdNo}
         onChange={(e) => setHoldNo(e.target.value)}
         required
@@ -382,7 +388,7 @@ function NewHoldForm({
         type="number"
         min="0.001"
         step="0.001"
-        placeholder="Volume m³"
+        placeholder={t('reference.holds.volume_placeholder')}
         value={volume}
         onChange={(e) => setVolume(e.target.value)}
         required
@@ -392,7 +398,7 @@ function NewHoldForm({
         type="submit"
         disabled={busy || !holdNo || !volume}
       >
-        Add
+        {t('reference.holds.add')}
       </button>
     </form>
   );

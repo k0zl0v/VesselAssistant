@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { formatTons } from '../calc/round';
+import { useT } from '../i18n';
 import type { VoyageHoldCalc } from '../services/CalculationService';
 import type { HoldLotView } from '../services/HoldLotsView';
 import type { Cargo } from '../services/ReferenceService';
@@ -39,20 +40,21 @@ export function HoldTable({
   busy,
   voyageOpen,
 }: Props) {
+  const t = useT();
   return (
     <table className="hold-table">
       <thead>
         <tr>
           <th></th>
-          <th>Hold</th>
-          <th className="num">Volume m³</th>
-          <th className="num">SF</th>
-          <th className="num">Loaded</th>
-          <th className="num">Discharged</th>
-          <th className="num">Remain</th>
-          <th className="num">Capacity 98%</th>
-          <th className="num">Empty 98%</th>
-          <th className="num">Empty Vol %</th>
+          <th>{t('holds.col.hold')}</th>
+          <th className="num">{t('holds.col.volume_m3')}</th>
+          <th className="num">{t('holds.col.sf')}</th>
+          <th className="num">{t('holds.col.loaded')}</th>
+          <th className="num">{t('holds.col.discharged')}</th>
+          <th className="num">{t('holds.col.remain')}</th>
+          <th className="num">{t('holds.col.capacity_98')}</th>
+          <th className="num">{t('holds.col.empty_98')}</th>
+          <th className="num">{t('holds.col.empty_vol_pct')}</th>
         </tr>
       </thead>
       <tbody>
@@ -66,7 +68,7 @@ export function HoldTable({
                     type="button"
                     onClick={() => onToggleExpand(expanded ? null : h.hold_id)}
                     className="expand-btn secondary"
-                    aria-label="Toggle hold details"
+                    aria-label={t('holds.toggle_aria')}
                   >
                     {expanded ? '▾' : '▸'}
                   </button>
@@ -126,7 +128,10 @@ function ExpansionRow({
   busy,
   voyageOpen,
 }: ExpansionProps) {
+  const t = useT();
   const [tab, setTab] = useState<'add' | 'discharge' | null>(null);
+
+  const topSeq = lots.length > 0 ? lots[lots.length - 1]!.load_sequence : null;
 
   return (
     <tr className="expansion">
@@ -134,22 +139,28 @@ function ExpansionRow({
         <div className="expansion-content">
           <div className="lots-list">
             <strong>
-              Lots in this hold (oldest → newest, top of stack is{' '}
-              {lots.length > 0 ? `#${lots[lots.length - 1]!.load_sequence}` : '—'})
+              {topSeq === null
+                ? t('holds.lots.title_empty')
+                : t('holds.lots.title_top', { seq: topSeq })}
             </strong>
             {lots.length === 0 ? (
-              <p className="hint inline">No lots loaded yet.</p>
+              <p className="hint inline">{t('holds.lots.empty')}</p>
             ) : (
               <ul>
                 {lots.map((l) => (
                   <li key={l.cargo_lot_id}>
-                    #{l.load_sequence} <strong>{l.source_vessel}</strong>{' '}
-                    — {l.cargo_name}
-                    {l.protein_percent !== null
-                      ? ` ${l.protein_percent.toFixed(1)}%`
-                      : ''}
-                    , SF {l.sf.toFixed(3)}, loaded {formatTons(l.loaded_tons)},{' '}
-                    remain {formatTons(l.remaining_tons)} t
+                    {t('holds.lots.line', {
+                      seq: l.load_sequence,
+                      vessel: l.source_vessel,
+                      cargo: l.cargo_name,
+                      protein:
+                        l.protein_percent !== null
+                          ? ` ${l.protein_percent.toFixed(1)}%`
+                          : '',
+                      sf: l.sf.toFixed(3),
+                      loaded: formatTons(l.loaded_tons),
+                      remain: formatTons(l.remaining_tons),
+                    })}
                   </li>
                 ))}
               </ul>
@@ -164,7 +175,7 @@ function ExpansionRow({
                   onClick={() => setTab(tab === 'add' ? null : 'add')}
                   className="secondary"
                 >
-                  + Add lot
+                  {t('holds.action.add_lot')}
                 </button>
                 <button
                   type="button"
@@ -172,7 +183,7 @@ function ExpansionRow({
                   className="secondary"
                   disabled={lots.every((l) => l.remaining_tons === 0)}
                 >
-                  ↓ Discharge
+                  {t('holds.action.discharge')}
                 </button>
               </div>
               {tab === 'add' && (

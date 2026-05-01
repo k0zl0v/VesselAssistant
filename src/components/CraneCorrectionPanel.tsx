@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatTons } from '../calc/round';
 import { getDb } from '../db';
+import { useT } from '../i18n';
 import {
   CraneCorrectionService,
   CRANE_OPERATION_TYPES,
@@ -20,6 +21,7 @@ interface Props {
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 export function CraneCorrectionPanel({ cranes, vessels, refresh }: Props) {
+  const t = useT();
   const [coefs, setCoefs] = useState<CraneCoefficient[]>([]);
   const [filterCrane, setFilterCrane] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -56,20 +58,20 @@ export function CraneCorrectionPanel({ cranes, vessels, refresh }: Props) {
 
   return (
     <section className="reference-block">
-      <h2>Crane corrections</h2>
+      <h2>{t('crane.title')}</h2>
 
       {cranes.length === 0 ? (
-        <p className="hint inline">Add at least one crane above first.</p>
+        <p className="hint inline">{t('crane.no_cranes_hint')}</p>
       ) : (
         <>
           <div className="filter-row">
             <label>
-              Filter by crane
+              {t('crane.filter.label')}
               <select
                 value={filterCrane}
                 onChange={(e) => setFilterCrane(e.target.value)}
               >
-                <option value="">All cranes</option>
+                <option value="">{t('crane.filter.all')}</option>
                 {cranes.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -82,20 +84,20 @@ export function CraneCorrectionPanel({ cranes, vessels, refresh }: Props) {
           <table className="ref-table">
             <thead>
               <tr>
-                <th>Crane</th>
-                <th>Op type</th>
-                <th>Side</th>
-                <th>Vessel</th>
-                <th>Valid from</th>
-                <th>Valid to</th>
-                <th className="num">Coefficient</th>
+                <th>{t('crane.col.crane')}</th>
+                <th>{t('crane.col.op_type')}</th>
+                <th>{t('crane.col.side')}</th>
+                <th>{t('crane.col.vessel')}</th>
+                <th>{t('crane.col.valid_from')}</th>
+                <th>{t('crane.col.valid_to')}</th>
+                <th className="num">{t('crane.col.coefficient')}</th>
               </tr>
             </thead>
             <tbody>
               {coefs.length === 0 && (
                 <tr>
                   <td colSpan={7} className="hint inline">
-                    No coefficients yet.
+                    {t('crane.empty')}
                   </td>
                 </tr>
               )}
@@ -103,8 +105,8 @@ export function CraneCorrectionPanel({ cranes, vessels, refresh }: Props) {
                 <tr key={c.id}>
                   <td>{craneName(c.crane_id)}</td>
                   <td>{c.operation_type}</td>
-                  <td>{c.side ?? 'any'}</td>
-                  <td>{c.vessel_name ?? 'any'}</td>
+                  <td>{c.side ?? t('crane.side.any')}</td>
+                  <td>{c.vessel_name ?? t('crane.vessel.any')}</td>
                   <td>{c.valid_from}</td>
                   <td>{c.valid_to ?? '∞'}</td>
                   <td className="num">{c.coefficient.toFixed(3)}</td>
@@ -141,6 +143,7 @@ function NewCoefficientForm({
   onSubmit: (input: Parameters<CraneCorrectionService['create']>[0]) => Promise<void>;
   busy: boolean;
 }) {
+  const t = useT();
   const [craneId, setCraneId] = useState(cranes[0]?.id ?? '');
   const [opType, setOpType] = useState<string>(CRANE_OPERATION_TYPES[0]);
   const [side, setSide] = useState<string>('');
@@ -168,7 +171,7 @@ function NewCoefficientForm({
         setCoef('');
       }}
     >
-      <strong>Add coefficient</strong>
+      <strong>{t('crane.add_title')}</strong>
       <select value={craneId} onChange={(e) => setCraneId(e.target.value)}>
         {cranes.map((c) => (
           <option key={c.id} value={c.id}>
@@ -177,14 +180,14 @@ function NewCoefficientForm({
         ))}
       </select>
       <select value={opType} onChange={(e) => setOpType(e.target.value)}>
-        {CRANE_OPERATION_TYPES.map((t) => (
-          <option key={t} value={t}>
-            {t}
+        {CRANE_OPERATION_TYPES.map((tp) => (
+          <option key={tp} value={tp}>
+            {tp}
           </option>
         ))}
       </select>
       <select value={side} onChange={(e) => setSide(e.target.value)}>
-        <option value="">any side</option>
+        <option value="">{t('crane.side.any_option')}</option>
         {SIDES.map((s) => (
           <option key={s} value={s}>
             {s}
@@ -192,7 +195,7 @@ function NewCoefficientForm({
         ))}
       </select>
       <select value={vesselName} onChange={(e) => setVesselName(e.target.value)}>
-        <option value="">any vessel</option>
+        <option value="">{t('crane.vessel.any_option')}</option>
         {vessels.map((v) => (
           <option key={v.id} value={v.name}>
             {v.name}
@@ -209,7 +212,7 @@ function NewCoefficientForm({
         type="date"
         value={validTo}
         onChange={(e) => setValidTo(e.target.value)}
-        placeholder="Valid to"
+        placeholder={t('crane.valid_to_placeholder')}
       />
       <input
         type="number"
@@ -217,12 +220,12 @@ function NewCoefficientForm({
         min="0.001"
         value={coef}
         onChange={(e) => setCoef(e.target.value)}
-        placeholder="Coef"
+        placeholder={t('crane.coef_placeholder')}
         required
         style={{ width: '6rem' }}
       />
       <button type="submit" disabled={busy || !coef}>
-        Add
+        {t('crane.add')}
       </button>
     </form>
   );
@@ -235,6 +238,7 @@ function CalculatorWidget({
   cranes: Crane[];
   vessels: Vessel[];
 }) {
+  const t = useT();
   const [craneId, setCraneId] = useState(cranes[0]?.id ?? '');
   const [opType, setOpType] = useState<string>(CRANE_OPERATION_TYPES[0]);
   const [side, setSide] = useState<string>('');
@@ -249,7 +253,7 @@ function CalculatorWidget({
     setResult(null);
     const sw = Number(scaleWeight);
     if (!(sw > 0)) {
-      setError('Scale weight must be > 0');
+      setError(t('crane.calc.error.scale_positive'));
       return;
     }
     try {
@@ -267,9 +271,11 @@ function CalculatorWidget({
     }
   }
 
+  const unit = t('crane.calc.unit_t');
+
   return (
     <div className="calculator">
-      <h3>Correction calculator</h3>
+      <h3>{t('crane.calc.title')}</h3>
       <form
         className="form-row"
         onSubmit={(e) => {
@@ -285,14 +291,14 @@ function CalculatorWidget({
           ))}
         </select>
         <select value={opType} onChange={(e) => setOpType(e.target.value)}>
-          {CRANE_OPERATION_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {CRANE_OPERATION_TYPES.map((tp) => (
+            <option key={tp} value={tp}>
+              {tp}
             </option>
           ))}
         </select>
         <select value={side} onChange={(e) => setSide(e.target.value)}>
-          <option value="">any side</option>
+          <option value="">{t('crane.side.any_option')}</option>
           {SIDES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -300,7 +306,7 @@ function CalculatorWidget({
           ))}
         </select>
         <select value={vesselName} onChange={(e) => setVesselName(e.target.value)}>
-          <option value="">any vessel</option>
+          <option value="">{t('crane.vessel.any_option')}</option>
           {vessels.map((v) => (
             <option key={v.id} value={v.name}>
               {v.name}
@@ -319,11 +325,11 @@ function CalculatorWidget({
           min="0.001"
           value={scaleWeight}
           onChange={(e) => setScaleWeight(e.target.value)}
-          placeholder="Scale weight"
+          placeholder={t('crane.calc.scale_weight_placeholder')}
           required
           style={{ width: '8rem' }}
         />
-        <button type="submit">Calculate</button>
+        <button type="submit">{t('crane.calc.calculate')}</button>
       </form>
 
       {error && <p className="error">{error}</p>}
@@ -331,16 +337,16 @@ function CalculatorWidget({
       {result && (
         <dl className="totals">
           <div>
-            <dt>Scale weight</dt>
-            <dd>{formatTons(result.scale_weight)} t</dd>
+            <dt>{t('crane.calc.scale_weight')}</dt>
+            <dd>{formatTons(result.scale_weight)} {unit}</dd>
           </div>
           <div>
-            <dt>Coefficient</dt>
+            <dt>{t('crane.calc.coefficient')}</dt>
             <dd>{result.coefficient.toFixed(3)}</dd>
           </div>
           <div>
-            <dt>Corrected weight</dt>
-            <dd>{formatTons(result.corrected_weight)} t</dd>
+            <dt>{t('crane.calc.corrected_weight')}</dt>
+            <dd>{formatTons(result.corrected_weight)} {unit}</dd>
           </div>
         </dl>
       )}

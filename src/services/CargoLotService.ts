@@ -1,5 +1,14 @@
+import { wouldOverload } from '../calc/capacity';
 import type { Db } from './db';
 import type { AddLotInput, CargoLot } from './types';
+
+/**
+ * Marker prefix for overload-guard errors (AT-05 / TZ §8 rule 2).
+ * The full message is `OVERLOAD:<json>` where `<json>` carries the
+ * OverloadCheckResult plus `hold_id` so the UI can show a concrete
+ * overshoot figure and offer "Continue anyway?".
+ */
+export const OVERLOAD_ERROR_PREFIX = 'OVERLOAD:';
 
 export class CargoLotService {
   constructor(private readonly db: Db) {}
@@ -24,6 +33,42 @@ export class CargoLotService {
       );
       const vesselId = vesselRows[0]?.vessel_id;
       if (!vesselId) throw new Error(`voyage ${input.voyage_id} not found`);
+
+      // Overload guard (TZ §8 rule 2, AT-05). We check BEFORE inserting so a
+      // refused lot doesn't pollute the layer table. The SF used here is the
+      // SF the operator is recording on THIS lot — even if a different SF was
+      // saved earlier in `hold_cargo_parameters`, what matters for the check
+      // is the cargo physics being declared right now.
+      const holdRows = await tx.select<{ volume_m3: number }>(
+        `SELECT volume_m3 FROM holds WHERE id = ?`,
+        [input.hold_id],
+      );
+      const hold_volume_m3 = holdRows[0]?.volume_m3;
+      if (hold_volume_m3 == null) {
+        throw new Error(`hold ${input.hold_id} not found`);
+      }
+      const remainRows = await tx.select<{ remain: number | null }>(
+        `SELECT COALESCE(SUM(remaining_tons), 0) AS remain
+           FROM cargo_layers
+          WHERE voyage_id = ? AND hold_id = ?`,
+        [input.voyage_id, input.hold_id],
+      );
+      const current_remain_tons = Number(remainRows[0]?.remain ?? 0);
+      const overload = wouldOverload({
+        hold_volume_m3,
+        sf: input.sf,
+        fill_percent: 0.98,
+        current_remain_tons,
+        added_tons: input.loaded_tons,
+      });
+      if (overload.overloads && !input.acknowledge_overload) {
+        throw new Error(
+          `${OVERLOAD_ERROR_PREFIX}${JSON.stringify({
+            ...overload,
+            hold_id: input.hold_id,
+          })}`,
+        );
+      }
 
       const seqRows = await tx.select<{ next_seq: number }>(
         `SELECT COALESCE(MAX(load_sequence), 0) + 1 AS next_seq

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../i18n';
 import type { Vessel } from '../services/ReferenceService';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function NewVoyageForm({ vessels, onSubmit, onCancel, busy }: Props) {
+  const t = useT();
   const [vesselId, setVesselId] = useState(vessels[0]?.id ?? '');
   const [voyageNo, setVoyageNo] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,12 +18,9 @@ export function NewVoyageForm({ vessels, onSubmit, onCancel, busy }: Props) {
   if (vessels.length === 0) {
     return (
       <div className="form-panel">
-        <p>
-          You need at least one vessel. Add one in <strong>Reference</strong>{' '}
-          first.
-        </p>
+        <p dangerouslySetInnerHTML={{ __html: t('voyage.form.no_vessels') }} />
         <button type="button" onClick={onCancel} className="secondary">
-          Close
+          {t('voyage.form.close')}
         </button>
       </div>
     );
@@ -40,9 +39,9 @@ export function NewVoyageForm({ vessels, onSubmit, onCancel, busy }: Props) {
         }
       }}
     >
-      <h3>New voyage</h3>
+      <h3>{t('voyage.form.title')}</h3>
       <label>
-        Vessel
+        {t('voyage.form.vessel')}
         <select
           value={vesselId}
           onChange={(e) => setVesselId(e.target.value)}
@@ -56,19 +55,19 @@ export function NewVoyageForm({ vessels, onSubmit, onCancel, busy }: Props) {
         </select>
       </label>
       <label>
-        Voyage No
+        {t('voyage.form.voyage_no')}
         <input
           type="text"
           value={voyageNo}
           onChange={(e) => setVoyageNo(e.target.value)}
           required
-          placeholder="V-001"
+          placeholder={t('voyage.form.voyage_no_placeholder')}
         />
       </label>
       {error && <p className="error">{error}</p>}
       <div className="form-actions">
         <button type="submit" disabled={busy || !voyageNo.trim()}>
-          Create
+          {t('voyage.form.create')}
         </button>
         <button
           type="button"
@@ -76,7 +75,7 @@ export function NewVoyageForm({ vessels, onSubmit, onCancel, busy }: Props) {
           className="secondary"
           disabled={busy}
         >
-          Cancel
+          {t('voyage.form.cancel')}
         </button>
       </div>
     </form>
