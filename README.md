@@ -40,15 +40,22 @@ Offline-first desktop-приложение для расчётов погруз�
 
 ## Установка для разработки
 
-> Команды появятся после tauri-скаффолда. Текущая итерация — только конфигурация репозитория.
+Требования: Node.js 20+ (проверено на 24), Rust toolchain (`rustup`), системные зависимости Tauri ([docs](https://tauri.app/start/prerequisites/)).
 
 ```bash
-# планируется:
 npm install
-npm run tauri dev
+npm test                 # Vitest — расчётный модуль
+npm run typecheck        # tsc --noEmit
+npm run dev              # Vite dev server (только UI, http://localhost:1420)
+npm run tauri dev        # desktop dev — требует rustup
+npm run tauri build      # production-билд десктопа
 ```
 
-Требования: Node.js 20+, Rust toolchain (`rustup`), системные зависимости Tauri ([docs](https://tauri.app/start/prerequisites/)).
+Если Rust ещё не установлен:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
 ## Структура репозитория
 
@@ -57,6 +64,23 @@ npm run tauri dev
 ├── CLAUDE.md                                  # guidance для Claude Code
 ├── README.md
 ├── TZ_shipping_calculations_offline_v3.md     # техническое задание (источник истины)
+├── package.json
+├── vite.config.ts
+├── vitest.config.ts
+├── tsconfig.json
+├── index.html
+├── src/                                       # React + расчётный модуль
+│   ├── calc/                                  # pure CalculationEngine + tests
+│   ├── services/                              # сервисный слой (заглушка)
+│   ├── components/, pages/                    # UI (заглушки)
+│   ├── App.tsx, main.tsx
+│   └── assets/
+├── src-tauri/                                 # Rust + миграции SQLite
+│   ├── src/lib.rs, src/main.rs
+│   ├── migrations/0001_initial_schema.sql
+│   ├── Cargo.toml, tauri.conf.json
+│   └── icons/, capabilities/
+├── templates/                                 # XLSX/PDF шаблоны (пока пусто)
 ├── .claude/skills/                            # доменные skills для Claude Code
 │   ├── shipping-calculations/
 │   ├── excel-export/
@@ -64,8 +88,6 @@ npm run tauri dev
 │   └── db-migrations/
 └── .gitignore
 ```
-
-После tauri-скаффолда добавятся `src/`, `src-tauri/`, `templates/`, `package.json`.
 
 ## Документация
 

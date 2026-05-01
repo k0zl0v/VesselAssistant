@@ -56,31 +56,38 @@ SQLite (локальный файл проекта)
 
 Полный список сервисов и их назначение — в ТЗ §11.
 
-## Project structure (целевая)
+## Project structure
 
 ```
-src/                  # React UI
-  components/
-  pages/
-  services/           # сервисный слой (вызовы Tauri commands + бизнес-логика)
-  calc/               # CalculationEngine — pure functions
-  calc/__tests__/     # unit-тесты с контрольными значениями
-src-tauri/            # Rust: команды, доступ к SQLite, генерация документов
-  src/
-  migrations/         # SQLite миграции (NNNN_*.sql)
-templates/            # XLSX/DOCX шаблоны (Load Plan, OGV, SOF, Crane Corr)
+src/
+  App.tsx, main.tsx        # точка входа React
+  calc/                    # CalculationEngine — pure functions
+    round.ts               # roundTo3 / formatTons
+    capacity.ts            # capacityTons, emptySpace, totalEmpty, correctedWeight
+    discharge.ts           # LIFO dischargeFromHold
+    types.ts               # Layer, DischargeAllocation, ...
+    __tests__/             # Vitest tests (17 базовых + контрольные сценарии)
+  services/                # сервисный слой (Tauri commands + бизнес-логика)
+  components/, pages/      # React UI (пока пусто)
+src-tauri/
+  src/lib.rs               # Tauri Builder + регистрация плагинов и миграций
+  src/main.rs              # bin entry → vessel_assistant_lib::run()
+  migrations/              # SQLite миграции (0001_initial_schema.sql)
+  Cargo.toml               # crate name: vessel-assistant
+  tauri.conf.json          # productName: VesselAssistant, identifier: com.vesselassistant.app
+templates/                 # XLSX/DOCX шаблоны (пока пусто)
 ```
 
 ## Commands
 
-После Tauri-скаффолда здесь появятся реальные команды. Сейчас — placeholder:
-
 - `npm install` — зависимости.
-- `npm run dev` — Vite dev server (только UI).
-- `npm run tauri dev` — desktop dev режим.
-- `npm run tauri build` — production билд.
-- `npm run test` — Vitest.
-- `npm run lint` — ESLint + Prettier.
+- `npm run dev` — Vite dev server (только UI, http://localhost:1420).
+- `npm run tauri dev` — desktop dev режим (требует установленный `rustup`).
+- `npm run tauri build` — production билд десктопа.
+- `npm test` — Vitest (single run).
+- `npm run test:watch` — Vitest в watch-режиме.
+- `npm run typecheck` — `tsc --noEmit`, без сборки.
+- `npm run build` — production-билд только UI (typecheck + Vite).
 
 ## Conventions
 
