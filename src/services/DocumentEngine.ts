@@ -59,11 +59,14 @@ export class DocumentEngine {
     wb.creator = 'VesselAssistant';
     wb.created = new Date();
 
-    // ── Sheet 1: SOF ─────────────────────────────────────────────────
-    await this.buildSofSheet(wb, voyage_id);
-
-    // ── Sheet 2: (vessel name) load plan ─────────────────────────────
+    // ── Sheet 1: (vessel name) load plan ─────────────────────────────
+    // Put the Load Plan first so it's what opens by default in Excel /
+    // Numbers — SOF / OGV / Crane Corr can be empty for fresh voyages
+    // and an empty first sheet looks like a broken export.
     this.buildLoadPlanSheet(wb, vessel, voyage, portNames, calc, cargoByHold);
+
+    // ── Sheet 2: SOF ─────────────────────────────────────────────────
+    await this.buildSofSheet(wb, voyage_id);
 
     // ── Sheet 3: OGV ─────────────────────────────────────────────────
     await this.buildOgvSheet(wb, voyage_id);

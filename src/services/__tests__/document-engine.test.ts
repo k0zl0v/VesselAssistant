@@ -93,9 +93,10 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
     expect(wb.worksheets).toHaveLength(4);
+    // Load plan first so a default-open shows the data, not an empty SOF.
     expect(wb.worksheets.map((s) => s.name)).toEqual([
-      'SOF',
       'KAVKAZ IV',
+      'SOF',
       'OGV',
       'CRANE CORR.',
     ]);
@@ -104,8 +105,9 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
   it('uses the actual vessel name for the load plan sheet, never hard-coded', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
-    // Load plan is the second sheet now.
-    expect(wb.worksheets[1]!.name).toBe('KAVKAZ IV');
+    // Load plan is the FIRST sheet so the default-open view in Excel /
+    // Numbers lands on the data, not on a possibly-empty SOF.
+    expect(wb.worksheets[0]!.name).toBe('KAVKAZ IV');
   });
 
   it('writes the per-hold values from CalculationService', async () => {
