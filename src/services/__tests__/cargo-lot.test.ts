@@ -117,6 +117,37 @@ describe('CargoLotService — integration', () => {
     expect(list.map((l) => l.load_sequence)).toEqual([1, 2, 3]);
   });
 
+  it('auto-creates hold_cargo_parameters on the first lot per (voyage, hold, cargo)', async () => {
+    await lots.add({
+      voyage_id: voyageId, source_vessel: 'A', cargo_id: cargoId,
+      hold_id: holdIds[0]!, sf: 1.44, planned_tons: 100, loaded_tons: 100,
+      protein_percent: 12.5,
+    });
+
+    const params = await db.select<{ sf: number; fill_percent: number; protein_percent: number | null }>(
+      `SELECT sf, fill_percent, protein_percent FROM hold_cargo_parameters
+        WHERE voyage_id = ? AND hold_id = ? AND cargo_id = ?`,
+      [voyageId, holdIds[0]!, cargoId],
+    );
+    expect(params).toHaveLength(1);
+    expect(params[0]).toEqual({ sf: 1.44, fill_percent: 0.98, protein_percent: 12.5 });
+
+    // Second lot in the same hold uses a different SF — but params row
+    // should NOT be overwritten (one SF per hold, like the Excel original).
+    await lots.add({
+      voyage_id: voyageId, source_vessel: 'B', cargo_id: cargoId,
+      hold_id: holdIds[0]!, sf: 1.50, planned_tons: 200, loaded_tons: 200,
+    });
+
+    const after = await db.select<{ sf: number }>(
+      `SELECT sf FROM hold_cargo_parameters
+        WHERE voyage_id = ? AND hold_id = ? AND cargo_id = ?`,
+      [voyageId, holdIds[0]!, cargoId],
+    );
+    expect(after).toHaveLength(1);
+    expect(after[0]!.sf).toBe(1.44);
+  });
+
   it('rejects SF <= 0 via CHECK constraint', async () => {
     await expect(
       lots.add({

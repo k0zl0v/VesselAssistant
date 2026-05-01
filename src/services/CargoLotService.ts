@@ -8,9 +8,23 @@ export class CargoLotService {
    * Adds a lot AND its corresponding cargo_layers row in one transaction.
    * `load_sequence` is the next free integer for (voyage_id, hold_id).
    * Layer's `remaining_tons` starts equal to lot's `loaded_tons` (TZ §3, §5).
+   *
+   * When this is the first lot in a hold for the given cargo (no row in
+   * `hold_cargo_parameters` for the (voyage, hold, cargo) triple), the
+   * lot's SF is also written there so CalculationService has an SF to
+   * compute capacity. Subsequent lots in the same hold leave the existing
+   * parameter row untouched — matching the original Excel which stores
+   * one SF per hold.
    */
   async add(input: AddLotInput): Promise<CargoLot> {
     return await this.db.transaction(async (tx) => {
+      const vesselRows = await tx.select<{ vessel_id: string }>(
+        `SELECT vessel_id FROM voyages WHERE id = ?`,
+        [input.voyage_id],
+      );
+      const vesselId = vesselRows[0]?.vessel_id;
+      if (!vesselId) throw new Error(`voyage ${input.voyage_id} not found`);
+
       const seqRows = await tx.select<{ next_seq: number }>(
         `SELECT COALESCE(MAX(load_sequence), 0) + 1 AS next_seq
            FROM cargo_lots
@@ -61,6 +75,28 @@ export class CargoLotService {
           load_sequence,
         ],
       );
+
+      const existingParam = await tx.select<{ id: string }>(
+        `SELECT id FROM hold_cargo_parameters
+          WHERE voyage_id = ? AND hold_id = ? AND cargo_id = ?`,
+        [input.voyage_id, input.hold_id, input.cargo_id],
+      );
+      if (existingParam.length === 0) {
+        await tx.execute(
+          `INSERT INTO hold_cargo_parameters
+             (id, voyage_id, vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0.98)`,
+          [
+            crypto.randomUUID(),
+            input.voyage_id,
+            vesselId,
+            input.hold_id,
+            input.cargo_id,
+            input.protein_percent ?? null,
+            input.sf,
+          ],
+        );
+      }
 
       const rows = await tx.select<CargoLot>(
         `SELECT * FROM cargo_lots WHERE id = ?`,
