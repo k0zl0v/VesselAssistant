@@ -118,6 +118,28 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 └── .gitignore
 ```
 
+## Сборка релиза через GitHub Actions
+
+Workflow `.github/workflows/release.yml` собирает бинарники под **macOS arm64** и **Windows x64** при пуше тега вида `vX.Y.Z`. Полный цикл:
+
+```bash
+# Бамп версии в src-tauri/Cargo.toml, src-tauri/tauri.conf.json и package.json (всё одинаковое значение).
+git commit -am "chore: bump to v0.1.1"
+git tag v0.1.1
+git push origin main --tags
+```
+
+GitHub Actions запустит два параллельных runner'а (`macos-14` + `windows-latest`), прогонит тесты и typecheck, соберёт бандлы и создаст **draft release** в `https://github.com/k0zl0v/VesselAssistant/releases` с приложенными:
+
+- `VesselAssistant_X.Y.Z_aarch64.dmg` — установщик для Apple Silicon Mac
+- `VesselAssistant_X.Y.Z_x64-setup.exe` — NSIS-установщик для Windows
+- `VesselAssistant_X.Y.Z_x64_en-US.msi` — Windows Installer
+- Plus `.app.tar.gz` и `.sig` для будущих автообновлений
+
+Через ~15 минут после `git push --tags` зайти в Releases, нажать **Edit draft → Publish release**, переслать `.dmg` коллегам на Mac или `.exe` — на Windows.
+
+Можно также запустить workflow вручную через **Actions → Release → Run workflow** для smoke-теста без релиза — артефакты появятся в логе run'а.
+
 ## Документация
 
 - [`TZ_shipping_calculations_offline_v3.md`](./TZ_shipping_calculations_offline_v3.md) — полное техническое задание (v3.0). Источник истины для всех бизнес-правил, расчётных формул, схемы БД и приёмочных сценариев.
