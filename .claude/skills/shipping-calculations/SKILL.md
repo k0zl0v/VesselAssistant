@@ -10,11 +10,14 @@ This skill encodes the calculation rules from `TZ_shipping_calculations_offline_
 ## Hard invariants
 
 1. **Round to 3 decimals only at display/export boundaries.** Never round intermediate values.
-2. **FillPercent is `0.98` for MVP.** A `fillPercent` parameter must exist in the data model but the UI exposes only 0.98.
-3. **SF is keyed by `(hold, cargo, vessel/lot)` — not globally by cargo.** Always look up SF from `hold_cargo_parameters` or the `cargo_lots.sf` field for that specific row.
-4. **No division by zero on SF.** Validate `sf > 0` before any capacity formula.
+2. **FillPercent is `0.98` for MVP.** A `fillPercent` parameter exists in the data model but UI/services use 0.98 across the board.
+3. **SF is keyed by `(hold, cargo, vessel/lot)` — not globally.** Two-tier storage:
+   - **Write time (lot-level):** `cargo_lots.sf` = the SF declared when the lot was added.
+   - **Calc time (hold-level cache):** `hold_cargo_parameters.sf` = the SF used by `CalculationService.calculate` for capacity. Auto-set from the *first* lot per `(voyage, hold, cargo)`; subsequent lots in the same hold do NOT overwrite.
+   - **AT-05 overload guard** (`wouldOverload` in `src/calc/capacity.ts`) uses the *new lot's* SF, not the cached one — what's being recorded right now is what matters.
+4. **No division by zero on SF.** `capacityTons` and `wouldOverload` throw on `sf <= 0`. SQL CHECK on `cargo_lots.sf > 0` and `hold_cargo_parameters.sf > 0` is the second line.
 5. **`RemainHold[h] >= 0`** is required — if violated, surface as a discrepancy error (do not silently clamp).
-6. **`TotalEmpty` sums only positive `EmptySpace[h]`** — negative values do not increase capacity.
+6. **`TotalEmpty` sums only positive `EmptySpace[h]`** — negative values do not increase capacity. The per-hold `EmptySpace[h]` itself stays negative for the discrepancy display; only the aggregate clamps.
 
 ## Core formulas (from TZ §5)
 
@@ -131,19 +134,31 @@ Discharge 500 t  → VELES remaining = 700, DIANA MARIA remaining = 1600.
 Discharge 900 t  → VELES remaining = 0,   DIANA MARIA remaining = 1400.
 ```
 
-## Regression baseline (TZ Appendix C)
+## Regression baseline (TZ Appendix C — already wired)
 
-The original Excel file `Kavkaz IV_ Load St Plan+SOF.xlsx` produces:
+Per-hold values from the actual `Kavkaz IV_  Load St Plan+SOF.xlsx` are encoded in `src/fixtures/kavkaz-iv.ts` (`KAVKAZ_IV_HOLDS` array + `KAVKAZ_IV_TOTALS`). The fixture is used by:
+- `src/services/__tests__/calculation.test.ts` — regression assertion against `CalculationService.calculate`.
+- `src/services/__tests__/document-engine.test.ts` — XLSX export verification.
+- `src/seedDemo.ts` — `Seed demo (KAVKAZ IV)` button in the UI.
+
+Aggregates that must hold within tolerance 0.001:
 
 | Metric | Value |
 |---|---:|
 | On Board | 23683.955 |
-| Discharged | 2001 |
+| Total Loaded | 25684.955 |
+| Total Discharged | 2001 |
 | Total Empty Space 100% | 16689.390454957404 |
-| Total Empty Space 98% | 15881.924 (after rounding to 3 decimals) |
+| Total Empty Space 98% | 15881.923545858255 (rounds to 15881.924) |
 | FillPercent | 0.98 |
 
-Tolerance for regression tests: **0.001**.
+⚠ Don't duplicate these numbers in other tests — import from `src/fixtures/kavkaz-iv.ts` and assert via `toBeCloseTo(KAVKAZ_IV_TOTALS.on_board, 3)`.
+
+## AT-05 overload guard
+
+`wouldOverload` in `src/calc/capacity.ts` is the predicate for AT-05 / TZ §8 rule 2. It returns `{ capacity_tons, projected_remain_tons, overshoot_tons, overloads }`. `CargoLotService.add` calls it BEFORE inserting the lot and throws `OVERLOAD:<json>` when overshooting unless `acknowledge_overload: true` is set. The 1e-6 fp tolerance prevents false positives on exact-fit lots.
+
+UI side: `AddLotForm` catches the `OVERLOAD:` prefix, parses the JSON payload, shows `confirm("This load exceeds 98% capacity by X t. Continue anyway?")`, and re-submits with the acknowledge flag on yes.
 
 ## Common pitfalls
 
