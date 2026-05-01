@@ -174,7 +174,7 @@ describe('CalculationService — basic per-hold view', () => {
 
 describe('CalculationService — Appendix C regression baseline (KAVKAZ IV)', async () => {
   // Lazy import so test files in this dir share the fixture nicely.
-  const { KAVKAZ_IV_HOLDS, KAVKAZ_IV_TOTALS } = await import('./fixtures/kavkaz-iv');
+  const { KAVKAZ_IV_HOLDS, KAVKAZ_IV_TOTALS } = await import('../../fixtures/kavkaz-iv');
 
   let db: NodeDb;
   let calc: CalculationService;
