@@ -209,10 +209,8 @@ describe('VoyageService — integration', () => {
     });
 
     it('the executeBatch that copy() now uses is all-or-nothing: a failing statement mid-batch leaves no partial voyage row', async () => {
-      // copy() migrated off db.transaction onto executeBatch (docs/adr/0002). This exercises the
-      // same batch shape copy() builds (a voyages insert followed by one hold_cargo_parameters
-      // insert per source row) directly against executeBatch, with the last statement forced to
-      // fail, to prove the primitive copy() now depends on rolls back the earlier statements too.
+      // copy() migrated off db.transaction onto executeBatch (docs/adr/0002-atomic-writes-execute-batch.md);
+      // this drives the same batch shape directly against executeBatch, not through copy().
       const sourceId = await seedSourceVoyage();
       const source = (await svc.get(sourceId))!;
       const params = await db.select<{
@@ -241,16 +239,18 @@ describe('VoyageService — integration', () => {
                ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
           params: [copyId, source.vessel_id, markerVoyageNo, source.loading_port_id, source.discharging_port_id, now, now],
         },
-        ...params.map((p, i) => ({
-          sql: `INSERT INTO hold_cargo_parameters
+        ...params.map((p, i) => {
+          // A single-row INSERT always affects 1 row, so `expectRowsAffected: 2` on the last
+          // statement forces `batch.stale` only after every earlier statement already ran.
+          const lastStatementOverride = i === params.length - 1 ? { expectRowsAffected: 2 } : {};
+          return {
+            sql: `INSERT INTO hold_cargo_parameters
                   (id, voyage_id, vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          params: [crypto.randomUUID(), copyId, p.vessel_id, p.hold_id, p.cargo_id, p.protein_percent, p.sf, p.fill_percent],
-          // A single-row INSERT always affects exactly 1 row — `2` can never match, forcing
-          // `batch.stale` on the LAST statement, i.e. after every earlier statement (the voyage
-          // insert and the other hcp inserts) already ran inside the same immediate transaction.
-          ...(i === params.length - 1 ? { expectRowsAffected: 2 } : {}),
-        })),
+            params: [crypto.randomUUID(), copyId, p.vessel_id, p.hold_id, p.cargo_id, p.protein_percent, p.sf, p.fill_percent],
+            ...lastStatementOverride,
+          };
+        }),
       ];
 
       const err = await db.executeBatch(batch).then(
