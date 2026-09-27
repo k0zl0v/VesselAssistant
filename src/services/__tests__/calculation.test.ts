@@ -3,7 +3,7 @@ import { CalculationService } from '../CalculationService';
 import { CargoLotService } from '../CargoLotService';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb } from './helpers';
 import type { NodeDb } from '../db-node';
 
 /**
@@ -47,7 +47,7 @@ async function setupVoyage(
     );
   }
 
-  const voyages = new VoyageService(db);
+  const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
   const voyage = await voyages.create({
     vessel_id: vesselId,
     voyage_no: spec.voyageNo,

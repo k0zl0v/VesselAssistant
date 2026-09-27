@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { getAutoBackup } from '../autoBackup';
 import { getDb } from '../db';
 import { useT } from '../i18n';
 import type { ParsedLoadPlan } from '../services/ImportService';
@@ -40,7 +41,7 @@ export function ImportPanel() {
         import('../services/ImportService'),
         getDb(),
       ]);
-      const importer = new ImportService(db);
+      const importer = new ImportService(db, await getAutoBackup());
       const result = await importer.parseLoadPlan(bytes);
       setParsed(result);
     } catch (e) {
@@ -59,7 +60,7 @@ export function ImportPanel() {
         import('../services/ImportService'),
         getDb(),
       ]);
-      const importer = new ImportService(db);
+      const importer = new ImportService(db, await getAutoBackup());
       const { voyage_id } = await importer.applyImport(parsed);
       setAppliedVoyageId(voyage_id);
       setParsed(null);

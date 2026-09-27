@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import { CalculationService } from './CalculationService';
 import { SofService } from './SofService';
-import { VoyageService } from './VoyageService';
 import type { Db } from './db';
+import type { Voyage } from './types';
 
 const NUM_FMT = '0.000';
 const HEADER_FILL: ExcelJS.Fill = {
@@ -33,7 +33,7 @@ export class DocumentEngine {
   constructor(private readonly db: Db) {}
 
   async generateLoadPlan(voyage_id: string): Promise<Uint8Array> {
-    const voyage = await new VoyageService(this.db).get(voyage_id);
+    const [voyage] = await this.db.select<Voyage>(`SELECT * FROM voyages WHERE id = ?`, [voyage_id]);
     if (!voyage) throw new Error(`Voyage ${voyage_id} not found`);
 
     const vesselRows = await this.db.select<{

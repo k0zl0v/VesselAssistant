@@ -1,4 +1,7 @@
+import type { AutoBackupHook } from './AutoBackupService';
 import type { Db, SqlValue } from './db';
+import { AppError } from './errors';
+import { PROTEIN_ALLOWED } from './types';
 
 /**
  * Tables in FK-dependency order for INSERT (parents before children).
@@ -203,30 +206,50 @@ export interface BackupEnvelope {
   tables: Record<string, Record<string, SqlValue>[]>;
 }
 
-export class BackupService {
-  constructor(private readonly db: Db) {}
+/**
+ * Dump every TZ §9 table into a single JSON envelope. Order of rows
+ * within a table is by primary key (`id`) when present, so output is
+ * stable across runs and diff-friendly.
+ */
+export async function dumpAllTables(db: Db, exportedAt: Date = new Date()): Promise<string> {
+  const tables: Record<string, Record<string, SqlValue>[]> = {};
+  for (const spec of TABLES) {
+    const cols = spec.columns.map((c) => `"${c}"`).join(', ');
+    tables[spec.name] = await db.select<Record<string, SqlValue>>(
+      `SELECT ${cols} FROM ${spec.name} ORDER BY "id"`,
+    );
+  }
 
-  /**
-   * Dump every TZ §9 table into a single JSON envelope. Order of rows
-   * within a table is by primary key (`id`) when present, so output is
-   * stable across runs and diff-friendly.
-   */
-  async exportToJson(): Promise<string> {
-    const tables: Record<string, Record<string, SqlValue>[]> = {};
-    for (const spec of TABLES) {
-      const cols = spec.columns.map((c) => `"${c}"`).join(', ');
-      const rows = await this.db.select<Record<string, SqlValue>>(
-        `SELECT ${cols} FROM ${spec.name} ORDER BY "id"`,
-      );
-      tables[spec.name] = rows;
+  const envelope: BackupEnvelope = {
+    schema_version: SCHEMA_VERSION,
+    exported_at: exportedAt.toISOString(),
+    tables,
+  };
+  return JSON.stringify(envelope, null, 2);
+}
+
+/** FR-19 over the whole envelope, so a bad file is refused before the auto-backup and the wipe. */
+function assertProteinAllowed(envelope: BackupEnvelope): void {
+  for (const table of ['hold_cargo_parameters', 'cargo_lots']) {
+    for (const row of envelope.tables[table] ?? []) {
+      const value = row.protein_percent;
+      if (value === null || value === undefined) continue;
+      if (typeof value !== 'number' || !PROTEIN_ALLOWED.includes(value)) {
+        throw new AppError('protein.invalid', { value: typeof value === 'number' ? value : String(value) });
+      }
     }
+  }
+}
 
-    const envelope: BackupEnvelope = {
-      schema_version: SCHEMA_VERSION,
-      exported_at: new Date().toISOString(),
-      tables,
-    };
-    return JSON.stringify(envelope, null, 2);
+export class BackupService {
+  constructor(
+    private readonly db: Db,
+    private readonly autoBackup: AutoBackupHook,
+  ) {}
+
+  /** Dump every TZ §9 table into a single JSON envelope (see `dumpAllTables`). */
+  async exportToJson(): Promise<string> {
+    return dumpAllTables(this.db);
   }
 
   /**
@@ -252,7 +275,10 @@ export class BackupService {
       throw new Error('backup envelope is missing `tables` object');
     }
 
+    assertProteinAllowed(envelope);
+
     const wipeFirst = opts.wipeFirst ?? true;
+    await this.autoBackup.snapshot('restore');
 
     await this.db.transaction(async (tx) => {
       if (wipeFirst) {

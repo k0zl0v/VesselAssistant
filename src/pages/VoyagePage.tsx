@@ -4,6 +4,7 @@ import { HoldTable } from '../components/HoldTable';
 import { NewVoyageForm } from '../components/NewVoyageForm';
 import { SofPanel } from '../components/SofPanel';
 import { VoyageTotals } from '../components/VoyageTotals';
+import { getAutoBackup } from '../autoBackup';
 import { getDb } from '../db';
 import { useT } from '../i18n';
 import { seedKavkazDemo } from '../seedDemo';
@@ -198,7 +199,7 @@ export function VoyagePage() {
           onSubmit={async (input) => {
             await withBusy(async () => {
               const db = await getDb();
-              const v = await new VoyageService(db).create(input);
+              const v = await new VoyageService(db, await getAutoBackup()).create(input);
               await refresh({ selectedId: v.id, showNewVoyage: false });
             });
           }}
@@ -236,7 +237,7 @@ export function VoyagePage() {
                   onClick={() =>
                     void withBusy(async () => {
                       const db = await getDb();
-                      await new VoyageService(db).close(selected.id);
+                      await new VoyageService(db, await getAutoBackup()).close(selected.id);
                       await refresh({ selectedId: selected.id, subTab });
                     })
                   }

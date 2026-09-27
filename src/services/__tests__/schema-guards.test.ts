@@ -4,7 +4,7 @@ import { OgvService } from '../OgvService';
 import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
 import type { NodeDb } from '../db-node';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 
 interface AuditActor {
   entity_type: string;
@@ -16,7 +16,7 @@ interface AuditActor {
 /** Create voyage → add lot → discharge → SOF create/update/delete → close. */
 async function runAuditedChain(db: NodeDb): Promise<void> {
   const seed = await seedReferenceData(db, { vesselName: 'NORD STAR', holdNos: [1] });
-  const voyages = new VoyageService(db);
+  const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
   const voyage = await voyages.create({ vessel_id: seed.vesselId, voyage_no: 'SG-1' });
   await new CargoLotService(db).add({
     voyage_id: voyage.id,
@@ -106,7 +106,7 @@ describe('schema guards — irreversible states (D3, S-13)', () => {
   beforeEach(async () => {
     db = await openTestDb();
     const seed = await seedReferenceData(db, { vesselName: 'NORD STAR', holdNos: [1] });
-    voyageId = (await new VoyageService(db).create({ vessel_id: seed.vesselId, voyage_no: 'IG-1' })).id;
+    voyageId = (await new VoyageService(db, NOOP_AUTO_BACKUP).create({ vessel_id: seed.vesselId, voyage_no: 'IG-1' })).id;
   });
 
   afterEach(() => {
@@ -124,8 +124,8 @@ describe('schema guards — irreversible states (D3, S-13)', () => {
   });
 
   it('closes an open voyage but rejects reopening a closed one', async () => {
-    await new VoyageService(db).close(voyageId);
-    expect((await new VoyageService(db).get(voyageId))!.status).toBe('closed');
+    await new VoyageService(db, NOOP_AUTO_BACKUP).close(voyageId);
+    expect((await new VoyageService(db, NOOP_AUTO_BACKUP).get(voyageId))!.status).toBe('closed');
 
     await expect(
       db.execute(`UPDATE voyages SET status = 'open' WHERE id = ?`, [voyageId]),
@@ -140,7 +140,7 @@ describe('schema guards — protein_percent allowed set (FR-19)', () => {
   beforeEach(async () => {
     db = await openTestDb();
     const seed = await seedReferenceData(db, { vesselName: 'NORD STAR', holdNos: [1] });
-    const voyage = await new VoyageService(db).create({ vessel_id: seed.vesselId, voyage_no: 'PG-1' });
+    const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).create({ vessel_id: seed.vesselId, voyage_no: 'PG-1' });
     ids = { voyageId: voyage.id, vesselId: seed.vesselId, holdId: seed.holdIds[0]!, cargoId: seed.cargoId };
   });
 

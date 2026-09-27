@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CargoLotService, OVERLOAD_ERROR_PREFIX } from '../CargoLotService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 
 describe('CargoLotService — integration', () => {
@@ -20,7 +20,7 @@ describe('CargoLotService — integration', () => {
     holdIds = seed.holdIds;
     cargoId = seed.cargoId;
 
-    const voyages = new VoyageService(db);
+    const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
     const voyage = await voyages.create({
       vessel_id: seed.vesselId,
       voyage_no: 'VY-1',
@@ -164,7 +164,7 @@ describe('CargoLotService — integration', () => {
       });
       smallHoldIds = seed.holdIds;
       smallCargoId = seed.cargoId;
-      const voyages = new VoyageService(db);
+      const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
       const v = await voyages.create({
         vessel_id: seed.vesselId,
         voyage_no: 'VY-AT05',

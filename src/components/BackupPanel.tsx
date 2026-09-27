@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { confirm, open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { getAutoBackup } from '../autoBackup';
 import { getDb } from '../db';
 import { useT } from '../i18n';
 import { BackupService } from '../services/BackupService';
@@ -33,7 +34,7 @@ export function BackupPanel() {
       if (!path) return;
 
       const db = await getDb();
-      const json = await new BackupService(db).exportToJson();
+      const json = await new BackupService(db, await getAutoBackup()).exportToJson();
       await writeTextFile(path, json);
       setInfo(t('backup.info.saved', { path }));
     } catch (e) {
@@ -64,7 +65,7 @@ export function BackupPanel() {
 
       const json = await readTextFile(picked);
       const db = await getDb();
-      await new BackupService(db).importFromJson(json, { wipeFirst: true });
+      await new BackupService(db, await getAutoBackup()).importFromJson(json, { wipeFirst: true });
 
       const reload = await confirm(t('backup.confirm.reload'), {
         title: t('backup.confirm.reload_title'),

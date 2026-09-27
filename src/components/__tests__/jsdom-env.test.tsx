@@ -5,7 +5,7 @@ import { VoyageTotals } from '../VoyageTotals';
 import { CalculationService } from '../../services/CalculationService';
 import { CargoLotService } from '../../services/CargoLotService';
 import { VoyageService } from '../../services/VoyageService';
-import { openTestDb, seedReferenceData } from '../../services/__tests__/helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from '../../services/__tests__/helpers';
 import type { NodeDb } from '../../services/db-node';
 
 describe('component test environment: jsdom + better-sqlite3 in one file', () => {
@@ -21,7 +21,7 @@ describe('component test environment: jsdom + better-sqlite3 in one file', () =>
 
   it('renders totals computed from a real in-memory SQLite', async () => {
     const seed = await seedReferenceData(db, { vesselName: 'NORD STAR', holdNos: [1] });
-    const voyage = await new VoyageService(db).create({
+    const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).create({
       vessel_id: seed.vesselId,
       voyage_no: 'ENV-1',
     });

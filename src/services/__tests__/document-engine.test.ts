@@ -8,7 +8,7 @@ import { OgvService } from '../OgvService';
 import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
 import { KAVKAZ_IV_HOLDS, KAVKAZ_IV_TOTALS } from '../../fixtures/kavkaz-iv';
-import { openTestDb } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 
 async function loadXlsx(bytes: Uint8Array): Promise<ExcelJS.Workbook> {
@@ -48,7 +48,7 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
       );
     }
 
-    const voyage = await new VoyageService(db).create({
+    const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).create({
       vessel_id: vesselId,
       voyage_no: 'EXPORT-001',
     });
@@ -315,5 +315,44 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
     await expect(
       new DocumentEngine(db).generateLoadPlan('does-not-exist'),
     ).rejects.toThrow(/not found/);
+  });
+});
+
+describe('DocumentEngine — protein in the Load Plan hold table (FR-19, D7)', () => {
+  let db: NodeDb;
+
+  beforeEach(async () => {
+    db = await openTestDb();
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  it.each([
+    [10.5, 'WHEAT 10.5%'],
+    [11.5, 'WHEAT 11.5%'],
+    [12.5, 'WHEAT 12.5%'],
+    [13.5, 'WHEAT 13.5%'],
+    [null, 'WHEAT'],
+  ])('protein %s → "%s" under Cargo / Protein', async (protein, expected) => {
+    const seed = await seedReferenceData(db, { vesselName: 'NORD STAR', holdNos: [1], cargoName: 'WHEAT' });
+    const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).create({ vessel_id: seed.vesselId, voyage_no: 'P-1' });
+    await new CargoLotService(db).add({
+      voyage_id: voyage.id,
+      source_vessel: 'DIANA MARIA',
+      cargo_id: seed.cargoId,
+      hold_id: seed.holdIds[0]!,
+      protein_percent: protein,
+      sf: 1.25,
+      planned_tons: 1000,
+      loaded_tons: 1000,
+    });
+
+    const wb = await loadXlsx(await new DocumentEngine(db).generateLoadPlan(voyage.id));
+    const sheet = wb.worksheets[0]!;
+    expect(sheet.getCell(6, 2).value).toBe('Cargo / Protein');
+    expect(sheet.getCell(7, 1).value).toBe('№1');
+    expect(sheet.getCell(7, 2).value).toBe(expected);
   });
 });

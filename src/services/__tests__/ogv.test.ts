@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CargoLotService } from '../CargoLotService';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 
 describe('OgvService — integration (AT-07 / AT-08 / AT-12)', () => {
@@ -22,7 +22,7 @@ describe('OgvService — integration (AT-07 / AT-08 / AT-12)', () => {
     holdId = seed.holdIds[0]!;
     cargoId = seed.cargoId;
 
-    const voyages = new VoyageService(db);
+    const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
     const voyage = await voyages.create({
       vessel_id: seed.vesselId,
       voyage_no: 'VY-1',

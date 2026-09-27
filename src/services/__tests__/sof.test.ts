@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 
 describe('SofService — integration', () => {
@@ -15,7 +15,7 @@ describe('SofService — integration', () => {
       vesselName: 'KAVKAZ IV',
       holdNos: [],
     });
-    const voyage = await new VoyageService(db).create({
+    const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).create({
       vessel_id: seed.vesselId,
       voyage_no: 'V-SOF',
     });

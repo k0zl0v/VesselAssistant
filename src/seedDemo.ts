@@ -1,6 +1,5 @@
 import { CargoLotService } from './services/CargoLotService';
 import { OgvService } from './services/OgvService';
-import { VoyageService } from './services/VoyageService';
 import { KAVKAZ_IV_HOLDS } from './fixtures/kavkaz-iv';
 import type { Db } from './services/db';
 
@@ -59,11 +58,13 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
     );
   }
 
-  const voyages = new VoyageService(db);
-  const voyage = await voyages.create({
-    vessel_id: vesselId,
-    voyage_no: VOYAGE_NO,
-  });
+  const voyage = { id: crypto.randomUUID() };
+  const now = new Date().toISOString();
+  await db.execute(
+    `INSERT INTO voyages (id, vessel_id, voyage_no, status, created_at, updated_at)
+     VALUES (?, ?, ?, 'open', ?, ?)`,
+    [voyage.id, vesselId, VOYAGE_NO, now, now],
+  );
 
   for (const h of KAVKAZ_IV_HOLDS) {
     const holdId = holdIdsByNo[h.hold_no]!;

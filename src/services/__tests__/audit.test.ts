@@ -3,7 +3,7 @@ import { AuditLogService } from '../AuditLogService';
 import { CargoLotService } from '../CargoLotService';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 
 interface RawAuditRow {
@@ -35,7 +35,7 @@ describe('audit_log triggers — FR-10', () => {
     holdId = seed.holdIds[0]!;
     cargoId = seed.cargoId;
 
-    voyages = new VoyageService(db);
+    voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
     lots = new CargoLotService(db);
     ogv = new OgvService(db);
     audit = new AuditLogService(db);

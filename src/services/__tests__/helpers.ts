@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AutoBackupHook } from '../AutoBackupService';
 import { NodeDb } from '../db-node';
 import type { OperatorSession } from '../SessionService';
 
@@ -15,6 +16,9 @@ const migrationSqls: readonly string[] = readdirSync(MIGRATIONS_DIR)
 type SessionSeed = Pick<OperatorSession, 'operator_name' | 'operator_role'>;
 
 export const TEST_SESSION: SessionSeed = { operator_name: 'test-operator', operator_role: 'operator' };
+
+/** Tests only: prod code always gets a real `AutoBackupService` (`src/autoBackup.ts`). */
+export const NOOP_AUTO_BACKUP: AutoBackupHook = { snapshot: async () => undefined };
 
 /**
  * Open a fresh in-memory SQLite, apply every production migration from

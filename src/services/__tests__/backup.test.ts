@@ -1,9 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AutoBackupService } from '../AutoBackupService';
 import { BackupService } from '../BackupService';
+import { MemoryBackupStore } from '../BackupStore';
+import { isAppError } from '../errors';
 import { CargoLotService } from '../CargoLotService';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
-import { openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
 import type { SqlValue } from '../db';
 
@@ -21,7 +24,7 @@ async function seedFullProject(db: NodeDb): Promise<SeededIds> {
     cargoName: 'Wheat',
   });
 
-  const voyages = new VoyageService(db);
+  const voyages = new VoyageService(db, NOOP_AUTO_BACKUP);
   const voyage = await voyages.create({
     vessel_id: seed.vesselId,
     voyage_no: 'V-100',
@@ -113,7 +116,7 @@ describe('BackupService — round-trip and modes', () => {
 
   it('round-trip: export from one DB, import into a fresh DB, all data preserved', async () => {
     const seeded = await seedFullProject(dbA);
-    const backup = new BackupService(dbA);
+    const backup = new BackupService(dbA, NOOP_AUTO_BACKUP);
     const json = await backup.exportToJson();
 
     // Capture row counts and key fact-shapes from the source DB.
@@ -137,7 +140,7 @@ describe('BackupService — round-trip and modes', () => {
     // Restore into a clean second DB.
     const dbB = await openTestDb();
     try {
-      await new BackupService(dbB).importFromJson(json);
+      await new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(json);
 
       for (const t of TABLES) {
         expect(await rowCount(dbB, t), `count(${t})`).toBe(beforeCounts[t]);
@@ -172,7 +175,7 @@ describe('BackupService — round-trip and modes', () => {
 
   it('exportToJson produces a well-formed envelope with schema_version and tables', async () => {
     await seedFullProject(dbA);
-    const json = await new BackupService(dbA).exportToJson();
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
     const parsed = JSON.parse(json);
 
     expect(parsed.schema_version).toBe(2);
@@ -195,7 +198,7 @@ describe('BackupService — round-trip and modes', () => {
         tables: {},
       });
       await expect(
-        new BackupService(dbB).importFromJson(bad),
+        new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(bad),
       ).rejects.toThrow(/schema_version mismatch/);
     } finally {
       dbB.close();
@@ -205,7 +208,7 @@ describe('BackupService — round-trip and modes', () => {
   it('wipeFirst: true deletes pre-existing rows that are not in the import', async () => {
     // Source: full seeded project.
     await seedFullProject(dbA);
-    const json = await new BackupService(dbA).exportToJson();
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
 
     // Target: a SECOND seeded project with different ids. After import,
     // none of those original rows should remain.
@@ -216,7 +219,7 @@ describe('BackupService — round-trip and modes', () => {
         holdNos: [1],
         cargoName: 'Corn',
       });
-      const otherVoyages = new VoyageService(dbB);
+      const otherVoyages = new VoyageService(dbB, NOOP_AUTO_BACKUP);
       const otherVoyage = await otherVoyages.create({
         vessel_id: otherSeed.vesselId,
         voyage_no: 'OTHER-1',
@@ -228,7 +231,7 @@ describe('BackupService — round-trip and modes', () => {
       );
       expect(preVessels.map((v) => v.name)).toContain('OTHER SHIP');
 
-      await new BackupService(dbB).importFromJson(json, { wipeFirst: true });
+      await new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(json, { wipeFirst: true });
 
       // OTHER SHIP and OTHER-1 voyage are gone.
       const postVessels = await dbB.select<{ name: string }>(
@@ -249,7 +252,7 @@ describe('BackupService — round-trip and modes', () => {
   it('wipeFirst: false preserves existing rows and adds imported ones (disjoint ids)', async () => {
     // Source DB has its own seeded project.
     await seedFullProject(dbA);
-    const json = await new BackupService(dbA).exportToJson();
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
 
     // Target DB has a completely disjoint reference set: different
     // vessel/cargo/hold ids, different voyage, no discharges yet.
@@ -267,7 +270,7 @@ describe('BackupService — round-trip and modes', () => {
         holds: await rowCount(dbB, 'holds'),
       };
 
-      await new BackupService(dbB).importFromJson(json, { wipeFirst: false });
+      await new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(json, { wipeFirst: false });
 
       // Counts should be the sum of pre-existing plus imported.
       expect(await rowCount(dbB, 'vessels')).toBe(before.vessels + 1);
@@ -295,9 +298,9 @@ describe('BackupService — round-trip and modes', () => {
     const before = await dbA.select<Record<string, SqlValue>>(`SELECT * FROM audit_log ORDER BY id`);
     expect(before.length).toBeGreaterThan(0);
 
-    const envelope = JSON.parse(await new BackupService(dbA).exportToJson());
+    const envelope = JSON.parse(await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson());
     envelope.tables.audit_log = [];
-    await new BackupService(dbA).importFromJson(JSON.stringify(envelope));
+    await new BackupService(dbA, NOOP_AUTO_BACKUP).importFromJson(JSON.stringify(envelope));
 
     const after = await dbA.select<Record<string, SqlValue>>(`SELECT * FROM audit_log ORDER BY id`);
     expect(after.length).toBeGreaterThanOrEqual(before.length);
@@ -306,7 +309,7 @@ describe('BackupService — round-trip and modes', () => {
 
   it('importFromJson accepts a schema_version 1 snapshot without the operator columns', async () => {
     await seedFullProject(dbA);
-    const envelope = JSON.parse(await new BackupService(dbA).exportToJson());
+    const envelope = JSON.parse(await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson());
     envelope.schema_version = 1;
     for (const row of envelope.tables.audit_log as Record<string, SqlValue>[]) {
       delete row.user_role;
@@ -315,11 +318,89 @@ describe('BackupService — round-trip and modes', () => {
 
     const dbB = await openTestDb();
     try {
-      await new BackupService(dbB).importFromJson(JSON.stringify(envelope));
+      await new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(JSON.stringify(envelope));
       expect(await rowCount(dbB, 'cargo_lots')).toBe(3);
       expect(await rowCount(dbB, 'audit_log')).toBe(envelope.tables.audit_log.length);
     } finally {
       dbB.close();
     }
+  });
+});
+
+describe('BackupService — auto-backup before restore (FR-14)', () => {
+  let dbA: NodeDb;
+  let dbB: NodeDb;
+
+  beforeEach(async () => {
+    dbA = await openTestDb();
+    dbB = await openTestDb();
+  });
+
+  afterEach(() => {
+    dbA.close();
+    dbB.close();
+  });
+
+  it('importFromJson snapshots restore while the target still holds its old data', async () => {
+    await seedFullProject(dbA);
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
+    await seedReferenceData(dbB, { vesselName: 'OTHER SHIP', holdNos: [1] });
+    const vesselsAtSnapshot: string[][] = [];
+    const hook = {
+      snapshot: vi.fn(async () => {
+        vesselsAtSnapshot.push((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name));
+      }),
+    };
+
+    await new BackupService(dbB, hook).importFromJson(json);
+
+    expect(hook.snapshot).toHaveBeenCalledTimes(1);
+    expect(hook.snapshot).toHaveBeenCalledWith('restore');
+    expect(vesselsAtSnapshot).toEqual([['OTHER SHIP']]);
+    expect((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name)).toEqual(['NORD STAR']);
+  });
+
+  it('a throwing hook rejects importFromJson and leaves the target untouched', async () => {
+    await seedFullProject(dbA);
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
+    await seedReferenceData(dbB, { vesselName: 'OTHER SHIP', holdNos: [1] });
+    const hook = { snapshot: vi.fn(async () => Promise.reject(new Error('disk full'))) };
+
+    await expect(new BackupService(dbB, hook).importFromJson(json)).rejects.toThrow('disk full');
+    expect((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name)).toEqual(['OTHER SHIP']);
+  });
+
+  it('S-10: a snapshot carrying protein 14.0 is rejected whole, before any auto-backup', async () => {
+    await seedFullProject(dbA);
+    const envelope = JSON.parse(await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson());
+    (envelope.tables.cargo_lots as Record<string, SqlValue>[])[1]!.protein_percent = 14.0;
+    await seedReferenceData(dbB, { vesselName: 'OTHER SHIP', holdNos: [1] });
+    const hook = { snapshot: vi.fn(async () => undefined) };
+
+    const err = await new BackupService(dbB, hook).importFromJson(JSON.stringify(envelope)).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    expect(isAppError(err) && [err.code, err.params]).toEqual(['protein.invalid', { value: 14 }]);
+    expect(hook.snapshot).not.toHaveBeenCalled();
+    expect((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name)).toEqual(['OTHER SHIP']);
+    expect(await rowCount(dbB, 'cargo_lots')).toBe(0);
+  });
+
+  it('S-11: restoring with a real AutoBackupService first writes auto-*-restore.json of the replaced state', async () => {
+    await seedFullProject(dbA);
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
+    await seedReferenceData(dbB, { vesselName: 'OTHER SHIP', holdNos: [1] });
+    const store = new MemoryBackupStore();
+
+    await new BackupService(dbB, new AutoBackupService(dbB, store)).importFromJson(json);
+
+    const names = (await store.list()).map((f) => f.name);
+    expect(names).toHaveLength(1);
+    expect(names[0]).toMatch(/^auto-.+-restore\.json$/);
+    const saved = JSON.parse(store.files.get(names[0]!)!);
+    expect(saved.tables.vessels.map((v: { name: string }) => v.name)).toEqual(['OTHER SHIP']);
+    expect((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name)).toEqual(['NORD STAR']);
   });
 });
