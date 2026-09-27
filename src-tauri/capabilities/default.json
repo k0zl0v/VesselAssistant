@@ -13,6 +13,7 @@
     "dialog:default",
     "dialog:allow-save",
     "dialog:allow-open",
+    "log:default",
     {
       "identifier": "fs:allow-write-file",
       "allow": [
@@ -29,6 +30,47 @@
         { "path": "$DOCUMENT/**" },
         { "path": "$DESKTOP/**" },
         { "path": "$HOME/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/backups" },
+        { "path": "$APPDATA/backups/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        { "path": "$APPDATA/backups" },
+        { "path": "$APPDATA/backups/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        { "path": "$APPDATA/backups" },
+        { "path": "$APPDATA/backups/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        { "path": "$APPDATA/backups" },
+        { "path": "$APPDATA/backups/**" }
       ]
     }
   ]
