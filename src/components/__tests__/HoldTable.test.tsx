@@ -13,8 +13,7 @@ import type { VoyageHoldCalc } from '../../services/CalculationService';
 /**
  * `remain_tons < 0` cannot occur through the real service layer (FR-17's guard
  * blocks a discharge past what's loaded) — only a component-level test can
- * construct it directly, bypassing the service layer, to verify FR-08's
- * "negative RemainHold[h] is highlighted" rule on the remainder cell itself.
+ * construct it directly, bypassing the service layer, to verify FR-08.
  */
 const makeHoldCalc = (overrides: Partial<VoyageHoldCalc>): VoyageHoldCalc => ({
   hold_id: crypto.randomUUID(),

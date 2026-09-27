@@ -90,7 +90,8 @@ export class DocumentEngine {
       [voyage_id],
     );
     if (!voyage) throw new AppError('voyage.not_found', { voyage_id });
-    const entries = await new AuditLogService(this.db).listForVoyage(voyage_id);
+    // Bounded, not paginated: 10_000 is far above any realistic voyage's row count (review round 3, finding 4).
+    const entries = await new AuditLogService(this.db).listForVoyage(voyage_id, { limit: 10_000 });
 
     const wb = new ExcelJS.Workbook();
     wb.creator = 'VesselAssistant';
