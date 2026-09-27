@@ -1,35 +1,28 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { afterEach, describe, expect, it } from 'vitest';
 import { CalculationService } from '../CalculationService';
 import { ImportService } from '../ImportService';
 import {
   KAVKAZ_IV_HOLDS,
   KAVKAZ_IV_TOTALS,
+  KAVKAZ_IV_VESSEL_NAME,
 } from '../../fixtures/kavkaz-iv';
 import { openTestDb } from './helpers';
 import type { NodeDb } from '../db-node';
 
-const SOURCE_FILE = '/Users/akozlov/Downloads/Kavkaz IV_  Load St Plan+SOF.xlsx';
+/** Committed fixture (`npm run fixtures:import`). A missing file fails the tests, never skips them. */
+const SOURCE_FILE = fileURLToPath(
+  new URL('./fixtures/import/appendix-c-load-plan.xlsx', import.meta.url),
+);
 const TOLERANCE = 0.001;
 
-describe('ImportService — KAVKAZ IV xlsx', () => {
-  const haveFile = existsSync(SOURCE_FILE);
-  const maybeIt = haveFile ? it : it.skip;
-  if (!haveFile) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `import.test: source XLSX not found at ${SOURCE_FILE} — skipping.`,
-    );
-  }
+function readFixture(): Uint8Array {
+  const buf = readFileSync(SOURCE_FILE);
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+}
 
-  let bytes: Uint8Array;
-  beforeAll(() => {
-    if (haveFile) {
-      const buf = readFileSync(SOURCE_FILE);
-      bytes = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-    }
-  });
-
+describe('ImportService — Appendix C load plan xlsx', () => {
   let db: NodeDb | null = null;
   afterEach(() => {
     if (db) {
@@ -38,11 +31,12 @@ describe('ImportService — KAVKAZ IV xlsx', () => {
     }
   });
 
-  maybeIt('parseLoadPlan extracts vessel + 5 holds with values from the fixture', async () => {
-    const importer = new ImportService(await openTestDb());
-    const parsed = await importer.parseLoadPlan(bytes);
+  it('parseLoadPlan extracts vessel + 5 holds with values from the fixture', async () => {
+    db = await openTestDb();
+    const importer = new ImportService(db);
+    const parsed = await importer.parseLoadPlan(readFixture());
 
-    expect(parsed.vessel_name).toBe('KAVKAZ IV');
+    expect(parsed.vessel_name).toBe(KAVKAZ_IV_VESSEL_NAME);
     expect(parsed.holds).toHaveLength(KAVKAZ_IV_HOLDS.length);
 
     for (const expected of KAVKAZ_IV_HOLDS) {
@@ -56,12 +50,12 @@ describe('ImportService — KAVKAZ IV xlsx', () => {
     }
   });
 
-  maybeIt('applyImport persists data so CalculationService matches KAVKAZ_IV_TOTALS', async () => {
+  it('applyImport persists data so CalculationService matches KAVKAZ_IV_TOTALS', async () => {
     db = await openTestDb();
     const importer = new ImportService(db);
     const calc = new CalculationService(db);
 
-    const parsed = await importer.parseLoadPlan(bytes);
+    const parsed = await importer.parseLoadPlan(readFixture());
     const { voyage_id } = await importer.applyImport(parsed);
 
     const result = await calc.calculate(voyage_id);

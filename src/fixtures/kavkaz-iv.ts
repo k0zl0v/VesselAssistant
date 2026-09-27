@@ -14,6 +14,9 @@
  * in ogv.test.ts. Aggregate totals are unchanged either way because
  * SF is per-hold, not per-lot, in the original.
  */
+/** Vessel name of the Appendix C baseline; the only place the literal may appear (CLAUDE.md rule 5). */
+export const KAVKAZ_IV_VESSEL_NAME = 'KAVKAZ IV';
+
 export interface KavkazHoldFixture {
   hold_no: number;
   volume_m3: number;
