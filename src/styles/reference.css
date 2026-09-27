@@ -1,0 +1,370 @@
+/* Reference data screen (docs/ui/artboards/Reference.dc.html). */
+
+.refs-body {
+  padding-top: 18px;
+}
+
+.refs-tabs {
+  border-color: var(--line-strong);
+}
+
+.refs-tabs button {
+  padding: 0 14px;
+  border-left-color: var(--line-strong);
+}
+
+.refs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Outline accent «+ Судно / + Трюм / + Коэффициент». */
+.btn.refs-add {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.btn.refs-add:hover:not(:disabled) {
+  border-color: var(--accent-press);
+  color: var(--accent-press);
+}
+
+.refs-small {
+  font-size: var(--text-small);
+}
+
+.refs-upper {
+  text-transform: uppercase;
+}
+
+.refs-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  min-height: 50px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.refs-card-empty {
+  padding: var(--space-4) 18px 18px;
+}
+
+.refs-card-head .card-subtitle {
+  font-size: var(--text-caption);
+}
+
+/* ===== Vessels & holds ============================================== */
+
+.refs-vessels {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.refs-vessel-list {
+  position: sticky;
+  top: 0;
+  width: var(--refs-list-width);
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.refs-vessel-list-head {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.refs-vessel-list-head .refs-row {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.refs-list-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.search-box.refs-search {
+  width: 100%;
+}
+
+.refs-vessel-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px;
+}
+
+.btn.refs-vessel-item {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 9px 11px;
+  border: 1px solid var(--track);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.btn.refs-vessel-item:hover:not([aria-pressed='true']) {
+  border-color: var(--line-strong);
+}
+
+.btn.refs-vessel-item[aria-pressed='true'] {
+  border-color: var(--accent-soft-line);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+}
+
+.refs-vessel-item-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.refs-vessel-name {
+  flex-grow: 1;
+  min-width: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.refs-role-tag {
+  padding: 1px 6px;
+  border-radius: var(--radius-tag);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  font-size: var(--text-micro);
+}
+
+.refs-vessel-item[aria-pressed='true'] .refs-role-tag {
+  background: var(--surface);
+}
+
+.refs-vessel-meta {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.refs-no-match {
+  margin: var(--space-2) 6px;
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+}
+
+.refs-vessel-main {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.refs-vessel-card {
+  padding: 15px 18px;
+}
+
+.refs-vessel-card-head {
+  margin-bottom: 14px;
+}
+
+.refs-vessel-title {
+  margin: 0;
+  font-size: var(--text-section);
+  font-weight: 600;
+}
+
+.refs-role-line {
+  padding: 2px 7px;
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  font-size: var(--text-caption);
+}
+
+.refs-fields {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.refs-holds-table .refs-col-hold {
+  width: 92px;
+}
+
+.refs-holds-table .refs-col-volume {
+  width: 150px;
+}
+
+.refs-holds-table .refs-col-cargo {
+  width: 200px;
+}
+
+.refs-holds-table .refs-col-sf {
+  width: 120px;
+}
+
+.data-table td.refs-hold-no {
+  font-weight: 600;
+}
+
+/* ===== Crane correction ============================================= */
+
+.refs-crane {
+  display: flex;
+  align-items: stretch;
+}
+
+.refs-crane-main {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.refs-coef-table td {
+  height: 36px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.data-table td.refs-crane-name {
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+
+.data-table td.refs-valid {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.data-table tr.refs-picked td {
+  background: var(--accent-soft);
+}
+
+.data-table tr.refs-picked td.refs-k {
+  font-weight: 600;
+}
+
+.refs-calc {
+  width: var(--refs-calc-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px var(--space-4);
+  border-left: 1px solid var(--line-soft);
+  background: var(--surface-raised);
+}
+
+.refs-calc-row {
+  display: flex;
+  gap: 9px;
+}
+
+.refs-grow {
+  flex-grow: 1;
+}
+
+.refs-calc-narrow {
+  width: var(--refs-calc-narrow);
+  flex-shrink: 0;
+}
+
+.field-label.refs-micro-label {
+  font-size: var(--text-micro);
+}
+
+.refs-calc .input {
+  font-size: var(--text-small);
+}
+
+.refs-calc .input.num {
+  font-size: var(--text-body);
+}
+
+.input.refs-date {
+  padding: 0 6px;
+}
+
+.refs-calc-result {
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--chrome);
+}
+
+.refs-calc-result .metric-label {
+  letter-spacing: var(--tracking-col);
+  color: var(--chrome-ink-muted);
+}
+
+.refs-calc-value {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--text-result);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-ink);
+}
+
+.refs-calc-value .metric-unit {
+  margin-left: 5px;
+  font-size: var(--text-body);
+  color: var(--chrome-ink-muted);
+}
+
+.refs-calc-formula {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--chrome-ink-muted);
+}
+
+.refs-calc-note {
+  margin: 0;
+  font-size: var(--text-micro);
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+.refs-calc .state-error p {
+  font-size: var(--text-small);
+}
+
+/* ===== Cargoes / cranes / ports ===================================== */
+
+.refs-list-card .data-table .refs-col-wide {
+  width: 220px;
+}
+
+.refs-list-card .data-table .refs-col-unit {
+  width: 120px;
+}
+
+/* ===== Dialogs ====================================================== */
+
+.refs-field-gap {
+  margin-top: var(--space-3);
+}
+
+.refs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.refs-dialog-error {
+  margin-top: var(--space-3);
+}

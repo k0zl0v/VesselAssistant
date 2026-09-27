@@ -1290,7 +1290,7 @@ button.secondary.danger:not(.btn) {
   color: var(--danger);
 }
 
-button:not(.btn):disabled {
+button:not(.btn):not(.rail-item):not(.lang-pill):not(.quick-chip):not(.segmented button):disabled {
   border-color: var(--line);
   background: var(--line);
   color: var(--ink-disabled);

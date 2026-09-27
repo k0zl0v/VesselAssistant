@@ -180,6 +180,12 @@
   --shadow-sheet: 0 1px 3px rgba(13, 22, 32, 0.07); /* paper sheet in the print preview */
   --book-width: 300px;        /* «Состав книги» column */
   --sheet-tabs-height: 32px;  /* workbook tab strip under the preview */
+
+  /* ---- Экран: reference ---- */
+  --refs-list-width: 268px;   /* vessel list column */
+  --refs-calc-width: 306px;   /* «Пересчёт веса» side panel */
+  --refs-calc-narrow: 116px;  /* side / date selects in the calculator */
+  --text-result: 23px;        /* corrected weight on the chrome tile */
 }
 
 /* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,
