@@ -17,7 +17,7 @@ Offline-first desktop-приложение для расчётов погруз�
 - **Vitest** для unit + integration-тестов.
 - **ExcelJS** для XLSX генерации/парсинга. **Импортируется лениво через `await import()`** — иначе вешает 940 KB на initial bundle.
 - **Tauri-плагины:** `plugin-sql`, `plugin-dialog`, `plugin-fs`, `plugin-opener`. Capabilities в `src-tauri/capabilities/default.json`.
-- **i18n:** свой минимальный store в `src/i18n/` (en + ru, ~190 ключей), без `i18next`.
+- **i18n:** свой минимальный store в `src/i18n/` (en + ru, общие ключи в `en.ts`/`ru.ts` + по файлу на экран в `src/i18n/parts/`), без `i18next`.
 
 ## Domain glossary
 
@@ -44,14 +44,14 @@ Offline-first desktop-приложение для расчётов погруз�
 7. **Итоговые поля только вычисляемые**, ручной правки не допускают.
 8. **Деление на ноль по SF запрещено** — валидация перед расчётом (`capacityTons` бросает).
 9. **`RemainHold[h] >= 0`** — отрицательный остаток в UI/экспорте подсвечивается как ошибка.
-10. **AT-05 overload guard** в `CargoLotService.add` — лот, превышающий 98% capacity, бросает `OVERLOAD:<json>`. UI ловит и спрашивает подтверждение перед `acknowledge_overload: true`.
+10. **AT-05 overload guard** в `CargoLotService.add` — лот, превышающий 98% capacity, бросает `OVERLOAD:<json>`. UI (`AddLotForm`) считает проверку вместимости вживую и показывает inline-панель перегруза с чекбоксом подтверждения перед `acknowledge_overload: true` — без `window.confirm`.
 
 ## Architecture
 
 ```
 React UI (src/)
    ↓ через t() из src/i18n/
-Pages (VoyagePage, ReferencePage, ToolsPage)
+Shell (src/shell/: Rail, VoyageProvider, PageHeader) → Pages (LoadPlan, CargoLayers, Ogv, Sof, Documents, Reference, Tools, Audit)
    ↓
 Services (src/services/) — TS, бизнес-логика
    - VoyageService, CargoLotService, OgvService
@@ -80,7 +80,9 @@ Pure функции (`src/calc/`) — ниже всего, без зависим
 
 ```
 src/
-  App.tsx                  # tab nav: Voyages | Reference | Tools
+  App.tsx                  # навигационный рельс (разделы ТЗ §10) + VoyageProvider
+  shell/                   # Rail, VoyageContext (данные выбранного рейса), PageHeader, NewVoyageDialog
+  styles/                  # tokens.css (дизайн-токены) + CSS по экрану; App.css — база и общие классы
   main.tsx                 # React entry
   db.ts                    # TauriDb singleton
   seedDemo.ts              # KAVKAZ IV demo voyage seeder
@@ -102,9 +104,10 @@ src/
                            # ErrorBoundary, ExportButton, HoldTable,
                            # ImportPanel, LanguageSwitcher, NewVoyageForm,
                            # SessionGate, SofPanel, VoyageTotals
-  pages/                   # VoyagePage, ReferencePage, ToolsPage
+  pages/                   # LoadPlan, CargoLayers, Ogv, Sof, Documents, Reference, Tools, Audit
+                           # UI-правила — skill `ui-kit`, макеты — docs/ui/
   i18n/                    # index.ts (store + useT hook)
-                           # en.ts, ru.ts (~244 keys, en/ru parity)
+                           # en.ts, ru.ts + parts/<screen>.ts (en/ru parity)
                            # errors.ts (describeError), __tests__/
   fixtures/
     kavkaz-iv.ts           # Appendix C baseline (real xlsx values)
@@ -153,7 +156,7 @@ scripts/
 - `npm install` — зависимости.
 - `npm test` / `npm run test:watch` — Vitest (349 тест). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
 - `npm run typecheck` — три прогона `tsc --noEmit`: корень, `e2e/`, `e2e-smoke/`.
-- `npm run build` — production UI (`tsc && vite build`). Initial bundle ~285 KB / 84 KB gzip + ленивые ExcelJS/DocumentEngine/ImportService чанки.
+- `npm run build` — production UI (`tsc && vite build`). Initial bundle ~450 KB / 126 KB gzip (после редизайна UI; рост — код экранов и строки) + шрифты IBM Plex (локально, `@fontsource`) + ленивые ExcelJS/DocumentEngine/ImportService чанки.
 - `npm run dev` — только Vite (без Tauri runtime; `TauriDb` упадёт).
 - `npm run tauri dev` — desktop dev. Требует `. "$HOME/.cargo/env"` в свежем shell.
 - `npm run tauri build` — релиз `.dmg`/`.app` под текущую ОС. Cargo cache держит вторые сборки в ~30 сек.
@@ -200,7 +203,7 @@ git push origin main --tags
 - **Новая SQL миграция?** Два действия: создать `src-tauri/migrations/NNNN_*.sql`, добавить в `migrations()` (`src-tauri/src/lib.rs`). Мирроить в тестах вручную не нужно — `src/services/__tests__/helpers.ts` `openTestDb` читает каталог `src-tauri/migrations/` по маске `\d{4}_.+\.sql` и применяет по имени файла. Страж — `cargo test` (`src-tauri/tests/migrations.rs`): падает, если число файлов ≠ длине `migrations()` или версии не непрерывны с 1.
 - **Аудит — автоматический, актор — `app_session`.** SQL-триггеры (`0002_audit_triggers.sql`, актор-колонки добавлены `0003_operator_context.sql`) пишут в `audit_log` для каждого `INSERT/UPDATE/DELETE` восьми ключевых таблиц, подставляя `user_id`/`user_role`/`reason` из единственной строки `app_session` (id=1, пишет `SessionService.start()`/`withVoyageGuard`). Сервисы аудит-логирование не вызывают.
 - **i18n:** все user-facing строки — через `t('key')`. Новый ключ → добавить в `src/i18n/en.ts` И `src/i18n/ru.ts` (typecheck заставит). Тесты сервисов пишут английские error-messages — это OK, они не пропускаются в UI без `t()`.
-- **ExcelJS — динамический импорт.** Любой компонент/сервис, тянущий `exceljs`, должен загружаться через `await import('../services/...')` в момент клика, иначе initial bundle вырастет с 285 KB до 1.2 MB.
+- **ExcelJS — динамический импорт.** Любой компонент/сервис, тянущий `exceljs`, должен загружаться через `await import('../services/...')` в момент клика, иначе initial bundle вырастет на ~940 KB.
 - **Коммиты на английском**, conventional-commits (`feat`, `fix`, `chore`, `docs`, `ci`, `refactor`, `test`).
 
 ## What NOT to do
@@ -218,7 +221,7 @@ git push origin main --tags
 - ❌ **Делать API-вызовы к внешним сервисам** в основных функциях (offline-first).
 - ❌ **Запускать Rust команды без `. "$HOME/.cargo/env"`** в свежем shell — `--no-modify-path` использовался при установке `rustup`.
 - ❌ **`cargo check`/`cargo build` через `cd src-tauri`** — лучше через `--manifest-path src-tauri/Cargo.toml`. cwd может неожиданно сброситься.
-- ❌ **`setError(String(e))` в новых обработчиках.** Через `describeError(e)`. Оставшиеся семь мест со старым `String(e)` (`BackupPanel.tsx`, `ExportButton.tsx`, `ImportPanel.tsx`, `CraneCorrectionPanel.tsx`, `AuditLogPanel.tsx`, `NewVoyageForm.tsx`, `AddSofEventForm.tsx`, `ReferencePage.tsx`) — известный долг, не образец для нового кода.
+- ❌ **`setError(String(e))` в обработчиках.** Текст ошибки — `describeError(e)`; техническая строка — только в свёрнутых «Подробностях» (`ErrorState.details`).
 - ❌ **`it.skip`/`maybeIt`/`existsSync`-скип, зависящий от наличия личного файла.** Отсутствующая фикстура — красный тест, не пропущенный (`scripts/assert-no-skips.mjs` это гейтит). Фикстуры — коммиченные файлы, не личные пути разработчика.
 - ❌ **`BEGIN`/`COMMIT` вручную через `plugin-sql` в новом коде.** Для одной таблицы — обычный `execute`; для нескольких — `executeBatch` (Rust-уровень, атомарность на одном соединении). `db.transaction` остаётся только в трёх унаследованных местах из «Conventions» (`CargoLotService.add`, `ImportService`, `BackupService.importFromJson`) и образцом для нового кода не служит. Ручной `BEGIN` через plugin-sql не гарантирует то же соединение на последующих вызовах.
 

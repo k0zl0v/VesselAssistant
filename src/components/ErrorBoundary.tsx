@@ -1,15 +1,21 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { reportError } from '../errorReporting';
 import { useT } from '../i18n';
+import { ErrorState } from './ui/states';
 
 function CrashFallback() {
   const t = useT();
   return (
-    <main className="container">
-      <p className="error">{t('app.crashed')}</p>
-      <button type="button" onClick={() => window.location.reload()}>
-        {t('app.reload')}
-      </button>
+    <main className="crash-screen">
+      <ErrorState
+        title={t('app.crashed')}
+        message={t('app.crashed_hint')}
+        actions={
+          <button type="button" className="btn btn-sm btn-danger-outline" onClick={() => window.location.reload()}>
+            {t('app.reload')}
+          </button>
+        }
+      />
     </main>
   );
 }

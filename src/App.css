@@ -1226,13 +1226,7 @@ textarea.input {
   color: var(--ink-faint);
 }
 
-/* ===== Legacy panels ================================================= */
-/* Class names still used by Tools/Reference panels and the sign-in gate.
-   Restyled on tokens so untouched screens match the new shell. */
-
-.container {
-  padding: var(--space-5) var(--content-pad) var(--space-8);
-}
+/* ===== Sign-in gate and crash screen ================================ */
 
 .session-gate {
   max-width: 420px;
@@ -1243,9 +1237,20 @@ textarea.input {
   border-radius: var(--radius-shell);
 }
 
+.session-gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: var(--space-5);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
 .session-gate h2 {
   margin: 0 0 var(--space-4);
   font-size: var(--text-section);
+  font-weight: 600;
 }
 
 .session-gate form {
@@ -1254,223 +1259,14 @@ textarea.input {
   gap: var(--space-3);
 }
 
-.session-gate label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--text-caption);
-  font-weight: 600;
-  letter-spacing: var(--tracking-label);
-  color: var(--ink-col);
+.session-gate-loading {
+  padding: var(--space-6);
+  color: var(--ink-faint);
 }
 
-button:not(.btn):not(.rail-item):not(.lang-pill):not(.quick-chip):not(.segmented button),
-select:not(.input):not(.rail-voyage-select) {
-  height: var(--control-md);
-  padding: 0 13px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-control);
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: var(--text-body);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-select:not(.input):not(.rail-voyage-select),
-button.secondary:not(.btn) {
-  border-color: var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 500;
-}
-
-button.secondary.danger:not(.btn) {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-button:not(.btn):not(.rail-item):not(.lang-pill):not(.quick-chip):not(.segmented button):disabled {
-  border-color: var(--line);
-  background: var(--line);
-  color: var(--ink-disabled);
-  cursor: not-allowed;
-}
-
-input:not(.input):not(.input-bare):not([type='checkbox']):not([type='radio']):not(.rail-voyage-select) {
-  height: var(--control-md);
-  padding: 0 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  font-size: var(--text-body);
-}
-
-input:not(.input):not(.input-bare):focus-visible,
-select:not(.input):focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--focus-ring);
-}
-
-.hint {
-  margin: 0 0 var(--space-3);
-  padding: var(--space-4);
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius-card);
-  background: var(--surface-raised);
-  color: var(--ink-muted);
-  font-size: var(--text-small);
-  line-height: 1.5;
-}
-
-.hint.inline {
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-}
-
-.error {
-  color: var(--danger);
-  font-size: var(--text-small);
-}
-
-.error:not(.inline) {
-  margin: var(--space-2) 0;
-  padding: 10px var(--space-3);
-  border: 1px solid var(--danger-soft-line);
-  border-radius: 6px;
-  background: var(--danger-soft);
-  color: var(--danger-ink);
-}
-
-.warning {
-  margin: var(--space-2) 0;
-  padding: 10px var(--space-3);
-  border: 1px solid var(--warning-soft-line);
-  border-radius: 6px;
-  background: var(--warning-soft);
-  color: var(--warning-ink);
-  font-size: var(--text-small);
-}
-
-.success,
-.info {
-  margin: var(--space-2) 0;
-  padding: 10px var(--space-3);
-  border: 1px solid var(--positive-soft-line);
-  border-radius: 6px;
-  background: var(--positive-soft);
-  color: var(--positive);
-  font-size: var(--text-small);
-}
-
-.info {
-  border-color: var(--accent-soft-line);
-  background: var(--accent-soft);
-  color: var(--accent-press);
-}
-
-.form-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-3) 0;
-}
-
-.form-panel {
-  margin: var(--space-3) 0;
-  padding: var(--space-4);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-}
-
-.form-actions,
-.actions,
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-2) 0;
-}
-
-.reference-block {
-  margin-bottom: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-}
-
-.reference-block h2,
-.reference-block h3 {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-card);
-  font-weight: 600;
-}
-
-.ref-table,
-.sof-table,
-.audit-log-table,
-.import-preview table {
-  width: 100%;
-  border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
-}
-
-.ref-table th,
-.sof-table th,
-.audit-log-table th,
-.import-preview th {
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface-sunken);
-  font-size: var(--text-micro);
-  font-weight: 600;
-  letter-spacing: var(--tracking-col);
-  color: var(--ink-col);
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.ref-table td,
-.sof-table td,
-.audit-log-table td,
-.import-preview td {
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--line-soft);
-  font-size: var(--text-body);
-}
-
-.ref-table .num,
-.sof-table .num,
-.audit-log-table .num,
-.import-preview .num {
-  text-align: right;
-}
-
-.diff {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: var(--ink-muted);
-}
-
-.hold-list,
-.vessel-holds {
-  margin: var(--space-2) 0;
-  padding-left: var(--space-5);
-}
-
-.calculator {
-  margin-top: var(--space-3);
+.crash-screen {
+  max-width: 520px;
+  margin: 12vh auto 0;
 }
 
 .rail-new-voyage {

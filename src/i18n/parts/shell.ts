@@ -2,6 +2,7 @@
 export const en = {
   'ui.dialog.close': 'Close',
   'ui.error.details': 'Details',
+  'app.crashed_hint': 'Reload the window. Entered data is stored in the local database.',
 
   'nav.load_plan': 'Load Plan',
   'nav.layers': 'Cargo layers',
@@ -50,6 +51,7 @@ export const en = {
 export const ru: { [K in keyof typeof en]: string } = {
   'ui.dialog.close': 'Закрыть',
   'ui.error.details': 'Подробности',
+  'app.crashed_hint': 'Перезагрузите окно. Введённые данные хранятся в локальной базе.',
 
   'nav.load_plan': 'Load Plan',
   'nav.layers': 'Слои груза',

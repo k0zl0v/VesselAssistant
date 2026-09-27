@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { getDb } from '../db';
 import { useT } from '../i18n';
+import { Icon } from './ui/Icon';
 import { describeError } from '../i18n/errors';
 import type { Db } from '../services/db';
 import { SessionService, type OperatorRole, type OperatorSession } from '../services/SessionService';
@@ -44,10 +45,16 @@ export function SessionGate({ children, onStarted, openDb = getDb }: Props) {
   }, [openDb]);
 
   if (session) return <>{children}</>;
-  if (!ready) return <p className="hint">{t('app.loading')}</p>;
+  if (!ready) return <p className="session-gate-loading">{t('app.loading')}</p>;
 
   return (
-    <main className="container session-gate">
+    <main className="session-gate">
+      <div className="session-gate-brand">
+        <span className="rail-logo">
+          <Icon name="ship" />
+        </span>
+        <span>{t('shell.brand')}</span>
+      </div>
       <h2>{t('session.title')}</h2>
       <form
         onSubmit={async (e) => {
@@ -70,13 +77,18 @@ export function SessionGate({ children, onStarted, openDb = getDb }: Props) {
           }
         }}
       >
-        <label>
-          {t('session.name')}{' '}
-          <input value={name} onChange={(e) => setName(e.target.value)} autoFocus disabled={busy} />
+        <label className="field">
+          <span className="field-label">{t('session.name')}</span>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus disabled={busy} />
         </label>
-        <label>
-          {t('session.role')}{' '}
-          <select value={role} onChange={(e) => setRole(e.target.value as OperatorRole)} disabled={busy}>
+        <label className="field">
+          <span className="field-label">{t('session.role')}</span>
+          <select
+            className="input"
+            value={role}
+            onChange={(e) => setRole(e.target.value as OperatorRole)}
+            disabled={busy}
+          >
             {ROLES.map((r) => (
               <option key={r} value={r}>
                 {t(`session.role.${r}`)}
@@ -84,11 +96,15 @@ export function SessionGate({ children, onStarted, openDb = getDb }: Props) {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>
           {t('session.start')}
         </button>
       </form>
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
     </main>
   );
 }
