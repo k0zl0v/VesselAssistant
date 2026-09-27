@@ -1,18 +1,6 @@
 /* Discharge dialog with the LIFO preview (docs/ui/artboards/Discharge.dc.html)
    and the «OGV · Operations» screen. */
 
-:root {
-  --discharge-step-width: 40px;   /* номер шага списания слева от слоя */
-  --discharge-col-off: 130px;     /* колонка «Списать» */
-  --discharge-col-after: 148px;   /* колонка «Останется» */
-  --discharge-bar-width: 210px;   /* шкала «списано / остаётся» слоя */
-  --discharge-bar-height: 7px;
-  --discharge-tons-width: 150px;
-  --discharge-date-width: 148px;
-  --text-tile: 15px;              /* значение в тайле «после операции» */
-  --text-tag: 9px;                /* метка слоя «СЛОЙ 3 · ВЕРХ» */
-}
-
 /* ===== Dialog: fields ================================================ */
 
 .discharge-fields {

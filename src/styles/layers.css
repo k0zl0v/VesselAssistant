@@ -1,20 +1,6 @@
 /* Cargo layers by hold (docs/ui/artboards/CargoLayers.dc.html). */
 
 /* New tokens from the artboard — to be moved into tokens.css by the lead. */
-:root {
-  --layers-stack-height: max(404px, calc(100vh - 400px));
-  --layers-block-min: 30px;
-  --layers-solid-min: 26px;
-  --layers-block-min-labelled: 42px;
-  --layers-label-row: 14px;
-  --layers-block-gap: 3px;
-  --layers-gap: 22px;
-  --layer-ink: #ffffff;
-  --layer-ink-dim: rgba(255, 255, 255, 0.82);
-  --layer-seq-ink: #3e4b55;
-  --line-faint: #f1f4f6;
-}
-
 .layers-body {
   display: flex;
   flex-direction: column;

@@ -26,8 +26,11 @@ export function Dialog({ title, subtitle, onClose, children, footer, wide, testI
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     const root = ref.current;
-    const first = root?.querySelector<HTMLElement>('[autofocus], input, select, textarea, button:not(.dialog-close)');
-    (first ?? root)?.focus();
+    // A child with React autoFocus has already taken focus during commit; keep it.
+    if (!root?.contains(document.activeElement)) {
+      const first = root?.querySelector<HTMLElement>('input, select, textarea, button:not(.dialog-close)');
+      (first ?? root)?.focus();
+    }
 
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') {

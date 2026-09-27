@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { findOverlapping } from '../calc/time';
+import { findOverlapPairs } from '../calc/laytime';
 import { getDb } from '../db';
 import { describeError } from '../i18n/errors';
 import { reportError } from '../errorReporting';
@@ -31,6 +31,7 @@ export interface VoyageData {
   calc: VoyageCalcResult;
   overview: VoyageOverview;
   sofEvents: SofEvent[];
+  /** Overlapping SOF interval pairs — what the operator has to fix. */
   sofOverlapCount: number;
   loadingPort: Port | null;
   dischargingPort: Port | null;
@@ -70,7 +71,6 @@ async function loadVoyageData(voyage: Voyage, vessels: Vessel[], ports: Port[]):
     new SofService(db).list(voyage.id),
     new ReferenceService(db).listHolds(voyage.vessel_id),
   ]);
-  const overlaps = findOverlapping(sofEvents);
   return {
     voyage,
     vessel: vessels.find((v) => v.id === voyage.vessel_id) ?? null,
@@ -78,7 +78,7 @@ async function loadVoyageData(voyage: Voyage, vessels: Vessel[], ports: Port[]):
     calc,
     overview,
     sofEvents,
-    sofOverlapCount: overlaps.size,
+    sofOverlapCount: findOverlapPairs(sofEvents).length,
     loadingPort: ports.find((p) => p.id === voyage.loading_port_id) ?? null,
     dischargingPort: ports.find((p) => p.id === voyage.discharging_port_id) ?? null,
     calculatedAt: new Date(),

@@ -1,23 +1,6 @@
 /* Statement of Facts (docs/ui/artboards/Sof.dc.html). */
 
 /* New tokens — to be moved into tokens.css by the lead. */
-:root {
-  --sof-loading: var(--accent);
-  --sof-discharging: var(--cargo-fallback);
-  --sof-weather: var(--warning);
-  --sof-port: var(--ink-faint);
-  --sof-other: var(--chrome-ink-dim);
-  --sof-bar-ink: var(--accent-ink);
-  --sof-bar-line: rgba(0, 0, 0, 0.08);
-  --sof-track: var(--surface-readonly);
-  --sof-day-col: 72px;
-  --sof-track-height: 24px;
-  --sof-bar-height: 18px;
-  --sof-point-width: 4px;
-  --sof-axis: #9aa8b3;
-  --sof-axis-text: 9px;
-}
-
 .sof-g-loading { --sof-color: var(--sof-loading); }
 .sof-g-discharging { --sof-color: var(--sof-discharging); }
 .sof-g-weather { --sof-color: var(--sof-weather); }

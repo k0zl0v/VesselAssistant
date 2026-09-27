@@ -125,6 +125,61 @@
   --backdrop: rgba(14, 27, 38, 0.48);
   --dialog-width: 720px;
   --dialog-width-wide: 760px;
+
+  /* ---- Экран: add-lot ---- */
+  --add-lot-form-width: 424px;
+  --add-lot-narrow: 138px;
+  --add-lot-body-min: 700px;
+  --add-lot-bar-height: 22px;
+  --radius-panel: 6px;
+  --positive-ink: #1b5738; /* body text of the «within capacity» panel */
+
+  /* ---- Экран: discharge ---- */
+  --discharge-step-width: 40px;   /* номер шага списания слева от слоя */
+  --discharge-col-off: 130px;     /* колонка «Списать» */
+  --discharge-col-after: 148px;   /* колонка «Останется» */
+  --discharge-bar-width: 210px;   /* шкала «списано / остаётся» слоя */
+  --discharge-bar-height: 7px;
+  --discharge-tons-width: 150px;
+  --discharge-date-width: 148px;
+  --text-tile: 15px;              /* значение в тайле «после операции» */
+  --text-tag: 9px;                /* метка слоя «СЛОЙ 3 · ВЕРХ» */
+
+  /* ---- Экран: layers ---- */
+  --layers-stack-height: max(404px, calc(100vh - 400px));
+  --layers-block-min: 30px;
+  --layers-solid-min: 26px;
+  --layers-block-min-labelled: 42px;
+  --layers-label-row: 14px;
+  --layers-block-gap: 3px;
+  --layers-gap: 22px;
+  --layer-ink: #ffffff;
+  --layer-ink-dim: rgba(255, 255, 255, 0.82);
+  --layer-seq-ink: #3e4b55;
+  --line-faint: #f1f4f6;
+
+  /* ---- Экран: sof ---- */
+  --sof-loading: var(--accent);
+  --sof-discharging: var(--cargo-fallback);
+  --sof-weather: var(--warning);
+  --sof-port: var(--ink-faint);
+  --sof-other: var(--chrome-ink-dim);
+  --sof-bar-ink: var(--accent-ink);
+  --sof-bar-line: rgba(0, 0, 0, 0.08);
+  --sof-track: var(--surface-readonly);
+  --sof-day-col: 72px;
+  --sof-track-height: 24px;
+  --sof-bar-height: 18px;
+  --sof-point-width: 4px;
+  --sof-axis: #9aa8b3;
+  --sof-axis-text: 9px;
+
+  /* ---- Экран: documents ---- */
+  --text-print-col: 9px;      /* column labels and sheet position tags in the print preview */
+  --radius-item: 6px;         /* list item / inset panel inside a card */
+  --shadow-sheet: 0 1px 3px rgba(13, 22, 32, 0.07); /* paper sheet in the print preview */
+  --book-width: 300px;        /* «Состав книги» column */
+  --sheet-tabs-height: 32px;  /* workbook tab strip under the preview */
 }
 
 /* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,
