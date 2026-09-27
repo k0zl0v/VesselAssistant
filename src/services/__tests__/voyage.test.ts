@@ -6,7 +6,7 @@ import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
-import type { SqlValue } from '../db';
+import type { BatchStatement, SqlValue } from '../db';
 
 describe('VoyageService — integration', () => {
   let db: NodeDb;
@@ -206,6 +206,63 @@ describe('VoyageService — integration', () => {
         (e: unknown) => e,
       );
       expect(isAppError(err) && [err.code, err.params]).toEqual(['voyage.not_found', { voyage_id: 'missing' }]);
+    });
+
+    it('the executeBatch that copy() now uses is all-or-nothing: a failing statement mid-batch leaves no partial voyage row', async () => {
+      // copy() migrated off db.transaction onto executeBatch (docs/adr/0002). This exercises the
+      // same batch shape copy() builds (a voyages insert followed by one hold_cargo_parameters
+      // insert per source row) directly against executeBatch, with the last statement forced to
+      // fail, to prove the primitive copy() now depends on rolls back the earlier statements too.
+      const sourceId = await seedSourceVoyage();
+      const source = (await svc.get(sourceId))!;
+      const params = await db.select<{
+        vessel_id: string;
+        hold_id: string;
+        cargo_id: string;
+        protein_percent: number | null;
+        sf: number;
+        fill_percent: number;
+      }>(
+        `SELECT vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent FROM hold_cargo_parameters WHERE voyage_id = ?`,
+        [sourceId],
+      );
+      expect(params.length).toBeGreaterThanOrEqual(2); // need >1 row to prove an EARLIER hcp insert is rolled back too
+
+      const copyId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const markerVoyageNo = 'V-ATOMIC-FAIL';
+
+      const batch: BatchStatement[] = [
+        {
+          sql: `INSERT INTO voyages (
+                 id, vessel_id, voyage_no,
+                 loading_port_id, discharging_port_id, status,
+                 created_at, updated_at
+               ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
+          params: [copyId, source.vessel_id, markerVoyageNo, source.loading_port_id, source.discharging_port_id, now, now],
+        },
+        ...params.map((p, i) => ({
+          sql: `INSERT INTO hold_cargo_parameters
+                  (id, voyage_id, vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          params: [crypto.randomUUID(), copyId, p.vessel_id, p.hold_id, p.cargo_id, p.protein_percent, p.sf, p.fill_percent],
+          // A single-row INSERT always affects exactly 1 row — `2` can never match, forcing
+          // `batch.stale` on the LAST statement, i.e. after every earlier statement (the voyage
+          // insert and the other hcp inserts) already ran inside the same immediate transaction.
+          ...(i === params.length - 1 ? { expectRowsAffected: 2 } : {}),
+        })),
+      ];
+
+      const err = await db.executeBatch(batch).then(
+        () => null,
+        (e: unknown) => e,
+      );
+      expect(isAppError(err) && err.code).toBe('batch.stale');
+
+      const leftover = await db.select(`SELECT * FROM voyages WHERE voyage_no = ?`, [markerVoyageNo]);
+      expect(leftover).toEqual([]);
+      const leftoverParams = await db.select(`SELECT * FROM hold_cargo_parameters WHERE voyage_id = ?`, [copyId]);
+      expect(leftoverParams).toEqual([]);
     });
   });
 });
