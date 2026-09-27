@@ -2,7 +2,11 @@
  * Canonical English dictionary. The set of keys here defines the contract:
  * `ru.ts` must mirror this exactly (validated by tests).
  */
+import { partsEn } from './parts';
+
 export const en = {
+  ...partsEn,
+
   // App shell / nav
   'app.brand': 'VesselAssistant',
   'app.nav.voyages': 'Voyages',
@@ -40,11 +44,11 @@ export const en = {
   // Voyage page
   'voyage.title': 'Voyages',
   'voyage.new': 'New voyage',
-  'voyage.seed_demo': 'Seed demo (KAVKAZ IV)',
+  'voyage.seed_demo': 'KAVKAZ IV demo data',
   'voyage.closed_suffix': '(closed)',
   'voyage.empty_hint':
     'No voyages yet. Click <em>Seed demo</em> for the KAVKAZ IV baseline, or <em>New voyage</em> if you have already added a vessel in <strong>Reference</strong>.',
-  'voyage.heading': 'Voyage {voyage_no} —',
+  'voyage.heading': 'Voyage {voyage_no}',
   'voyage.status.open': 'open',
   'voyage.status.closed': 'closed',
   'voyage.close': 'Close voyage',
@@ -79,22 +83,22 @@ export const en = {
 
   // Hold table
   'holds.col.hold': 'Hold',
-  'holds.col.volume_m3': 'Volume m³',
+  'holds.col.volume_m3': 'Volume, m³',
   'holds.col.sf': 'SF',
   'holds.col.loaded': 'Loaded',
   'holds.col.discharged': 'Discharged',
   'holds.col.remain': 'Remain',
   'holds.col.capacity_98': 'Capacity 98%',
   'holds.col.empty_98': 'Empty 98%',
-  'holds.col.empty_vol_pct': 'Empty Vol %',
+  'holds.col.empty_vol_pct': 'Empty, %',
   'holds.toggle_aria': 'Toggle hold details',
   'holds.lots.title_top': 'Lots in this hold (oldest → newest, top of stack is #{seq})',
   'holds.lots.title_empty': 'Lots in this hold (oldest → newest, top of stack is —)',
   'holds.lots.empty': 'No lots loaded yet.',
   'holds.lots.line':
     '#{seq} {vessel} — {cargo}{protein}, SF {sf}, loaded {loaded}, remain {remain} t',
-  'holds.action.add_lot': '+ Add lot',
-  'holds.action.discharge': '↓ Discharge',
+  'holds.action.add_lot': 'Add lot',
+  'holds.action.discharge': 'Discharge',
   'holds.error.no_sf': 'SF not set',
 
   // Add lot form
@@ -300,7 +304,7 @@ export const en = {
 
   // Export
   'export.dialog.title': 'Save Load Plan',
-  'export.button': 'Export Load Plan (XLSX)',
+  'export.button': 'Export',
   'export.exporting': 'Exporting…',
 
   // Demo / test

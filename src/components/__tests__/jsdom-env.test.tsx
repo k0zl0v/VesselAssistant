@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { VoyageTotals } from '../VoyageTotals';
+import { HoldTable } from '../HoldTable';
 import { CalculationService } from '../../services/CalculationService';
 import { CargoLotService } from '../../services/CargoLotService';
 import { VoyageService } from '../../services/VoyageService';
@@ -34,11 +34,11 @@ describe('component test environment: jsdom + better-sqlite3 in one file', () =>
       planned_tons: 1600,
       loaded_tons: 1600,
     });
-    const { totals } = await new CalculationService(db).calculate(voyage.id);
+    const { holds, totals } = await new CalculationService(db).calculate(voyage.id);
 
-    render(<VoyageTotals totals={totals} />);
+    render(<HoldTable holds={holds} totals={totals} summaries={{}} />);
 
-    expect(screen.getByText('On Board')).toBeInTheDocument();
-    expect(screen.getAllByText('1600.000 t')[0]).toBeInTheDocument();
+    expect(screen.getByText('Voyage total')).toBeInTheDocument();
+    expect(screen.getByTestId('totals-on-board').textContent).toBe('1\u202F600.000');
   });
 });

@@ -1,4 +1,5 @@
 import { en } from './en';
+import { partsRu } from './parts';
 
 /**
  * Russian dictionary. Must mirror every key in `en`. The shape is enforced
@@ -7,6 +8,8 @@ import { en } from './en';
 type Dict = { [K in keyof typeof en]: string };
 
 export const ru: Dict = {
+  ...partsRu,
+
   // App shell / nav
   'app.brand': 'VesselAssistant',
   'app.nav.voyages': 'Рейсы',
@@ -44,11 +47,11 @@ export const ru: Dict = {
   // Voyage page
   'voyage.title': 'Рейсы',
   'voyage.new': 'Новый рейс',
-  'voyage.seed_demo': 'Заполнить демо (KAVKAZ IV)',
+  'voyage.seed_demo': 'Демо-данные KAVKAZ IV',
   'voyage.closed_suffix': '(закрыт)',
   'voyage.empty_hint':
     'Рейсов пока нет. Нажмите <em>Заполнить демо</em> для базового рейса KAVKAZ IV или <em>Новый рейс</em>, если судно уже добавлено в <strong>Справочниках</strong>.',
-  'voyage.heading': 'Рейс {voyage_no} —',
+  'voyage.heading': 'Рейс {voyage_no}',
   'voyage.status.open': 'открыт',
   'voyage.status.closed': 'закрыт',
   'voyage.close': 'Закрыть рейс',
@@ -83,22 +86,22 @@ export const ru: Dict = {
 
   // Hold table
   'holds.col.hold': 'Трюм',
-  'holds.col.volume_m3': 'Объём м³',
+  'holds.col.volume_m3': 'Объём, м³',
   'holds.col.sf': 'SF',
   'holds.col.loaded': 'Погружено',
   'holds.col.discharged': 'Выгружено',
   'holds.col.remain': 'Остаток',
   'holds.col.capacity_98': 'Вмест. 98%',
   'holds.col.empty_98': 'Свободно 98%',
-  'holds.col.empty_vol_pct': 'Свободно об. %',
+  'holds.col.empty_vol_pct': 'Пусто, %',
   'holds.toggle_aria': 'Раскрыть детали трюма',
   'holds.lots.title_top': 'Партии в трюме (старые → новые, верх стека: #{seq})',
   'holds.lots.title_empty': 'Партии в трюме (старые → новые, верх стека: —)',
   'holds.lots.empty': 'Партии ещё не загружены.',
   'holds.lots.line':
     '#{seq} {vessel} — {cargo}{protein}, SF {sf}, погружено {loaded}, остаток {remain} т',
-  'holds.action.add_lot': '+ Добавить партию',
-  'holds.action.discharge': '↓ Выгрузить',
+  'holds.action.add_lot': 'Добавить партию',
+  'holds.action.discharge': 'Выгрузка',
   'holds.error.no_sf': 'не задан SF',
 
   // Add lot form
@@ -304,7 +307,7 @@ export const ru: Dict = {
 
   // Export
   'export.dialog.title': 'Сохранить Load Plan',
-  'export.button': 'Экспорт Load Plan (XLSX)',
+  'export.button': 'Экспорт',
   'export.exporting': 'Экспорт…',
 
   // Demo / test

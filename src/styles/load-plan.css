@@ -1,0 +1,52 @@
+/* Load / Stowage Plan (docs/ui/artboards/Main.dc.html). */
+
+.hold-table .col-hold {
+  width: 58px;
+}
+
+.hold-table .col-cargo {
+  width: 124px;
+}
+
+.hold-table .col-sf {
+  width: 66px;
+}
+
+.hold-table .col-t {
+  width: 106px;
+}
+
+.hold-table .col-pct {
+  width: 86px;
+}
+
+.hold-table .col-fill {
+  min-width: 150px;
+}
+
+.hold-table .hold-no {
+  font-weight: 600;
+}
+
+.hold-table .totals-aside {
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.load-plan-alert {
+  margin-bottom: var(--space-4);
+}
+
+.load-plan-confirm {
+  margin-bottom: var(--space-4);
+}
+
+/* FR-08: a hold with no SF is marked as an error — capacity cannot be computed. */
+.hold-table .sf-missing {
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--danger);
+  white-space: nowrap;
+}

@@ -1,43 +1,42 @@
 import { useState } from 'react';
 import './App.css';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
-import { useT } from './i18n';
+import { AuditPage } from './pages/AuditPage';
+import { CargoLayersPage } from './pages/CargoLayersPage';
+import { DocumentsPage } from './pages/DocumentsPage';
+import { LoadPlanPage } from './pages/LoadPlanPage';
+import { OgvPage } from './pages/OgvPage';
 import { ReferencePage } from './pages/ReferencePage';
+import { SofPage } from './pages/SofPage';
 import { ToolsPage } from './pages/ToolsPage';
-import { VoyagePage } from './pages/VoyagePage';
-
-type Tab = 'voyages' | 'reference' | 'tools';
-
-const TABS: { key: Tab; labelKey: 'app.nav.voyages' | 'app.nav.reference' | 'app.nav.tools' }[] = [
-  { key: 'voyages', labelKey: 'app.nav.voyages' },
-  { key: 'reference', labelKey: 'app.nav.reference' },
-  { key: 'tools', labelKey: 'app.nav.tools' },
-];
+import { NavigationProvider, type Screen } from './shell/navigation';
+import { NewVoyageDialog } from './shell/NewVoyageDialog';
+import { Rail } from './shell/Rail';
+import { VoyageProvider } from './shell/VoyageContext';
+import { VoyageRequired } from './shell/VoyageRequired';
 
 export default function App() {
-  const t = useT();
-  const [tab, setTab] = useState<Tab>('voyages');
+  const [screen, setScreen] = useState<Screen>('load-plan');
+  const [newVoyage, setNewVoyage] = useState(false);
+  const openNewVoyage = () => setNewVoyage(true);
 
   return (
-    <>
-      <nav className="appnav">
-        <span className="appnav-brand">{t('app.brand')}</span>
-        {TABS.map((tabDef) => (
-          <button
-            key={tabDef.key}
-            type="button"
-            onClick={() => setTab(tabDef.key)}
-            className={`appnav-tab ${tab === tabDef.key ? 'active' : ''}`}
-          >
-            {t(tabDef.labelKey)}
-          </button>
-        ))}
-        <span className="appnav-spacer" style={{ flex: 1 }} />
-        <LanguageSwitcher />
-      </nav>
-      {tab === 'voyages' && <VoyagePage />}
-      {tab === 'reference' && <ReferencePage />}
-      {tab === 'tools' && <ToolsPage />}
-    </>
+    <VoyageProvider>
+      <NavigationProvider value={{ screen, navigate: setScreen }}>
+        <div className="shell">
+          <Rail onNewVoyage={openNewVoyage} />
+          <main className="workspace">
+            {screen === 'load-plan' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <LoadPlanPage />}</VoyageRequired>}
+            {screen === 'layers' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <CargoLayersPage />}</VoyageRequired>}
+            {screen === 'ogv' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <OgvPage />}</VoyageRequired>}
+            {screen === 'sof' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <SofPage />}</VoyageRequired>}
+            {screen === 'documents' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <DocumentsPage />}</VoyageRequired>}
+            {screen === 'reference' && <ReferencePage />}
+            {screen === 'tools' && <ToolsPage />}
+            {screen === 'audit' && <AuditPage />}
+          </main>
+        </div>
+        {newVoyage && <NewVoyageDialog onClose={() => setNewVoyage(false)} />}
+      </NavigationProvider>
+    </VoyageProvider>
   );
 }

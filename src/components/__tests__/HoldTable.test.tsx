@@ -79,31 +79,20 @@ describe('HoldTable (S-3: free space per hold for the next barge)', () => {
     const voyageId = await seedEndOfS3WithHoldWithoutSf(db);
     const calc = await new CalculationService(db).calculate(voyageId);
     render(
-      <HoldTable
-        holds={calc.holds}
-        voyage_id={voyageId}
-        cargoes={[]}
-        lotsByHold={{}}
-        expandedHoldId={null}
-        onToggleExpand={() => undefined}
-        onAddLot={async () => undefined}
-        onDischarge={async () => undefined}
-        busy={false}
-        voyageOpen
-      />,
+      <HoldTable holds={calc.holds} totals={calc.totals} summaries={{}} />,
     );
   }
 
   const cell = (holdNo: number, name: string): string =>
     within(screen.getByTestId(`hold-row-${holdNo}`)).getByTestId(name).textContent ?? '';
 
-  it('EmptySpace98 for holds 1–5 equals the S-3 values in 0.000 format', async () => {
+  it('EmptySpace98 for holds 1–5 equals the S-3 values in 0.000 format, thousands grouped with U+202F', async () => {
     await mount();
     expect([1, 2, 3, 4, 5].map((n) => cell(n, 'hold-empty-98'))).toEqual([
-      '2955.285', '1869.540', '3313.836', '2577.540', '3164.723',
+      '2\u202F955.285', '1\u202F869.540', '3\u202F313.836', '2\u202F577.540', '3\u202F164.723',
     ]);
     expect([1, 2, 3, 4, 5].map((n) => cell(n, 'hold-remain'))).toEqual([
-      '4082.000', '7073.000', '4002.000', '6365.000', '4162.955',
+      '4\u202F082.000', '7\u202F073.000', '4\u202F002.000', '6\u202F365.000', '4\u202F162.955',
     ]);
     expect(cell(2, 'hold-sf')).toBe('1.226');
   });

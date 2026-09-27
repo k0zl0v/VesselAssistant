@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTons, roundTo3 } from '../round';
+import { formatPercent, formatTons, roundTo3 } from '../round';
 
 describe('roundTo3', () => {
   it('matches Excel ROUND for positive values', () => {
@@ -16,8 +16,22 @@ describe('roundTo3', () => {
 
 describe('formatTons', () => {
   it('always renders 3 decimals', () => {
-    expect(formatTons(2001)).toBe('2001.000');
-    expect(formatTons(15881.924)).toBe('15881.924');
+    expect(formatTons(2001)).toBe('2\u202F001.000');
+    expect(formatTons(15881.924)).toBe('15\u202F881.924');
     expect(formatTons(0)).toBe('0.000');
+    expect(formatTons(999.9996)).toBe('1\u202F000.000');
+  });
+
+  it('groups thousands with U+202F and marks negatives with U+2212', () => {
+    expect(formatTons(1234567.891)).toBe('1\u202F234\u202F567.891');
+    expect(formatTons(-142.5)).toBe('\u2212142.500');
+    expect(formatTons(-0.0001)).toBe('0.000');
+  });
+});
+
+describe('formatPercent', () => {
+  it('renders one decimal with a non-breaking space before %', () => {
+    expect(formatPercent(58)).toBe('58.0\u00A0%');
+    expect(formatPercent(101.46)).toBe('101.5\u00A0%');
   });
 });

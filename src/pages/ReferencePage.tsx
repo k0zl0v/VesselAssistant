@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CraneCorrectionPanel } from '../components/CraneCorrectionPanel';
 import { getDb } from '../db';
 import { useT } from '../i18n';
+import { PageHeader } from '../shell/PageHeader';
 import {
   ReferenceService,
   type Cargo,
@@ -55,8 +56,9 @@ export function ReferencePage() {
   }
 
   return (
-    <main className="container">
-      <h1>{t('reference.title')}</h1>
+    <>
+      <PageHeader title={t('reference.title')} />
+      <div className="page-body">
       {error && <p className="error">{error}</p>}
 
       <section className="reference-block">
@@ -209,7 +211,8 @@ export function ReferencePage() {
           }
         />
       </section>
-    </main>
+      </div>
+    </>
   );
 }
 
