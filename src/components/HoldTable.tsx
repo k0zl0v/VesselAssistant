@@ -93,6 +93,7 @@ export function HoldTable({
                 <ExpansionRow
                   voyage_id={voyage_id}
                   hold_id={h.hold_id}
+                  hold_no={h.hold_no}
                   lots={lotsByHold[h.hold_id] ?? []}
                   cargoes={cargoes}
                   onAddLot={onAddLot}
@@ -112,6 +113,7 @@ export function HoldTable({
 interface ExpansionProps {
   voyage_id: string;
   hold_id: string;
+  hold_no: number;
   lots: HoldLotView[];
   cargoes: Cargo[];
   onAddLot: (input: AddLotInput) => Promise<void>;
@@ -123,6 +125,7 @@ interface ExpansionProps {
 function ExpansionRow({
   voyage_id,
   hold_id,
+  hold_no,
   lots,
   cargoes,
   onAddLot,
@@ -195,6 +198,7 @@ function ExpansionRow({
                   cargoes={cargoes}
                   voyage_id={voyage_id}
                   hold_id={hold_id}
+                  hold_no={hold_no}
                   onSubmit={async (i) => {
                     await onAddLot(i);
                   }}

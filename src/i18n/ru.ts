@@ -110,7 +110,7 @@ export const ru: Dict = {
   'lot.add': 'Добавить',
   'lot.error.required': 'Нужны судно-источник, SF > 0 и тонны > 0',
   'lot.confirm.overload':
-    'Эта погрузка превышает 98% вместимости на {overshoot} т. Продолжить?',
+    'Трюм {hold_no}, вместимость {capacity} т, превышение {overshoot} т. Продолжить?',
 
   // Discharge form
   'discharge.title': 'Выгрузка (LIFO)',

@@ -106,7 +106,7 @@ export const en = {
   'lot.add': 'Add',
   'lot.error.required': 'Source vessel, SF > 0 and tons > 0 are required',
   'lot.confirm.overload':
-    'This load exceeds 98% capacity by {overshoot} t. Continue anyway?',
+    'Hold {hold_no}, capacity {capacity} t, overshoot {overshoot} t. Continue?',
 
   // Discharge form
   'discharge.title': 'Discharge (LIFO)',

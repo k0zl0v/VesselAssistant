@@ -59,12 +59,18 @@ describe('AddLotForm', () => {
     db.close();
   });
 
-  function mount(holdId: string, cargoes: Cargo[] = seed.cargoes, onSubmit?: (i: AddLotInput) => Promise<void>) {
+  function mount(
+    holdId: string,
+    hold_no: number,
+    cargoes: Cargo[] = seed.cargoes,
+    onSubmit?: (i: AddLotInput) => Promise<void>,
+  ) {
     render(
       <AddLotForm
         cargoes={cargoes}
         voyage_id={seed.voyageId}
         hold_id={holdId}
+        hold_no={hold_no}
         busy={false}
         onSubmit={
           onSubmit ??
@@ -95,12 +101,12 @@ describe('AddLotForm', () => {
 
   it('S-2: 285 t over lot A → confirm; Cancel → the service is not called again, lot B not saved', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    mount(seed.holdIds[0]!);
+    mount(seed.holdIds[0]!, 1);
     await enterLot('B', '285');
 
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce());
     expect(confirm).toHaveBeenCalledWith(
-      'Эта погрузка превышает 98% вместимости на 1 т. Продолжить?',
+      'Трюм 1, вместимость 784.000 т, превышение 1.000 т. Продолжить?',
     );
     expect(submitted).toHaveLength(1);
     expect(submitted[0]!.acknowledge_overload).toBeUndefined();
@@ -110,13 +116,13 @@ describe('AddLotForm', () => {
 
   it('S-2: Confirm → resubmitted with acknowledge_overload: true, lot B saved on top', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mount(seed.holdIds[0]!);
+    mount(seed.holdIds[0]!, 1);
     await enterLot('B', '285');
 
     await vi.waitFor(() => expect(submitted).toHaveLength(2));
     expect(confirm).toHaveBeenCalledOnce();
     expect(confirm).toHaveBeenCalledWith(
-      'Эта погрузка превышает 98% вместимости на 1 т. Продолжить?',
+      'Трюм 1, вместимость 784.000 т, превышение 1.000 т. Продолжить?',
     );
     expect(submitted[1]!.acknowledge_overload).toBe(true);
     expect(await lotsIn(seed.holdIds[0]!)).toEqual([
@@ -127,7 +133,7 @@ describe('AddLotForm', () => {
 
   it('S-2 boundary: 784 t into an empty hold → saved with no dialog', async () => {
     const confirm = vi.spyOn(window, 'confirm');
-    mount(seed.holdIds[1]!);
+    mount(seed.holdIds[1]!, 2);
     await enterLot('C', '784');
 
     await vi.waitFor(() => expect(submitted).toHaveLength(1));
@@ -136,7 +142,7 @@ describe('AddLotForm', () => {
   });
 
   it('FR-19: WHEAT offers exactly the protein grades 10.5 / 11.5 / 12.5 / 13.5', async () => {
-    mount(seed.holdIds[1]!);
+    mount(seed.holdIds[1]!, 2);
     await userEvent.setup().selectOptions(screen.getByTestId('lot-cargo'), 'WHEAT');
 
     const options = [...screen.getByTestId<HTMLSelectElement>('lot-protein').options].map((o) => o.value);
@@ -144,7 +150,7 @@ describe('AddLotForm', () => {
   });
 
   it('a service rejection is shown via describeError in the interface language', async () => {
-    mount(seed.holdIds[1]!, seed.cargoes, async () => {
+    mount(seed.holdIds[1]!, 2, seed.cargoes, async () => {
       throw new AppError('voyage.closed', { voyage_no: 'VY-AT05' });
     });
     await enterLot('D', '10');
@@ -158,7 +164,7 @@ describe('AddLotForm', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const overload = `OVERLOAD:${JSON.stringify({ capacity_tons: 784, projected_remain_tons: 785, overshoot_tons: 1, overloads: true, hold_id: 'h' })}`;
     let call = 0;
-    mount(seed.holdIds[1]!, seed.cargoes, async () => {
+    mount(seed.holdIds[1]!, 2, seed.cargoes, async () => {
       call += 1;
       if (call === 1) throw new Error(overload);
       throw new AppError('voyage.closed', { voyage_no: 'VY-AT05' });

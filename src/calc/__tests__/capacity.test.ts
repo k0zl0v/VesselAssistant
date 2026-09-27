@@ -110,6 +110,28 @@ describe('wouldOverload', () => {
   });
 });
 
+describe('S-2 scenario: TIGHT BARGE hold 1 (1000 m³, SF 1.25), lot A 500 t + lot B 285 t', () => {
+  it('chains wouldOverload → emptySpace → totalEmpty to the scenario\'s own numbers', () => {
+    const r = wouldOverload({
+      hold_volume_m3: 1000,
+      sf: 1.25,
+      fill_percent: 0.98,
+      current_remain_tons: 500,
+      added_tons: 285,
+    });
+    expect(r.capacity_tons).toBe(784);
+    expect(r.projected_remain_tons).toBe(785); // RemainHold[1] per scenarios.md S-2
+    expect(r.overshoot_tons).toBe(1);
+    expect(r.overloads).toBe(true);
+
+    const empty98 = emptySpace(r.capacity_tons, r.projected_remain_tons);
+    expect(empty98).toBe(-1); // EmptySpace98[1]
+
+    // TotalEmpty98 treats hold 1's negative empty space as zero, not as a subtraction.
+    expect(totalEmpty([empty98, 500])).toBe(500);
+  });
+});
+
 describe('correctedWeight', () => {
   it('divides scale weight by crane coefficient', () => {
     expect(correctedWeight(100, 0.95)).toBeCloseTo(105.263, 3);

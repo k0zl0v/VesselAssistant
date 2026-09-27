@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
 import { describeError } from '../i18n/errors';
+import { formatTons } from '../calc/round';
 import type { Cargo } from '../services/ReferenceService';
 import { PROTEIN_ALLOWED, type AddLotInput } from '../services/types';
 
@@ -28,11 +29,12 @@ interface Props {
   cargoes: Cargo[];
   voyage_id: string;
   hold_id: string;
+  hold_no: number;
   onSubmit: (input: AddLotInput) => Promise<void>;
   busy: boolean;
 }
 
-export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Props) {
+export function AddLotForm({ cargoes, voyage_id, hold_id, hold_no, onSubmit, busy }: Props) {
   const t = useT();
   const [sourceVessel, setSourceVessel] = useState('');
   const [cargoId, setCargoId] = useState(cargoes[0]?.id ?? '');
@@ -84,7 +86,11 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
           const payload = parseOverload(String(err instanceof Error ? err.message : err));
           if (payload && payload.overloads) {
             const ok = window.confirm(
-              t('lot.confirm.overload', { overshoot: payload.overshoot_tons }),
+              t('lot.confirm.overload', {
+                hold_no,
+                capacity: formatTons(payload.capacity_tons),
+                overshoot: formatTons(payload.overshoot_tons),
+              }),
             );
             if (!ok) {
               // User cancelled — keep form values, clear any error from a prior attempt.
