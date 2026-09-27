@@ -15,7 +15,7 @@
     "test:smoke": "wdio run e2e-smoke/wdio.conf.ts",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "fixtures:import": "vite-node scripts/generate-import-fixture.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p e2e/tsconfig.json && tsc --noEmit -p e2e-smoke/tsconfig.json",
     "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json"
   },
   "dependencies": {

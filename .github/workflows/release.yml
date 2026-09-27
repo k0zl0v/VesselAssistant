@@ -58,6 +58,9 @@ jobs:
       - name: Run unit / integration tests
         run: npm test
 
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
       - name: TypeScript typecheck
         run: npm run typecheck
 

@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      capabilities_ref:
+        description: >
+          Git ref to check out src-tauri/capabilities/default.json from before the
+          windows-smoke build (hypothesis 10: measure write_text_file/read_text_file
+          against a prior commit's capabilities instead of the branch's own).
+        required: false
+        default: ''
+
+env:
+  # release.yml also targets 22; keep both on the same major so a green CI actually
+  # predicts a green release build.
+  NODE_VERSION: 22
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'src-tauri/**'
+              - 'src/services/db-*.ts'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Own folder, not test-results/: Playwright wipes its outputDir (default
+      # "test-results") at the start of every run and would delete this report first.
+      - run: mkdir -p reports
+      - run: npm run test:unit -- --reporter=json --outputFile=reports/unit.json
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          CI: true
+      - run: node scripts/assert-no-skips.mjs reports/unit.json test-results/e2e.json
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install webkit2gtk (Tauri build-time dependency, even for cargo test)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+      # cargo test does not need dist/ (measured at У4 step 22: renaming dist/ away left
+      # 11/11 Rust tests green) — no npm/build step before it.
+      - run: mkdir -p test-results
+      - run: cargo test --manifest-path src-tauri/Cargo.toml 2>&1 | tee test-results/rust.log
+      - run: node scripts/assert-no-skips.mjs test-results/rust.log
+
+  windows-smoke:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out capabilities from capabilities_ref (hypothesis 10 measurement)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.capabilities_ref != '' }}
+        run: git checkout ${{ inputs.capabilities_ref }} -- src-tauri/capabilities/default.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+      - run: npm ci
+      - run: cargo install tauri-driver --locked
+      - run: cargo install msedgedriver-tool
+      - run: msedgedriver-tool
+      - run: npm run tauri build -- --debug --no-bundle
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - run: npm run test:smoke
