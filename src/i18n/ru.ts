@@ -99,6 +99,7 @@ export const ru: Dict = {
     '#{seq} {vessel} — {cargo}{protein}, SF {sf}, погружено {loaded}, остаток {remain} т',
   'holds.action.add_lot': '+ Добавить партию',
   'holds.action.discharge': '↓ Выгрузить',
+  'holds.error.no_sf': 'не задан SF',
 
   // Add lot form
   'lot.no_cargoes': 'Сначала добавьте хотя бы один груз в <strong>Справочниках</strong>.',

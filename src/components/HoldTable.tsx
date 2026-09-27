@@ -76,7 +76,15 @@ export function HoldTable({
                 </td>
                 <td>№{h.hold_no}</td>
                 <td className="num" data-testid="hold-volume">{formatTons(h.volume_m3)}</td>
-                <td className="num" data-testid="hold-sf">{h.sf === null ? '—' : h.sf.toFixed(3)}</td>
+                <td className="num" data-testid="hold-sf">
+                  {h.sf === null ? (
+                    <span className="error" data-testid="hold-sf-error">
+                      {t('holds.error.no_sf')}
+                    </span>
+                  ) : (
+                    h.sf.toFixed(3)
+                  )}
+                </td>
                 <td className="num" data-testid="hold-loaded">{formatTons(h.loaded_tons)}</td>
                 <td className="num" data-testid="hold-discharged">{formatTons(h.discharged_tons)}</td>
                 <td className="num" data-testid="hold-remain">{formatTons(h.remain_tons)}</td>

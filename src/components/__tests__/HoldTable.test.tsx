@@ -84,9 +84,11 @@ describe('HoldTable (S-3: free space per hold for the next barge)', () => {
     expect(cell(2, 'hold-sf')).toBe('1.226');
   });
 
-  it('a hold with no SF gets no capacity or empty space (rendered as "—", excluded from totals)', async () => {
+  it('a hold with no SF is marked with the "SF not set" error and gets no capacity or empty space (rendered as "—", excluded from totals)', async () => {
     await mount();
-    expect(cell(6, 'hold-sf')).toBe('—');
+    expect(cell(6, 'hold-sf')).toBe('SF not set');
+    expect(cell(6, 'hold-sf-error')).toBe('SF not set');
+    expect(screen.getByTestId('hold-sf-error').className).toContain('error');
     expect(cell(6, 'hold-capacity-98')).toBe('—');
     expect(cell(6, 'hold-empty-98')).toBe('—');
     expect(cell(6, 'hold-remain')).toBe('0.000');

@@ -175,6 +175,12 @@ button:disabled {
   color: var(--negative);
 }
 
+.hold-table .error {
+  color: var(--negative);
+  font-family: inherit;
+  font-weight: 600;
+}
+
 .hold-table tbody tr:last-child td {
   border-bottom: none;
 }

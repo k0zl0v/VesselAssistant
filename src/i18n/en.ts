@@ -95,6 +95,7 @@ export const en = {
     '#{seq} {vessel} — {cargo}{protein}, SF {sf}, loaded {loaded}, remain {remain} t',
   'holds.action.add_lot': '+ Add lot',
   'holds.action.discharge': '↓ Discharge',
+  'holds.error.no_sf': 'SF not set',
 
   // Add lot form
   'lot.no_cargoes': 'Add at least one cargo in <strong>Reference</strong> first.',
