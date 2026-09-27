@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AuditLogService } from '../AuditLogService';
 import { CargoLotService } from '../CargoLotService';
 import { OgvService } from '../OgvService';
+import { SessionService } from '../SessionService';
+import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
-import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
+import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData, TEST_SESSION } from './helpers';
 import type { NodeDb } from '../db-node';
 
 interface RawAuditRow {
@@ -241,5 +243,34 @@ describe('audit_log triggers — FR-10', () => {
     // Most recent first.
     expect(rows[0]!.id).toBeGreaterThan(rows[1]!.id);
     expect(rows[1]!.id).toBeGreaterThan(rows[2]!.id);
+  });
+
+  it('list() returns the session user, role and a null reason for an ordinary mutation', async () => {
+    const voyage = await voyages.create({ vessel_id: vesselId, voyage_no: 'VY-WHO' });
+
+    const [entry] = await audit.list({ entity_type: 'voyages', entity_id: voyage.id });
+    expect(entry).toMatchObject({
+      user_id: TEST_SESSION.operator_name,
+      user_role: TEST_SESSION.operator_role,
+      reason: null,
+    });
+  });
+
+  it('list() returns the override reason of a closed-voyage correction', async () => {
+    const voyage = await voyages.create({ vessel_id: vesselId, voyage_no: 'VY-WHY' });
+    await voyages.close(voyage.id);
+    await new SessionService(db).start({ operator_name: 'Olga Supervisor', operator_role: 'supervisor' });
+
+    const ev = await new SofService(db).create(
+      { voyage_id: voyage.id, event_date: '2026-05-03', description: 'late entry' },
+      { closed_voyage_reason: 'missed on the day' },
+    );
+
+    const [entry] = await audit.list({ entity_type: 'sof_events', entity_id: ev.id });
+    expect(entry).toMatchObject({
+      user_id: 'Olga Supervisor',
+      user_role: 'supervisor',
+      reason: 'missed on the day',
+    });
   });
 });

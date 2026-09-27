@@ -144,6 +144,9 @@ export function AuditLogPanel() {
               <th>{t('audit.col.entity')}</th>
               <th>{t('audit.col.id')}</th>
               <th>{t('audit.col.action')}</th>
+              <th>{t('audit.col.user')}</th>
+              <th>{t('audit.col.role')}</th>
+              <th>{t('audit.col.reason')}</th>
               <th>{t('audit.col.diff')}</th>
             </tr>
           </thead>
@@ -154,6 +157,9 @@ export function AuditLogPanel() {
                 <td>{e.entity_type}</td>
                 <td className="mono">{e.entity_id}</td>
                 <td>{e.action}</td>
+                <td>{e.user_id ?? '—'}</td>
+                <td>{e.user_role ?? '—'}</td>
+                <td>{e.reason ?? '—'}</td>
                 <td className="diff">{summarize(e)}</td>
               </tr>
             ))}
