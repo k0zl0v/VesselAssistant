@@ -87,7 +87,7 @@ export function HoldTable({
                 </td>
                 <td className="num" data-testid="hold-loaded">{formatTons(h.loaded_tons)}</td>
                 <td className="num" data-testid="hold-discharged">{formatTons(h.discharged_tons)}</td>
-                <td className="num" data-testid="hold-remain">{formatTons(h.remain_tons)}</td>
+                <td className={`num ${h.remain_tons < 0 ? 'negative' : ''}`} data-testid="hold-remain">{formatTons(h.remain_tons)}</td>
                 <td className="num" data-testid="hold-capacity-98">{fmt(h.capacity_tons_98)}</td>
                 <td
                   className={`num ${h.empty_space_98 !== null && h.empty_space_98 < 0 ? 'negative' : ''}`}

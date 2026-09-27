@@ -8,6 +8,31 @@ import { CargoLotService } from '../../services/CargoLotService';
 import { VoyageService } from '../../services/VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb } from '../../services/__tests__/helpers';
 import type { NodeDb } from '../../services/db-node';
+import type { VoyageHoldCalc } from '../../services/CalculationService';
+
+/**
+ * `remain_tons < 0` cannot occur through the real service layer (FR-17's guard
+ * blocks a discharge past what's loaded) — only a component-level test can
+ * construct it directly, bypassing the service layer, to verify FR-08's
+ * "negative RemainHold[h] is highlighted" rule on the remainder cell itself.
+ */
+const makeHoldCalc = (overrides: Partial<VoyageHoldCalc>): VoyageHoldCalc => ({
+  hold_id: crypto.randomUUID(),
+  hold_no: 1,
+  volume_m3: 5000,
+  sf: 1.2,
+  fill_percent: 0.98,
+  loaded_tons: 100,
+  discharged_tons: 0,
+  remain_tons: 100,
+  used_volume_m3: 0,
+  capacity_tons_100: 4000,
+  capacity_tons_98: 3920,
+  empty_space_100: 3900,
+  empty_space_98: 3820,
+  empty_volume_percent: 95,
+  ...overrides,
+});
 
 /** End of S-3 (NORD STAR, holds 1–5, one lot each) plus hold 6 with no lot, hence no SF. */
 async function seedEndOfS3WithHoldWithoutSf(db: NodeDb): Promise<string> {
@@ -92,5 +117,29 @@ describe('HoldTable (S-3: free space per hold for the next barge)', () => {
     expect(cell(6, 'hold-capacity-98')).toBe('—');
     expect(cell(6, 'hold-empty-98')).toBe('—');
     expect(cell(6, 'hold-remain')).toBe('0.000');
+  });
+
+  it('FR-08: a negative RemainHold[h] is highlighted with the "negative" class on the remainder cell itself; a non-negative one is not', () => {
+    render(
+      <HoldTable
+        holds={[
+          makeHoldCalc({ hold_no: 1, remain_tons: -50 }),
+          makeHoldCalc({ hold_no: 2, remain_tons: 100 }),
+        ]}
+        voyage_id="V-1"
+        cargoes={[]}
+        lotsByHold={{}}
+        expandedHoldId={null}
+        onToggleExpand={() => undefined}
+        onAddLot={async () => undefined}
+        onDischarge={async () => undefined}
+        busy={false}
+        voyageOpen
+      />,
+    );
+    expect(cell(1, 'hold-remain')).toBe('-50.000');
+    expect(within(screen.getByTestId('hold-row-1')).getByTestId('hold-remain').className).toContain('negative');
+    expect(cell(2, 'hold-remain')).toBe('100.000');
+    expect(within(screen.getByTestId('hold-row-2')).getByTestId('hold-remain').className).not.toContain('negative');
   });
 });
