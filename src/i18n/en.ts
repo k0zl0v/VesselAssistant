@@ -12,6 +12,30 @@ export const en = {
   'app.db_error': 'Database error: {message}',
   'app.lang.en': 'EN',
   'app.lang.ru': 'RU',
+  'app.crashed': 'Something went wrong. The error has been written to the log.',
+  'app.reload': 'Reload',
+
+  // Operator session (FR-10)
+  'session.title': 'Operator sign-in',
+  'session.name': 'Name',
+  'session.role': 'Role',
+  'session.role.operator': 'Operator',
+  'session.role.supervisor': 'Supervisor',
+  'session.role.admin': 'Administrator',
+  'session.role.viewer': 'Viewer',
+  'session.start': 'Start',
+  'session.name_required': 'Enter your name.',
+
+  // Service errors (AppError codes, rendered by describeError)
+  'error.voyage.not_found': 'Voyage not found.',
+  'error.hold.not_found': 'Hold not found.',
+  'error.ogv.insufficient_cargo': 'Not enough cargo in hold {hold_no}: {short_tons} t short',
+  'error.voyage.closed': 'Voyage {voyage_no} is closed. Only a supervisor or administrator can change it, with a reason.',
+  'error.voyage.closed_reason_required': 'Enter a reason to change a closed voyage.',
+  'error.protein.invalid': 'Protein {value}% is not allowed. Allowed: 10.5, 11.5, 12.5, 13.5.',
+  'error.backup.failed': 'Automatic backup failed: {message}',
+  'error.batch.stale': 'The data changed while saving. Reload and try again.',
+  'error.unexpected': 'Unexpected error. Details have been written to the log.',
 
   // Voyage page
   'voyage.title': 'Voyages',
@@ -24,6 +48,11 @@ export const en = {
   'voyage.status.open': 'open',
   'voyage.status.closed': 'closed',
   'voyage.close': 'Close voyage',
+  'voyage.close.confirm': 'Close voyage {voyage_no}? A closed voyage cannot be reopened. An automatic backup is taken first.',
+  'voyage.copy': 'Copy voyage',
+  'voyage.copy.voyage_no': 'New voyage No',
+  'voyage.copy.submit': 'Create copy',
+  'voyage.copy.cancel': 'Cancel',
 
   // Voyage totals
   'voyage.totals.on_board': 'On Board',
@@ -246,6 +275,7 @@ export const en = {
   'import.preview.applying': 'Applying…',
   'import.preview.apply': 'Apply',
   'import.preview.cancel': 'Cancel',
+  'import.rejected_row': 'Sheet {sheet}, cell {cell} (hold {hold_no}) was not imported: {reason}',
 
   // Audit log
   'audit.title': 'Audit log',
@@ -259,6 +289,9 @@ export const en = {
   'audit.col.id': 'Id',
   'audit.col.action': 'Action',
   'audit.col.diff': 'Diff',
+  'audit.col.user': 'User',
+  'audit.col.role': 'Role',
+  'audit.col.reason': 'Reason',
 
   // Export
   'export.dialog.title': 'Save Load Plan',

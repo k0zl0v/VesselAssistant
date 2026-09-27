@@ -16,6 +16,30 @@ export const ru: Dict = {
   'app.db_error': 'Ошибка базы данных: {message}',
   'app.lang.en': 'EN',
   'app.lang.ru': 'RU',
+  'app.crashed': 'Произошла ошибка. Она записана в журнал.',
+  'app.reload': 'Перезагрузить',
+
+  // Operator session (FR-10)
+  'session.title': 'Вход оператора',
+  'session.name': 'Имя',
+  'session.role': 'Роль',
+  'session.role.operator': 'Оператор',
+  'session.role.supervisor': 'Супервайзер',
+  'session.role.admin': 'Администратор',
+  'session.role.viewer': 'Наблюдатель',
+  'session.start': 'Начать работу',
+  'session.name_required': 'Укажите имя.',
+
+  // Service errors (AppError codes, rendered by describeError)
+  'error.voyage.not_found': 'Рейс не найден.',
+  'error.hold.not_found': 'Трюм не найден.',
+  'error.ogv.insufficient_cargo': 'Недостаточно груза в трюме {hold_no}: не хватает {short_tons} т',
+  'error.voyage.closed': 'Рейс {voyage_no} закрыт. Изменить его может только супервайзер или администратор с указанием причины.',
+  'error.voyage.closed_reason_required': 'Укажите причину изменения закрытого рейса.',
+  'error.protein.invalid': 'Протеин {value}% недопустим. Разрешены: 10.5, 11.5, 12.5, 13.5.',
+  'error.backup.failed': 'Автоматическая копия не создана: {message}',
+  'error.batch.stale': 'Данные изменились во время сохранения. Обновите страницу и повторите.',
+  'error.unexpected': 'Непредвиденная ошибка. Подробности записаны в журнал.',
 
   // Voyage page
   'voyage.title': 'Рейсы',
@@ -28,6 +52,11 @@ export const ru: Dict = {
   'voyage.status.open': 'открыт',
   'voyage.status.closed': 'закрыт',
   'voyage.close': 'Закрыть рейс',
+  'voyage.close.confirm': 'Закрыть рейс {voyage_no}? Закрытый рейс нельзя открыть снова. Перед закрытием создаётся автоматическая копия.',
+  'voyage.copy': 'Копировать рейс',
+  'voyage.copy.voyage_no': 'Номер нового рейса',
+  'voyage.copy.submit': 'Создать копию',
+  'voyage.copy.cancel': 'Отмена',
 
   // Voyage totals
   'voyage.totals.on_board': 'На борту',
@@ -250,6 +279,7 @@ export const ru: Dict = {
   'import.preview.applying': 'Применение…',
   'import.preview.apply': 'Применить',
   'import.preview.cancel': 'Отмена',
+  'import.rejected_row': 'Лист {sheet}, ячейка {cell} (трюм {hold_no}) не импортирована: {reason}',
 
   // Audit log
   'audit.title': 'Аудит-лог',
@@ -263,6 +293,9 @@ export const ru: Dict = {
   'audit.col.id': 'Id',
   'audit.col.action': 'Действие',
   'audit.col.diff': 'Изменения',
+  'audit.col.user': 'Пользователь',
+  'audit.col.role': 'Роль',
+  'audit.col.reason': 'Причина',
 
   // Export
   'export.dialog.title': 'Сохранить Load Plan',
