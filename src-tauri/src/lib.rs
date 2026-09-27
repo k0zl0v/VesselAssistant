@@ -41,26 +41,24 @@ pub fn migrations() -> Vec<Migration> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // NFR-8: max_file_size is 100x the plugin's 40_000-byte default and rotation keeps
+    // every file — a single-operator desktop app can afford unbounded growth more than
+    // it can afford losing an error record.
+    let log_plugin = tauri_plugin_log::Builder::new()
+        .targets([
+            Target::new(TargetKind::LogDir {
+                file_name: Some("vessel-assistant".into()),
+            }),
+            Target::new(TargetKind::Stdout),
+        ])
+        .level(log::LevelFilter::Info)
+        .level_for("sqlx", log::LevelFilter::Warn)
+        .max_file_size(5_000_000)
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+        .build();
+
     let builder = tauri::Builder::default()
-        .plugin(
-            tauri_plugin_log::Builder::new()
-                .targets([
-                    Target::new(TargetKind::LogDir {
-                        file_name: Some("vessel-assistant".into()),
-                    }),
-                    Target::new(TargetKind::Stdout),
-                ])
-                .level(log::LevelFilter::Info)
-                .level_for("sqlx", log::LevelFilter::Warn)
-                // 100x the plugin's 40_000-byte default: a busy day's error
-                // records must survive to the next read, not get rotated out.
-                .max_file_size(5_000_000)
-                // Single-operator desktop app on a local disk: unbounded
-                // growth is cheaper than losing an error record NFR-8 needs
-                // kept, over KeepOne/KeepSome's backup-count tradeoffs.
-                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
-                .build(),
-        )
+        .plugin(log_plugin)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
