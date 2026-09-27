@@ -90,6 +90,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check out capabilities from capabilities_ref (hypothesis 10 measurement)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.capabilities_ref != '' }}
+        shell: bash
         env:
           CAPABILITIES_REF: ${{ inputs.capabilities_ref }}
         run: git checkout "$CAPABILITIES_REF" -- src-tauri/capabilities/default.json
