@@ -5,7 +5,7 @@ import type { Db, SqlValue } from './db';
  * Reverse this list for DELETE.
  *
  * The columns array is the canonical column list per table — derived
- * directly from `src-tauri/migrations/0001_initial_schema.sql` (TZ §9).
+ * directly from the migrations in `src-tauri/migrations/` (TZ §9).
  * If the schema changes, bump SCHEMA_VERSION and update both ends here.
  */
 interface TableSpec {
@@ -185,12 +185,17 @@ const TABLES: readonly TableSpec[] = [
       'old_value',
       'new_value',
       'user_id',
+      'user_role',
+      'reason',
       'created_at',
     ],
   },
 ];
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+/** v1 snapshots predate `audit_log.user_role`/`reason`; missing columns import as NULL. */
+const ACCEPTED_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, SCHEMA_VERSION]);
 
 export interface BackupEnvelope {
   schema_version: number;
@@ -238,9 +243,9 @@ export class BackupService {
     opts: { wipeFirst?: boolean } = {},
   ): Promise<void> {
     const envelope = JSON.parse(json) as BackupEnvelope;
-    if (envelope.schema_version !== SCHEMA_VERSION) {
+    if (!ACCEPTED_SCHEMA_VERSIONS.has(envelope.schema_version)) {
       throw new Error(
-        `backup schema_version mismatch: expected ${SCHEMA_VERSION}, got ${envelope.schema_version}`,
+        `backup schema_version mismatch: expected one of ${[...ACCEPTED_SCHEMA_VERSIONS].join(', ')}, got ${envelope.schema_version}`,
       );
     }
     if (!envelope.tables || typeof envelope.tables !== 'object') {
@@ -251,8 +256,10 @@ export class BackupService {
 
     await this.db.transaction(async (tx) => {
       if (wipeFirst) {
-        // Reverse FK dependency order so children go first.
+        // Reverse FK dependency order so children go first. audit_log is
+        // append-only (0004 aborts DELETE): snapshot rows merge in by explicit id.
         for (let i = TABLES.length - 1; i >= 0; i--) {
+          if (TABLES[i]!.name === 'audit_log') continue;
           await tx.execute(`DELETE FROM ${TABLES[i]!.name}`);
         }
       }

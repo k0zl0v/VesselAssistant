@@ -5,6 +5,7 @@ import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
 import { openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
+import type { SqlValue } from '../db';
 
 interface SeededIds {
   vesselId: string;
@@ -174,7 +175,7 @@ describe('BackupService — round-trip and modes', () => {
     const json = await new BackupService(dbA).exportToJson();
     const parsed = JSON.parse(json);
 
-    expect(parsed.schema_version).toBe(1);
+    expect(parsed.schema_version).toBe(2);
     expect(typeof parsed.exported_at).toBe('string');
     expect(parsed.tables).toBeDefined();
     for (const t of TABLES) {
@@ -284,6 +285,39 @@ describe('BackupService — round-trip and modes', () => {
 
       // The imported lots are present.
       expect(await rowCount(dbB, 'cargo_lots')).toBe(3);
+    } finally {
+      dbB.close();
+    }
+  });
+
+  it('importFromJson keeps the existing audit_log when the snapshot carries none (D3a)', async () => {
+    await seedFullProject(dbA);
+    const before = await dbA.select<Record<string, SqlValue>>(`SELECT * FROM audit_log ORDER BY id`);
+    expect(before.length).toBeGreaterThan(0);
+
+    const envelope = JSON.parse(await new BackupService(dbA).exportToJson());
+    envelope.tables.audit_log = [];
+    await new BackupService(dbA).importFromJson(JSON.stringify(envelope));
+
+    const after = await dbA.select<Record<string, SqlValue>>(`SELECT * FROM audit_log ORDER BY id`);
+    expect(after.length).toBeGreaterThanOrEqual(before.length);
+    expect(after.slice(0, before.length)).toEqual(before);
+  });
+
+  it('importFromJson accepts a schema_version 1 snapshot without the operator columns', async () => {
+    await seedFullProject(dbA);
+    const envelope = JSON.parse(await new BackupService(dbA).exportToJson());
+    envelope.schema_version = 1;
+    for (const row of envelope.tables.audit_log as Record<string, SqlValue>[]) {
+      delete row.user_role;
+      delete row.reason;
+    }
+
+    const dbB = await openTestDb();
+    try {
+      await new BackupService(dbB).importFromJson(JSON.stringify(envelope));
+      expect(await rowCount(dbB, 'cargo_lots')).toBe(3);
+      expect(await rowCount(dbB, 'audit_log')).toBe(envelope.tables.audit_log.length);
     } finally {
       dbB.close();
     }

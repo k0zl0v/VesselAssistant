@@ -1,5 +1,8 @@
 export type VoyageStatus = 'open' | 'closed';
 
+/** FR-19 wheat protein grades; migration 0005 enforces the same set in SQLite. */
+export const PROTEIN_ALLOWED: readonly number[] = [10.5, 11.5, 12.5, 13.5];
+
 export interface Voyage {
   id: string;
   vessel_id: string;

@@ -1,0 +1,225 @@
+[
+  {
+    "name": "ogv_discharge_commits_every_statement",
+    "setup_sql": [
+      "INSERT INTO vessels (id, name) VALUES ('v-1', 'NORD STAR')",
+      "INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES ('h-1', 'v-1', 1, 100000)",
+      "INSERT INTO cargoes (id, name) VALUES ('c-1', 'Wheat')",
+      "INSERT INTO voyages (id, vessel_id, voyage_no) VALUES ('voy-1', 'v-1', 'B-1')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-1', 'voy-1', 'DIANA MARIA', 'c-1', 'h-1', 1.25, 1600, 1600, 1, '2026-05-01T00:00:00Z')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-2', 'voy-1', 'VELES', 'c-1', 'h-1', 1.25, 1200, 1200, 2, '2026-05-01T01:00:00Z')",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-1', 'lot-1', 'voy-1', 'h-1', 'DIANA MARIA', 1600, 1600, 1)",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-2', 'lot-2', 'voy-1', 'h-1', 'VELES', 1200, 1200, 2)"
+    ],
+    "batch": [
+      {
+        "sql": "INSERT INTO operations (id, voyage_id, type, event_date, source_hold, tons) VALUES (?, ?, 'discharge', ?, ?, ?)",
+        "params": [
+          "op-1",
+          "voy-1",
+          "2026-05-01",
+          "h-1",
+          1500
+        ]
+      },
+      {
+        "sql": "INSERT INTO discharge_allocations (id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "params": [
+          "alloc-1",
+          "op-1",
+          "layer-2",
+          "lot-2",
+          "h-1",
+          "VELES",
+          1200
+        ]
+      },
+      {
+        "sql": "INSERT INTO discharge_allocations (id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "params": [
+          "alloc-2",
+          "op-1",
+          "layer-1",
+          "lot-1",
+          "h-1",
+          "DIANA MARIA",
+          300
+        ]
+      },
+      {
+        "sql": "UPDATE cargo_layers SET remaining_tons = ?, layer_status = ? WHERE id = ? AND remaining_tons = ?",
+        "params": [
+          0,
+          "depleted",
+          "layer-2",
+          1200
+        ],
+        "expect_rows_affected": 1
+      },
+      {
+        "sql": "UPDATE cargo_layers SET remaining_tons = ?, layer_status = ? WHERE id = ? AND remaining_tons = ?",
+        "params": [
+          1300,
+          "active",
+          "layer-1",
+          1600
+        ],
+        "expect_rows_affected": 1
+      }
+    ],
+    "expect": "ok",
+    "rows_affected": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "assert_sql": "SELECT (SELECT count(*) FROM operations) AS operations, (SELECT count(*) FROM discharge_allocations) AS allocations, (SELECT count(*) FROM audit_log WHERE entity_type IN ('operations', 'discharge_allocations') OR (entity_type = 'cargo_layers' AND action = 'update')) AS batch_audit, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-1') AS layer_1_remaining, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-2') AS layer_2_remaining",
+    "assert_rows": [
+      {
+        "operations": 1,
+        "allocations": 2,
+        "batch_audit": 5,
+        "layer_1_remaining": 1300,
+        "layer_2_remaining": 0
+      }
+    ]
+  },
+  {
+    "name": "fk_failure_rolls_back_whole_batch",
+    "setup_sql": [
+      "INSERT INTO vessels (id, name) VALUES ('v-1', 'NORD STAR')",
+      "INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES ('h-1', 'v-1', 1, 100000)",
+      "INSERT INTO cargoes (id, name) VALUES ('c-1', 'Wheat')",
+      "INSERT INTO voyages (id, vessel_id, voyage_no) VALUES ('voy-1', 'v-1', 'B-1')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-1', 'voy-1', 'DIANA MARIA', 'c-1', 'h-1', 1.25, 1600, 1600, 1, '2026-05-01T00:00:00Z')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-2', 'voy-1', 'VELES', 'c-1', 'h-1', 1.25, 1200, 1200, 2, '2026-05-01T01:00:00Z')",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-1', 'lot-1', 'voy-1', 'h-1', 'DIANA MARIA', 1600, 1600, 1)",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-2', 'lot-2', 'voy-1', 'h-1', 'VELES', 1200, 1200, 2)"
+    ],
+    "batch": [
+      {
+        "sql": "INSERT INTO operations (id, voyage_id, type, event_date, source_hold, tons) VALUES (?, ?, 'discharge', ?, ?, ?)",
+        "params": [
+          "op-1",
+          "voy-1",
+          "2026-05-01",
+          "h-1",
+          1500
+        ]
+      },
+      {
+        "sql": "INSERT INTO discharge_allocations (id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "params": [
+          "alloc-1",
+          "op-1",
+          "layer-2",
+          "lot-2",
+          "h-1",
+          "VELES",
+          1200
+        ]
+      },
+      {
+        "sql": "INSERT INTO discharge_allocations (id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "params": [
+          "alloc-2",
+          "op-1",
+          "layer-missing",
+          "lot-1",
+          "h-1",
+          "DIANA MARIA",
+          300
+        ]
+      },
+      {
+        "sql": "UPDATE cargo_layers SET remaining_tons = ?, layer_status = ? WHERE id = ? AND remaining_tons = ?",
+        "params": [
+          0,
+          "depleted",
+          "layer-2",
+          1200
+        ],
+        "expect_rows_affected": 1
+      }
+    ],
+    "expect": "error",
+    "error": {
+      "kind": "Sql",
+      "index": 2
+    },
+    "assert_sql": "SELECT (SELECT count(*) FROM operations) AS operations, (SELECT count(*) FROM discharge_allocations) AS allocations, (SELECT count(*) FROM audit_log WHERE entity_type IN ('operations', 'discharge_allocations') OR (entity_type = 'cargo_layers' AND action = 'update')) AS batch_audit, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-1') AS layer_1_remaining, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-2') AS layer_2_remaining",
+    "assert_rows": [
+      {
+        "operations": 0,
+        "allocations": 0,
+        "batch_audit": 0,
+        "layer_1_remaining": 1600,
+        "layer_2_remaining": 1200
+      }
+    ]
+  },
+  {
+    "name": "stale_remaining_tons_rolls_back",
+    "setup_sql": [
+      "INSERT INTO vessels (id, name) VALUES ('v-1', 'NORD STAR')",
+      "INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES ('h-1', 'v-1', 1, 100000)",
+      "INSERT INTO cargoes (id, name) VALUES ('c-1', 'Wheat')",
+      "INSERT INTO voyages (id, vessel_id, voyage_no) VALUES ('voy-1', 'v-1', 'B-1')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-1', 'voy-1', 'DIANA MARIA', 'c-1', 'h-1', 1.25, 1600, 1600, 1, '2026-05-01T00:00:00Z')",
+      "INSERT INTO cargo_lots (id, voyage_id, source_vessel, cargo_id, hold_id, sf, planned_tons, loaded_tons, load_sequence, loaded_at) VALUES ('lot-2', 'voy-1', 'VELES', 'c-1', 'h-1', 1.25, 1200, 1200, 2, '2026-05-01T01:00:00Z')",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-1', 'lot-1', 'voy-1', 'h-1', 'DIANA MARIA', 1600, 1600, 1)",
+      "INSERT INTO cargo_layers (id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence) VALUES ('layer-2', 'lot-2', 'voy-1', 'h-1', 'VELES', 1200, 1200, 2)"
+    ],
+    "batch": [
+      {
+        "sql": "INSERT INTO operations (id, voyage_id, type, event_date, source_hold, tons) VALUES (?, ?, 'discharge', ?, ?, ?)",
+        "params": [
+          "op-1",
+          "voy-1",
+          "2026-05-01",
+          "h-1",
+          1500
+        ]
+      },
+      {
+        "sql": "INSERT INTO discharge_allocations (id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "params": [
+          "alloc-1",
+          "op-1",
+          "layer-2",
+          "lot-2",
+          "h-1",
+          "VELES",
+          1200
+        ]
+      },
+      {
+        "sql": "UPDATE cargo_layers SET remaining_tons = ?, layer_status = ? WHERE id = ? AND remaining_tons = ?",
+        "params": [
+          0,
+          "depleted",
+          "layer-2",
+          1100
+        ],
+        "expect_rows_affected": 1
+      }
+    ],
+    "expect": "error",
+    "error": {
+      "kind": "RowsAffectedMismatch",
+      "index": 2
+    },
+    "assert_sql": "SELECT (SELECT count(*) FROM operations) AS operations, (SELECT count(*) FROM discharge_allocations) AS allocations, (SELECT count(*) FROM audit_log WHERE entity_type IN ('operations', 'discharge_allocations') OR (entity_type = 'cargo_layers' AND action = 'update')) AS batch_audit, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-1') AS layer_1_remaining, (SELECT CAST(remaining_tons AS INTEGER) FROM cargo_layers WHERE id = 'layer-2') AS layer_2_remaining",
+    "assert_rows": [
+      {
+        "operations": 0,
+        "allocations": 0,
+        "batch_audit": 0,
+        "layer_1_remaining": 1600,
+        "layer_2_remaining": 1200
+      }
+    ]
+  }
+]

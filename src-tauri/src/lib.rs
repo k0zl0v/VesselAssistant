@@ -15,6 +15,24 @@ pub fn run() {
             sql: include_str!("../migrations/0002_audit_triggers.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "operator_context",
+            sql: include_str!("../migrations/0003_operator_context.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "immutability_guards",
+            sql: include_str!("../migrations/0004_immutability_guards.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "protein_percent_guard",
+            sql: include_str!("../migrations/0005_protein_percent_guard.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

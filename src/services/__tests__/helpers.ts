@@ -1,29 +1,39 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeDb } from '../db-node';
+import type { OperatorSession } from '../SessionService';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const MIGRATION_PATH = resolve(
-  here,
-  '../../../src-tauri/migrations/0001_initial_schema.sql',
-);
-const AUDIT_TRIGGERS_PATH = resolve(
-  here,
-  '../../../src-tauri/migrations/0002_audit_triggers.sql',
-);
+const MIGRATIONS_DIR = resolve(here, '../../../src-tauri/migrations');
 
-const migrationSql = readFileSync(MIGRATION_PATH, 'utf8');
-const auditTriggersSql = readFileSync(AUDIT_TRIGGERS_PATH, 'utf8');
+const migrationSqls: readonly string[] = readdirSync(MIGRATIONS_DIR)
+  .filter((f) => /^\d{4}_.+\.sql$/.test(f))
+  .sort()
+  .map((f) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8'));
+
+type SessionSeed = Pick<OperatorSession, 'operator_name' | 'operator_role'>;
+
+export const TEST_SESSION: SessionSeed = { operator_name: 'test-operator', operator_role: 'operator' };
 
 /**
- * Open a fresh in-memory SQLite, apply the production migrations in order,
- * and return a Db ready for service-level integration tests.
+ * Open a fresh in-memory SQLite, apply every production migration from
+ * `src-tauri/migrations` in filename order, and return a Db ready for
+ * service-level integration tests. An `app_session` row for
+ * `TEST_SESSION` is seeded unless `session: null` is passed.
  */
-export async function openTestDb(): Promise<NodeDb> {
+export async function openTestDb(
+  opts: { session?: SessionSeed | null } = {},
+): Promise<NodeDb> {
   const db = NodeDb.openInMemory();
-  await db.execute(migrationSql);
-  await db.execute(auditTriggersSql);
+  for (const sql of migrationSqls) await db.execute(sql);
+  const session = opts.session === undefined ? TEST_SESSION : opts.session;
+  if (session) {
+    await db.execute(
+      `INSERT INTO app_session (id, operator_name, operator_role) VALUES (1, ?, ?)`,
+      [session.operator_name, session.operator_role],
+    );
+  }
   return db;
 }
 

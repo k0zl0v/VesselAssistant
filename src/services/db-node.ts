@@ -1,5 +1,6 @@
 import BetterSqlite3 from 'better-sqlite3';
-import type { Db, SqlValue } from './db';
+import type { BatchStatement, Db, SqlValue } from './db';
+import { AppError } from './errors';
 
 type Handle = ReturnType<typeof BetterSqlite3>;
 
@@ -39,6 +40,25 @@ export class NodeDb implements Db {
       this.handle.exec('ROLLBACK');
       throw e;
     }
+  }
+
+  async executeBatch(batch: BatchStatement[]): Promise<number[]> {
+    const run = this.handle.transaction((statements: BatchStatement[]) =>
+      statements.map((s, index) => {
+        const { changes } = this.runWithInfo(s.sql, s.params);
+        if (s.expectRowsAffected !== undefined && changes !== s.expectRowsAffected) {
+          throw new AppError('batch.stale', { index });
+        }
+        return changes;
+      }),
+    );
+    return run.immediate(batch);
+  }
+
+  /** Synchronous single statement with better-sqlite3's run info. */
+  runWithInfo(sql: string, params: SqlValue[] = []): { changes: number; lastInsertRowid: number | bigint } {
+    const { changes, lastInsertRowid } = this.handle.prepare(sql).run(...this.coerce(params));
+    return { changes, lastInsertRowid };
   }
 
   close(): void {
