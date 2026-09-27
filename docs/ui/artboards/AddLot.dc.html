@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Добавление партии</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2F4F6;color:#0D1620;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0B6E7F}
+a:hover{color:#07535F}
+button,input,select{font:inherit}
+input:focus-visible,select:focus-visible{outline:2px solid #0B6E7F;outline-offset:1px}
+</style>
+</helmet>
+
+<div style="width: 720px; height: 860px; background: #FFFFFF; border: 1px solid #C3CDD6; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="padding: 17px 22px 15px; border-bottom: 1px solid #DDE3E8; display: flex; align-items: flex-start; gap: 14px">
+    <div style="flex-grow: 1">
+      <h1 style="margin: 0; font-size: 17px; font-weight: 600">Добавить партию в трюм №2</h1>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #47596B">Рейс DEMO-001 · KAVKAZ IV · слой будет положен сверху, номер 3</p>
+    </div>
+    <button type="button" aria-label="Закрыть" style="border: 1px solid #DDE3E8; background: #FFFFFF; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#47596B" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex">
+
+    <!-- Форма -->
+    <form style="width: 424px; flex-shrink: 0; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid #EDF1F3; overflow: hidden">
+
+      <div>
+        <label for="src" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">СУДНО-ИСТОЧНИК</label>
+        <input id="src" type="text" value="ALISA V" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; color: #0D1620; background: #FFFFFF" onChange="{{ noop }}">
+        <div style="display: flex; gap: 6px; margin-top: 7px">
+          <button type="button" style="border: 1px solid #DDE3E8; background: #F7F9FA; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #47596B; cursor: pointer">ALISA V</button>
+          <button type="button" style="border: 1px solid #DDE3E8; background: #F7F9FA; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #47596B; cursor: pointer">VLADIMIR</button>
+          <button type="button" style="border: 1px solid #DDE3E8; background: #F7F9FA; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #47596B; cursor: pointer">YEKATERINA</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <div style="flex-grow: 1">
+          <label for="cargo" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ГРУЗ</label>
+          <select id="cargo" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620" onChange="{{ noop }}">
+            <option>WHEAT</option>
+            <option>SFM</option>
+          </select>
+        </div>
+        <div style="width: 138px; flex-shrink: 0">
+          <label for="prot" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ПРОТЕИН</label>
+          <select id="prot" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620" onChange="{{ noop }}">
+            <option>12.5 %</option>
+            <option>10.5 %</option>
+            <option>11.5 %</option>
+            <option>13.5 %</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <div style="width: 138px; flex-shrink: 0">
+          <label for="sf" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">SF ПАРТИИ, м³/т</label>
+          <input id="sf" type="number" step="0.001" min="0.001" value="{{ sfStr }}" onChange="{{ setSf }}" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+        </div>
+        <div style="flex-grow: 1">
+          <label for="tons" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ТОННАЖ ФАКТ, т</label>
+          <input id="tons" type="number" step="0.001" min="0.001" value="{{ tonsStr }}" onChange="{{ setTons }}" style="width: 100%; height: 36px; border: 1px solid {{ tonsBorder }}; border-radius: 5px; padding: 0 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <div style="flex-grow: 1">
+          <label for="plan" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ТОННАЖ ПЛАН, т</label>
+          <input id="plan" type="number" step="0.001" value="{{ tonsStr }}" onChange="{{ noop }}" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #F7F9FA; color: #47596B">
+        </div>
+        <div style="flex-grow: 1">
+          <label for="date" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ДАТА ОПЕРАЦИИ</label>
+          <input id="date" type="date" value="2026-09-27" onChange="{{ noop }}" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+        </div>
+      </div>
+
+      <div style="background: #F7F9FA; border: 1px solid #E7ECEF; border-radius: 6px; padding: 11px 12px">
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 7px">SF ТРЮМА №2 УЖЕ ЗАФИКСИРОВАН</div>
+        <p style="margin: 0; font-size: 11px; color: #47596B; line-height: 1.5">Расчёт вместимости идёт по SF&nbsp;<span style="font-family: 'IBM Plex Mono', monospace">1.226</span> от первой партии в трюме. SF этой партии используется только для проверки перегруза.</p>
+      </div>
+
+      <span style="flex-grow: 1"></span>
+
+      <label style="display: flex; align-items: flex-start; gap: 9px; cursor: pointer; padding: 11px 12px; border: 1px solid {{ ackBorder }}; background: {{ ackBg }}; border-radius: 6px">
+        <input type="checkbox" checked="{{ ack }}" onChange="{{ toggleAck }}" style="width: 16px; height: 16px; margin: 1px 0 0; accent-color: #A5231B; flex-shrink: 0">
+        <span style="font-size: 12px; color: #0D1620; line-height: 1.45">Подтверждаю загрузку сверх 98&nbsp;% вместимости. Операция попадёт в журнал аудита с отметкой перегруза.</span>
+      </label>
+
+      <div style="display: flex; gap: 9px">
+        <button type="button" style="flex-grow: 1; height: 38px; border: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; border-radius: 5px; font-size: 13px; font-weight: 500; cursor: pointer">Отмена</button>
+        <button type="button" style="flex-grow: 2; height: 38px; border: 1px solid {{ submitBorder }}; background: {{ submitBg }}; color: {{ submitFg }}; border-radius: 5px; font-size: 13px; font-weight: 600; cursor: {{ submitCursor }}">{{ submitLabel }}</button>
+      </div>
+    </form>
+
+    <!-- Живой расчёт -->
+    <aside style="flex-grow: 1; min-width: 0; padding: 18px 22px; background: #FAFBFC; display: flex; flex-direction: column; gap: 13px; overflow: hidden">
+
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182">ПРОВЕРКА ВМЕСТИМОСТИ</div>
+
+      <div style="display: flex; flex-direction: column; gap: 0">
+        <sc-for list="{{ calc }}" as="r" hint-placeholder-count="5">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #EDF1F3">
+            <span style="font-size: 12px; color: {{ r.labelFg }}; font-weight: {{ r.weight }}">{{ r.label }}</span>
+            <span style="font-size: 13px; font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; color: {{ r.fg }}; font-weight: {{ r.weight }}">{{ r.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Шкала -->
+      <div>
+        <div style="height: 22px; background: #E7ECEF; border-radius: 4px; overflow: hidden; display: flex; position: relative">
+          <div style="width: {{ barCurrent }}; background: #C79030; height: 22px"></div>
+          <div style="width: {{ barAdded }}; background: {{ barAddedBg }}; height: 22px"></div>
+          <div style="position: absolute; top: 0; bottom: 0; left: {{ limitLeft }}; width: 2px; background: #A5231B"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: #7A8A99">
+          <span>0</span>
+          <span style="color: #A5231B; font-weight: 600">98 % — {{ capStr }} т</span>
+        </div>
+        <div style="display: flex; gap: 14px; margin-top: 9px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 10px; height: 10px; border-radius: 2px; background: #C79030"></span>На борту</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 10px; height: 10px; border-radius: 2px; background: {{ barAddedBg }}"></span>Новая партия</span>
+        </div>
+      </div>
+
+      <sc-if value="{{ overload }}" hint-placeholder-val="{{ true }}">
+        <div style="background: #FCECEA; border: 1px solid #F0BDB7; border-left: 3px solid #A5231B; border-radius: 6px; padding: 12px 13px">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 7px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A5231B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 4.3L2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            <span style="font-size: 13px; font-weight: 600; color: #7E1B14">Перегруз трюма №2</span>
+          </div>
+          <p style="margin: 0 0 8px; font-size: 12px; color: #7E1B14; line-height: 1.5">Партия выводит трюм за 98&nbsp;% вместимости на <strong style="font-family: 'IBM Plex Mono', monospace">{{ overshootStr }}</strong>&nbsp;т.</p>
+          <p style="margin: 0; font-size: 11px; color: #8A4B44; line-height: 1.5">Уменьшите тоннаж до <strong style="font-family: 'IBM Plex Mono', monospace">{{ freeStr }}</strong>&nbsp;т или подтвердите перегрузку слева. Правило ТЗ §8.2, сценарий AT-05.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ ok }}" hint-placeholder-val="{{ false }}">
+        <div style="background: #E6F3EB; border: 1px solid #B6DCC6; border-left: 3px solid #14663C; border-radius: 6px; padding: 12px 13px">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#14663C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg>
+            <span style="font-size: 13px; font-weight: 600; color: #0F4F2E">В пределах вместимости</span>
+          </div>
+          <p style="margin: 0; font-size: 12px; color: #1B5738; line-height: 1.5">После погрузки останется свободно <strong style="font-family: 'IBM Plex Mono', monospace">{{ afterFreeStr }}</strong>&nbsp;т до лимита 98&nbsp;%.</p>
+        </div>
+      </sc-if>
+
+      <span style="flex-grow: 1"></span>
+
+      <div style="font-size: 10px; color: #7A8A99; line-height: 1.55; border-top: 1px solid #EDF1F3; padding-top: 11px">
+        Вместимость = объём&nbsp;трюма × 0.98 ÷ SF. Значения пересчитываются при каждом вводе, промежуточные результаты не округляются.
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":720,"height":860}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tons: 2000, sf: 1.226, ack: false };
+    this.setTons = (e) => this.setState({ tons: Number(e.target.value) || 0 });
+    this.setSf = (e) => this.setState({ sf: Number(e.target.value) || 0 });
+    this.toggleAck = () => this.setState({ ack: !this.state.ack });
+    this.noop = () => {};
+  }
+  renderVals() {
+    const n = (x) => {
+      const p = x.toFixed(3).split('.');
+      p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      return p.join('.');
+    };
+    const VOL = 11187.3;
+    const REMAIN = 7073;
+    const sf = this.state.sf > 0 ? this.state.sf : 1.226;
+    const tons = this.state.tons;
+    const cap = (VOL * 0.98) / sf;
+    const free = cap - REMAIN;
+    const projected = REMAIN + tons;
+    const overshoot = projected - cap;
+    const overload = overshoot > 1e-6;
+    const ack = this.state.ack;
+    const enabled = !overload || ack;
+    const scale = Math.max(cap, projected) * 1.04;
+
+    return {
+      sfStr: sf.toFixed(3),
+      tonsStr: String(tons),
+      calc: [
+        { label: 'Объём трюма, м³', value: n(VOL), fg: '#47596B', labelFg: '#47596B', weight: '400' },
+        { label: 'Вместимость 98 %, т', value: n(cap), fg: '#47596B', labelFg: '#47596B', weight: '400' },
+        { label: 'Сейчас в трюме, т', value: n(REMAIN), fg: '#47596B', labelFg: '#47596B', weight: '400' },
+        { label: 'Свободно до лимита, т', value: n(free), fg: '#0D1620', labelFg: '#0D1620', weight: '500' },
+        { label: '+ новая партия, т', value: n(tons), fg: overload ? '#A5231B' : '#0B6E7F', labelFg: '#47596B', weight: '500' },
+        { label: 'Станет в трюме, т', value: n(projected), fg: overload ? '#A5231B' : '#0D1620', labelFg: '#0D1620', weight: '600' }
+      ],
+      barCurrent: ((REMAIN / scale) * 100).toFixed(2) + '%',
+      barAdded: ((Math.max(0, tons) / scale) * 100).toFixed(2) + '%',
+      barAddedBg: overload ? '#A5231B' : '#0B6E7F',
+      limitLeft: ((cap / scale) * 100).toFixed(2) + '%',
+      capStr: n(cap),
+      overload: overload,
+      ok: !overload,
+      overshootStr: n(Math.max(0, overshoot)),
+      freeStr: n(Math.max(0, free)),
+      afterFreeStr: n(Math.max(0, -overshoot)),
+      ack: ack,
+      ackBorder: overload ? (ack ? '#A5231B' : '#F0BDB7') : '#E7ECEF',
+      ackBg: overload ? '#FCECEA' : '#F7F9FA',
+      tonsBorder: overload ? '#A5231B' : '#C3CDD6',
+      submitLabel: overload ? 'Загрузить с перегрузом' : 'Загрузить партию',
+      submitBg: enabled ? (overload ? '#A5231B' : '#0B6E7F') : '#DDE3E8',
+      submitBorder: enabled ? (overload ? '#A5231B' : '#0B6E7F') : '#DDE3E8',
+      submitFg: enabled ? '#FFFFFF' : '#8FA0AD',
+      submitCursor: enabled ? 'pointer' : 'not-allowed',
+      toggleAck: this.toggleAck,
+      setTons: this.setTons,
+      setSf: this.setSf,
+      noop: this.noop
+    };
+  }
+}
+</script>
+</body>
+</html>

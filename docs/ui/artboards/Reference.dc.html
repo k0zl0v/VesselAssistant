@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Справочники</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2F4F6;color:#0D1620;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0B6E7F;text-decoration:none}
+a:hover{color:#07535F}
+button,input,select{font:inherit}
+</style>
+</helmet>
+
+<div style="width: 1440px; height: 1000px; display: flex; overflow: hidden; background: #F2F4F6">
+
+  <aside style="width: 232px; flex-shrink: 0; background: #0E1B26; display: flex; flex-direction: column; color: #C7D4DE">
+    <div style="padding: 18px 18px 14px; border-bottom: 1px solid #1E3143">
+      <div style="display: flex; align-items: center; gap: 9px">
+        <div style="width: 26px; height: 26px; border-radius: 5px; background: #0B6E7F; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17c1.8 1.3 3.4 1.3 4.5 0 1.4 1.3 3.1 1.3 4.5 0 1.4 1.3 3.1 1.3 4.5 0 1.1 1.3 2.7 1.3 4.5 0"></path><path d="M5 13V6h14v7"></path><path d="M12 3v3"></path></svg>
+        </div>
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: #FFFFFF">VESSEL ASSISTANT</span>
+      </div>
+    </div>
+    <div style="padding: 14px 12px 10px">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 0 6px 7px">АКТИВНЫЙ РЕЙС</div>
+      <button type="button" style="width: 100%; text-align: left; background: #17293A; border: 1px solid #27455E; border-radius: 6px; padding: 9px 11px; color: #FFFFFF; cursor: pointer">
+        <span style="display: block; font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">DEMO-001</span>
+        <span style="display: block; font-size: 11px; color: #8EA4B5; margin-top: 2px">KAVKAZ IV · 5 трюмов</span>
+      </button>
+    </div>
+    <nav style="padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow: hidden">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 10px 6px 6px">РЕЙС</div>
+      <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M9 10v10"></path></svg>
+        Load Plan
+      </a>
+      <a href="CargoLayers.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"></rect><rect x="4" y="11" width="16" height="4" rx="1"></rect><rect x="4" y="17" width="16" height="3" rx="1"></rect></svg>
+        Слои груза
+      </a>
+      <a href="Discharge.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+        OGV · Операции
+      </a>
+      <a href="Sof.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+        SOF
+      </a>
+      <a href="Documents.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+        Документы
+      </a>
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 16px 6px 6px">ДАННЫЕ</div>
+      <span style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: #0B6E7F; color: #FFFFFF; font-size: 13px; font-weight: 600">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h12v16H6a2 2 0 0 1-2-2z"></path><path d="M8 4v16"></path></svg>
+        Справочники
+      </span>
+    </nav>
+    <div style="padding: 12px; border-top: 1px solid #1E3143; display: flex; align-items: center; gap: 7px; font-size: 11px; color: #8EA4B5">
+      <span style="width: 7px; height: 7px; border-radius: 50%; background: #35A56B; flex-shrink: 0"></span>
+      Автономный режим · БД локально
+    </div>
+  </aside>
+
+  <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+
+    <header style="background: #FFFFFF; border-bottom: 1px solid #DDE3E8; padding: 14px 28px; display: flex; align-items: center; gap: 18px">
+      <h1 style="margin: 0; flex-grow: 1; font-size: 21px; font-weight: 600; letter-spacing: -0.01em">Справочники</h1>
+      <div style="display: flex; border: 1px solid #C3CDD6; border-radius: 5px; overflow: hidden; height: 34px; background: #FFFFFF">
+        <button type="button" style="border: 0; background: #EBF3F4; color: #07535F; font-size: 12px; font-weight: 600; padding: 0 14px; cursor: pointer">Суда и трюмы</button>
+        <button type="button" style="border: 0; border-left: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; font-size: 12px; padding: 0 14px; cursor: pointer">Грузы</button>
+        <button type="button" style="border: 0; border-left: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; font-size: 12px; padding: 0 14px; cursor: pointer">Краны</button>
+        <button type="button" style="border: 0; border-left: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; font-size: 12px; padding: 0 14px; cursor: pointer">Порты</button>
+      </div>
+    </header>
+
+    <div style="flex-grow: 1; min-height: 0; padding: 18px 28px 22px; display: flex; gap: 12px">
+
+      <!-- Список судов -->
+      <section style="width: 268px; flex-shrink: 0; background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden">
+        <div style="padding: 13px 14px; border-bottom: 1px solid #EDF1F3">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px">
+            <h2 style="margin: 0; font-size: 13px; font-weight: 600">Суда · 4</h2>
+            <button type="button" style="border: 1px solid #0B6E7F; background: #FFFFFF; color: #0B6E7F; border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer">+ Судно</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; border: 1px solid #DDE3E8; border-radius: 5px; padding: 0 9px; height: 30px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9AA8B3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+            <span style="font-size: 12px; color: #9AA8B3">Название или IMO</span>
+          </div>
+        </div>
+        <div style="flex-grow: 1; min-height: 0; padding: 7px">
+          <sc-for list="{{ vessels }}" as="v" hint-placeholder-count="4">
+            <button type="button" style="width: 100%; text-align: left; border: 1px solid {{ v.border }}; background: {{ v.bg }}; border-radius: 6px; padding: 9px 11px; margin-bottom: 5px; cursor: pointer">
+              <span style="display: flex; align-items: center; gap: 8px">
+                <span style="font-size: 13px; font-weight: 600; color: {{ v.fg }}; flex-grow: 1">{{ v.name }}</span>
+                <span style="font-size: 10px; color: {{ v.roleFg }}; background: {{ v.roleBg }}; border-radius: 3px; padding: 1px 6px">{{ v.role }}</span>
+              </span>
+              <span style="display: block; font-size: 11px; color: #7A8A99; margin-top: 3px">{{ v.meta }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- Детали судна -->
+      <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+
+        <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; padding: 15px 18px">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">KAVKAZ IV</h2>
+            <span style="font-size: 11px; color: #07535F; background: #EBF3F4; border: 1px solid #BEDDE1; border-radius: 3px; padding: 2px 7px">основное судно рейса DEMO-001</span>
+            <span style="flex-grow: 1"></span>
+            <button type="button" style="border: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; border-radius: 5px; padding: 5px 12px; font-size: 12px; cursor: pointer">Дублировать</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+            <sc-for list="{{ fields }}" as="f" hint-placeholder-count="4">
+              <div>
+                <label for="{{ f.id }}" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">{{ f.label }}</label>
+                <input id="{{ f.id }}" type="text" value="{{ f.value }}" style="width: 100%; height: 34px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 10px; font-size: 13px; background: #FFFFFF; color: #0D1620; font-family: {{ f.font }}">
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; overflow: hidden">
+          <div style="padding: 13px 18px; border-bottom: 1px solid #EDF1F3; display: flex; align-items: center; gap: 10px">
+            <h2 style="margin: 0; font-size: 14px; font-weight: 600">Трюмы</h2>
+            <span style="font-size: 11px; color: #7A8A99">суммарный объём <span style="font-family: 'IBM Plex Mono', monospace">54 232.100</span> м³</span>
+            <span style="flex-grow: 1"></span>
+            <button type="button" style="border: 1px solid #0B6E7F; background: #FFFFFF; color: #0B6E7F; border-radius: 4px; padding: 4px 11px; font-size: 12px; font-weight: 600; cursor: pointer">+ Трюм</button>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums">
+            <thead>
+              <tr style="background: #F7F9FA">
+                <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px 8px 18px; border-bottom: 1px solid #EDF1F3; width: 92px">ТРЮМ</th>
+                <th style="text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3; width: 150px">ОБЪЁМ, м³</th>
+                <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3; width: 180px">ГРУЗ В РЕЙСЕ</th>
+                <th style="text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3; width: 120px">SF РЕЙСА</th>
+                <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3">ПРИМЕЧАНИЕ</th>
+                <th style="width: 88px; border-bottom: 1px solid #EDF1F3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ holds }}" as="h" hint-placeholder-count="5">
+                <tr style="border-bottom: 1px solid #F1F4F6">
+                  <td style="padding: 9px 10px 9px 18px; font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">№{{ h.no }}</td>
+                  <td style="padding: 9px 10px; text-align: right; font-size: 13px; font-family: 'IBM Plex Mono', monospace">{{ h.vol }}</td>
+                  <td style="padding: 9px 10px">
+                    <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12px"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{ h.color }}"></span>{{ h.cargo }}</span>
+                  </td>
+                  <td style="padding: 9px 10px; text-align: right; font-size: 13px; font-family: 'IBM Plex Mono', monospace; color: #47596B">{{ h.sf }}</td>
+                  <td style="padding: 9px 10px; font-size: 12px; color: #7A8A99">{{ h.note }}</td>
+                  <td style="padding: 9px 18px 9px 10px; text-align: right">
+                    <span style="font-size: 12px; color: #0B6E7F; cursor: pointer">Изменить</span>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Crane correction -->
+        <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; flex-grow: 1; min-height: 0; display: flex; overflow: hidden">
+
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+            <div style="padding: 13px 18px; border-bottom: 1px solid #EDF1F3; display: flex; align-items: center; gap: 10px">
+              <h2 style="margin: 0; font-size: 14px; font-weight: 600">Коэффициенты кранов</h2>
+              <span style="flex-grow: 1"></span>
+              <button type="button" style="border: 1px solid #0B6E7F; background: #FFFFFF; color: #0B6E7F; border-radius: 4px; padding: 4px 11px; font-size: 12px; font-weight: 600; cursor: pointer">+ Коэффициент</button>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums">
+              <thead>
+                <tr style="background: #F7F9FA">
+                  <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px 8px 18px; border-bottom: 1px solid #EDF1F3">КРАН</th>
+                  <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3">БОРТ</th>
+                  <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3">ОПЕРАЦИЯ</th>
+                  <th style="text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 10px; border-bottom: 1px solid #EDF1F3">КОЭФФ.</th>
+                  <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 8px 18px 8px 10px; border-bottom: 1px solid #EDF1F3">ДЕЙСТВУЕТ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ coefs }}" as="c" hint-placeholder-count="5">
+                  <tr style="border-bottom: 1px solid #F1F4F6; background: {{ c.bg }}">
+                    <td style="padding: 8px 10px 8px 18px; font-size: 12px; font-weight: 500">{{ c.crane }}</td>
+                    <td style="padding: 8px 10px; font-size: 12px; color: #47596B">{{ c.side }}</td>
+                    <td style="padding: 8px 10px; font-size: 12px; color: #47596B">{{ c.op }}</td>
+                    <td style="padding: 8px 10px; text-align: right; font-size: 13px; font-family: 'IBM Plex Mono', monospace; font-weight: {{ c.weight }}">{{ c.k }}</td>
+                    <td style="padding: 8px 18px 8px 10px; font-size: 11px; color: #7A8A99; font-family: 'IBM Plex Mono', monospace">{{ c.valid }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="width: 306px; flex-shrink: 0; border-left: 1px solid #EDF1F3; background: #FAFBFC; padding: 15px 16px; display: flex; flex-direction: column; gap: 11px">
+            <h2 style="margin: 0; font-size: 14px; font-weight: 600">Пересчёт веса</h2>
+            <div style="display: flex; gap: 9px">
+              <div style="flex-grow: 1">
+                <label for="ck" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">КРАН</label>
+                <select id="ck" style="width: 100%; height: 32px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 8px; font-size: 12px; background: #FFFFFF; color: #0D1620"><option>Crane 2</option></select>
+              </div>
+              <div style="width: 116px; flex-shrink: 0">
+                <label for="cs" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">БОРТ</label>
+                <select id="cs" style="width: 100%; height: 32px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 8px; font-size: 12px; background: #FFFFFF; color: #0D1620"><option>PORT</option></select>
+              </div>
+            </div>
+            <div style="display: flex; gap: 9px">
+              <div style="flex-grow: 1">
+                <label for="co" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">ОПЕРАЦИЯ</label>
+                <select id="co" style="width: 100%; height: 32px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 8px; font-size: 12px; background: #FFFFFF; color: #0D1620"><option>LOADING</option></select>
+              </div>
+              <div style="width: 116px; flex-shrink: 0">
+                <label for="cd" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">ДАТА</label>
+                <input id="cd" type="date" value="2026-09-24" style="width: 100%; height: 32px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 8px; font-size: 12px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+              </div>
+            </div>
+            <div>
+              <label for="cw" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">ВЕС ПО СУДОВЫМ ВЕСАМ, т</label>
+              <input id="cw" type="number" step="0.001" value="1177.000" style="width: 100%; height: 34px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 10px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+            </div>
+
+            <div style="background: #0E1B26; border-radius: 6px; padding: 12px 14px">
+              <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #8EA4B5">СКОРРЕКТИРОВАННЫЙ ВЕС</div>
+              <div style="font-size: 23px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; color: #FFFFFF; margin-top: 3px">1 194.924<span style="font-size: 13px; font-weight: 400; color: #8EA4B5; margin-left: 5px">т</span></div>
+              <div style="font-size: 11px; color: #8EA4B5; margin-top: 5px; font-family: 'IBM Plex Mono', monospace">1 177.000 ÷ 0.985</div>
+            </div>
+
+            <div style="font-size: 10px; color: #7A8A99; line-height: 1.55">Подобран коэффициент <span style="font-family: 'IBM Plex Mono', monospace">0.985</span> — Crane 2 / PORT / LOADING, действует 01.09–31.12.2026. Если на дату операции коэффициента нет, расчёт блокируется.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const n = (x) => {
+      const p = x.toFixed(3).split('.');
+      p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      return p.join('.');
+    };
+    const SFM = '#5C4327';
+    const WHEAT = '#C79030';
+    return {
+      vessels: [
+        { name: 'KAVKAZ IV', meta: 'PANAMA · 5 трюмов · 54 232.100 м³', role: 'основное', roleBg: '#EBF3F4', roleFg: '#07535F', bg: '#EBF3F4', border: '#BEDDE1', fg: '#07535F' },
+        { name: 'ALISA V', meta: 'RUSSIA · судно-источник', role: 'источник', roleBg: '#EDF1F3', roleFg: '#47596B', bg: '#FFFFFF', border: '#E7ECEF', fg: '#0D1620' },
+        { name: 'VLADIMIR', meta: 'RUSSIA · судно-источник', role: 'источник', roleBg: '#EDF1F3', roleFg: '#47596B', bg: '#FFFFFF', border: '#E7ECEF', fg: '#0D1620' },
+        { name: 'YEKATERINA', meta: 'RUSSIA · судно-источник', role: 'источник', roleBg: '#EDF1F3', roleFg: '#47596B', bg: '#FFFFFF', border: '#E7ECEF', fg: '#0D1620' }
+      ],
+      fields: [
+        { id: 'fn', label: 'НАЗВАНИЕ', value: 'KAVKAZ IV', font: "'IBM Plex Sans', sans-serif" },
+        { id: 'ff', label: 'ФЛАГ', value: 'PANAMA', font: "'IBM Plex Sans', sans-serif" },
+        { id: 'fo', label: 'СУДОВЛАДЕЛЕЦ', value: 'Kavkaz Shipping Ltd.', font: "'IBM Plex Sans', sans-serif" },
+        { id: 'fi', label: 'IMO', value: '9271234', font: "'IBM Plex Mono', monospace" }
+      ],
+      holds: [
+        { no: 1, vol: n(10340.5), cargo: 'SFM', color: SFM, sf: '1.440', note: '—' },
+        { no: 2, vol: n(11187.3), cargo: 'WHEAT · 12.5 %', color: WHEAT, sf: '1.226', note: 'смежный с №1' },
+        { no: 3, vol: n(10749.8), cargo: 'SFM', color: SFM, sf: '1.440', note: '—' },
+        { no: 4, vol: n(11187.3), cargo: 'WHEAT · 11.5 %', color: WHEAT, sf: '1.226', note: '—' },
+        { no: 5, vol: n(10767.2), cargo: 'SFM', color: SFM, sf: '1.440', note: 'кормовой' }
+      ],
+      coefs: [
+        { crane: 'Crane 1', side: 'PORT', op: 'LOADING', k: '0.992', valid: '01.09 – 31.12.2026', bg: '#FFFFFF', weight: '400' },
+        { crane: 'Crane 1', side: 'STARBOARD', op: 'LOADING', k: '0.988', valid: '01.09 – 31.12.2026', bg: '#FFFFFF', weight: '400' },
+        { crane: 'Crane 2', side: 'PORT', op: 'LOADING', k: '0.985', valid: '01.09 – 31.12.2026', bg: '#EBF3F4', weight: '600' },
+        { crane: 'Crane 2', side: 'PORT', op: 'DISCHARGING', k: '1.004', valid: '01.09 – 31.12.2026', bg: '#FFFFFF', weight: '400' },
+        { crane: 'Crane 2', side: 'STARBOARD', op: 'DISCHARGING', k: '0.997', valid: '01.09 – 31.12.2026', bg: '#FFFFFF', weight: '400' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

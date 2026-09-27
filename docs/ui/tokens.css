@@ -1,0 +1,125 @@
+/**
+ * VesselAssistant — design tokens.
+ * Источник истины: docs/ui/artboards/DesignSystem.dc.html.
+ *
+ * Подключается первым, до App.css. Любое значение цвета, отступа, радиуса
+ * или высоты контрола в компонентах берётся отсюда — новых хардкодов не
+ * заводим: если нужного токена нет, добавляем его сюда, а не хекс в JSX.
+ */
+
+:root {
+  /* ---- Нейтрали -------------------------------------------------- */
+  --ink: #0d1620;          /* основной текст */
+  --ink-muted: #47596b;    /* вторичный текст, подписи в таблицах */
+  --ink-faint: #7a8a99;    /* сноски, дельты, плейсхолдеры */
+  --ink-disabled: #8fa0ad;
+  --line: #dde3e8;         /* границы карточек и полей */
+  --line-strong: #c3cdd6;  /* границы контролов, печатная сетка */
+  --line-soft: #edf1f3;    /* разделители строк таблицы */
+  --ground: #f2f4f6;       /* фон приложения */
+  --surface: #ffffff;      /* карточки, строки таблицы */
+  --surface-sunken: #f7f9fa; /* шапки таблиц, подложка итогов */
+  --surface-raised: #fafbfc; /* боковые панели внутри карточек */
+
+  /* ---- Хром и акцент --------------------------------------------- */
+  --chrome: #0e1b26;       /* навигационный рельс, тайл ключевой метрики */
+  --chrome-raised: #17293a;
+  --chrome-line: #1e3143;
+  --chrome-border: #27455e;
+  --chrome-ink: #c7d4de;
+  --chrome-ink-muted: #8ea4b5;
+  --chrome-ink-faint: #6e8496;
+
+  --accent: #0b6e7f;
+  --accent-press: #07535f;
+  --accent-soft: #ebf3f4;
+  --accent-soft-line: #bedde1;
+  --accent-ink: #ffffff;
+
+  /* ---- Статусы ---------------------------------------------------- */
+  --positive: #14663c;
+  --positive-deep: #0f4f2e;
+  --positive-soft: #e6f3eb;
+  --positive-soft-line: #b6dcc6;
+
+  --warning: #9a5b00;
+  --warning-ink: #7a4a0b;
+  --warning-soft: #fdf3e2;
+  --warning-soft-line: #ebd6ac;
+  --warning-row: #fff9ee;   /* подсветка строки с пересечением SOF */
+
+  --danger: #a5231b;
+  --danger-ink: #7e1b14;
+  --danger-ink-soft: #8a4b44;
+  --danger-soft: #fcecea;
+  --danger-soft-line: #f0bdb7;
+
+  --online: #35a56b;        /* индикатор автономного режима */
+
+  /* ---- Грузы и слои ----------------------------------------------- */
+  /* Различаются светлотой, а не только тоном: читаются на плохом экране
+     и не сливаются при ч/б печати. */
+  --cargo-sfm: #5c4327;
+  --cargo-wheat: #c79030;
+  --cargo-fallback: #1e3a52;
+  --layer-discharged: #dce3e8;
+  --layer-discharged-line: #b6c2cb;
+  --layer-discharged-fill: repeating-linear-gradient(
+    135deg, #dce3e8 0 4px, #eff2f4 4px 8px
+  );
+  --track: #e7ecef;         /* пустая часть шкалы заполнения */
+
+  /* ---- Типографика ------------------------------------------------ */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --text-micro: 10px;   /* метки колонок, разделы навигации */
+  --text-caption: 11px; /* подписи полей, сноски */
+  --text-small: 12px;   /* вторичный текст, чипы */
+  --text-body: 13px;    /* основной текст и ячейки таблицы */
+  --text-card: 14px;    /* заголовок карточки */
+  --text-section: 16px;
+  --text-page: 21px;    /* заголовок экрана */
+  --text-metric: 20px;  /* метрика в тайле */
+  --text-metric-lg: 27px; /* ключевая метрика «На борту» */
+
+  --tracking-label: 0.05em;  /* подписи полей */
+  --tracking-col: 0.07em;    /* заголовки колонок */
+  --tracking-nav: 0.09em;    /* разделы рельса */
+
+  /* ---- Размеры и ритм --------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  --radius-control: 5px;
+  --radius-card: 8px;
+  --radius-shell: 10px;
+  --radius-tag: 3px;
+  --radius-pill: 12px;
+
+  --control-sm: 30px;   /* чипы быстрого выбора, компактные кнопки */
+  --control-md: 34px;   /* поля и кнопки панели инструментов */
+  --control-lg: 38px;   /* главные действия в диалогах */
+  --row-height: 40px;   /* строка таблицы */
+
+  --rail-width: 232px;       /* навигационный рельс */
+  --inspector-width: 336px;  /* правая колонка экрана слоёв */
+  --content-pad: 28px;       /* горизонтальные поля рабочей области */
+
+  --focus-ring: 0 0 0 3px rgba(11, 110, 127, 0.16);
+}
+
+/* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,
+   три знака после запятой и узкий неразрывный пробел между разрядами
+   (U+202F — не ломает вставку в Excel). */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

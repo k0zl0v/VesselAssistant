@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Слои груза — LIFO</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2F4F6;color:#0D1620;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0B6E7F;text-decoration:none}
+a:hover{color:#07535F}
+button{font:inherit}
+</style>
+</helmet>
+
+<div style="width: 1440px; height: 980px; display: flex; overflow: hidden; background: #F2F4F6">
+
+  <aside style="width: 232px; flex-shrink: 0; background: #0E1B26; display: flex; flex-direction: column; color: #C7D4DE">
+    <div style="padding: 18px 18px 14px; border-bottom: 1px solid #1E3143">
+      <div style="display: flex; align-items: center; gap: 9px">
+        <div style="width: 26px; height: 26px; border-radius: 5px; background: #0B6E7F; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17c1.8 1.3 3.4 1.3 4.5 0 1.4 1.3 3.1 1.3 4.5 0 1.4 1.3 3.1 1.3 4.5 0 1.1 1.3 2.7 1.3 4.5 0"></path><path d="M5 13V6h14v7"></path><path d="M12 3v3"></path></svg>
+        </div>
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: #FFFFFF">VESSEL ASSISTANT</span>
+      </div>
+    </div>
+    <div style="padding: 14px 12px 10px">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 0 6px 7px">АКТИВНЫЙ РЕЙС</div>
+      <button type="button" style="width: 100%; text-align: left; background: #17293A; border: 1px solid #27455E; border-radius: 6px; padding: 9px 11px; color: #FFFFFF; cursor: pointer">
+        <span style="display: block; font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">DEMO-001</span>
+        <span style="display: block; font-size: 11px; color: #8EA4B5; margin-top: 2px">KAVKAZ IV · 5 трюмов</span>
+      </button>
+    </div>
+    <nav style="padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; overflow: hidden">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 10px 6px 6px">РЕЙС</div>
+      <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M9 10v10"></path></svg>
+        Load Plan
+      </a>
+      <span style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: #0B6E7F; color: #FFFFFF; font-size: 13px; font-weight: 600">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"></rect><rect x="4" y="11" width="16" height="4" rx="1"></rect><rect x="4" y="17" width="16" height="3" rx="1"></rect></svg>
+        Слои груза
+      </span>
+      <a href="Discharge.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+        OGV · Операции
+      </a>
+      <a href="Sof.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+        SOF
+      </a>
+      <a href="Documents.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+        Документы
+      </a>
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #6E8496; padding: 16px 6px 6px">ДАННЫЕ</div>
+      <a href="Reference.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h12v16H6a2 2 0 0 1-2-2z"></path><path d="M8 4v16"></path></svg>
+        Справочники
+      </a>
+    </nav>
+    <div style="padding: 12px; border-top: 1px solid #1E3143; display: flex; align-items: center; gap: 7px; font-size: 11px; color: #8EA4B5">
+      <span style="width: 7px; height: 7px; border-radius: 50%; background: #35A56B; flex-shrink: 0"></span>
+      Автономный режим · БД локально
+    </div>
+  </aside>
+
+  <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+
+    <header style="background: #FFFFFF; border-bottom: 1px solid #DDE3E8; padding: 14px 28px; display: flex; align-items: center; gap: 20px">
+      <div style="flex-grow: 1; min-width: 0">
+        <div style="font-size: 11px; color: #7A8A99; margin-bottom: 3px">Рейс DEMO-001 · KAVKAZ IV</div>
+        <h1 style="margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em">Слои груза по трюмам</h1>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0">
+        <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #07535F; background: #EBF3F4; border: 1px solid #BEDDE1; border-radius: 5px; padding: 6px 11px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"></path><path d="M7 10l5-5 5 5"></path></svg>
+          Списание строго LIFO — верхний слой первым
+        </span>
+        <button type="button" style="border: 1px solid #0B6E7F; background: #0B6E7F; color: #FFFFFF; border-radius: 5px; padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; height: 34px">Выгрузить из трюма</button>
+      </div>
+    </header>
+
+    <div style="flex-grow: 1; min-height: 0; padding: 18px 28px 0; display: flex; gap: 22px">
+
+      <!-- Стеки трюмов -->
+      <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+
+        <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 12px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 11px; height: 11px; border-radius: 2px; background: #5C4327"></span>SFM</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 11px; height: 11px; border-radius: 2px; background: #C79030"></span>WHEAT</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 11px; height: 11px; border-radius: 2px; background: repeating-linear-gradient(135deg, #D6DDE2 0 3px, #EFF2F4 3px 6px); border: 1px dashed #B6C2CB"></span>Списано</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #47596B"><span style="width: 14px; height: 0; border-top: 2px dashed #A5231B"></span>Вместимость 98 %</span>
+          <span style="flex-grow: 1"></span>
+          <span style="font-size: 11px; color: #7A8A99">Высота блока пропорциональна погруженным тоннам · 1 мм ≈ 26 т</span>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; padding: 18px 18px 0; flex-grow: 1; display: flex; gap: 12px; align-items: flex-end">
+          <sc-for list="{{ holds }}" as="h" hint-placeholder-count="5">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: stretch">
+
+              <!-- Стек -->
+              <div style="height: 404px; position: relative; display: flex; flex-direction: column; justify-content: flex-end">
+                <!-- линия 98% -->
+                <div style="position: absolute; left: 0; right: 0; bottom: {{ h.capPx }}; border-top: 2px dashed #A5231B; display: flex; justify-content: flex-end">
+                  <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #A5231B; background: #FFFFFF; padding: 0 3px; transform: translateY(-13px)">{{ h.cap }}</span>
+                </div>
+
+                <sc-for list="{{ h.layers }}" as="l" hint-placeholder-count="3">
+                  <div style="height: {{ l.hPx }}; border: 1px solid {{ l.border }}; border-radius: 3px; margin-bottom: 3px; background: {{ l.bg }}; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; position: relative">
+                    <div style="height: {{ l.solidPx }}; background: {{ l.solid }}; display: flex; flex-direction: column; justify-content: center; padding: 0 8px; overflow: hidden">
+                      <span style="font-size: 11px; font-weight: 600; color: {{ l.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ l.vessel }}</span>
+                      <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: {{ l.fgDim }}; white-space: nowrap">{{ l.remain }} т</span>
+                    </div>
+                    <span style="position: absolute; top: 3px; left: 7px; font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: {{ l.seqFg }}; letter-spacing: 0.04em">{{ l.seqLabel }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <!-- Подпись трюма -->
+              <div style="border-top: 1px solid #DDE3E8; padding: 10px 2px 14px">
+                <div style="display: flex; align-items: baseline; justify-content: space-between">
+                  <span style="font-size: 14px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">Трюм №{{ h.no }}</span>
+                  <span style="font-size: 10px; color: #7A8A99; font-family: 'IBM Plex Mono', monospace">SF {{ h.sf }}</span>
+                </div>
+                <div style="font-size: 11px; color: #47596B; margin-top: 4px; display: flex; justify-content: space-between">
+                  <span>Остаток</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0D1620">{{ h.remain }}</span>
+                </div>
+                <div style="font-size: 11px; color: #47596B; margin-top: 2px; display: flex; justify-content: space-between">
+                  <span>Свободно 98 %</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace">{{ h.empty }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Правая колонка -->
+      <div style="width: 336px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px">
+
+        <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; padding: 15px 16px">
+          <h2 style="margin: 0 0 3px; font-size: 14px; font-weight: 600">Остатки по судам-источникам</h2>
+          <p style="margin: 0 0 13px; font-size: 11px; color: #7A8A99">FR-18 · сумма по всем трюмам</p>
+          <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+            <div style="margin-bottom: 12px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px">
+                <span style="font-size: 12px; font-weight: 600">{{ s.name }}</span>
+                <span style="font-size: 12px; font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums">{{ s.tons }} т</span>
+              </div>
+              <div style="height: 6px; background: #E7ECEF; border-radius: 3px; overflow: hidden">
+                <div style="height: 6px; border-radius: 3px; background: #0B6E7F; width: {{ s.barW }}"></div>
+              </div>
+              <div style="font-size: 10px; color: #7A8A99; margin-top: 4px">{{ s.detail }}</div>
+            </div>
+          </sc-for>
+          <div style="border-top: 1px solid #EDF1F3; padding-top: 10px; display: flex; justify-content: space-between; align-items: baseline">
+            <span style="font-size: 12px; font-weight: 600; color: #47596B">Итого на борту</span>
+            <span style="font-size: 14px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">{{ onBoard }} т</span>
+          </div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; padding: 15px 16px; flex-grow: 1; min-height: 0">
+          <h2 style="margin: 0 0 3px; font-size: 14px; font-weight: 600">История списания</h2>
+          <p style="margin: 0 0 13px; font-size: 11px; color: #7A8A99">Какие слои закрыла каждая выгрузка</p>
+
+          <sc-for list="{{ history }}" as="op" hint-placeholder-count="2">
+            <div style="border: 1px solid #E7ECEF; border-radius: 6px; padding: 11px 12px; margin-bottom: 10px">
+              <div style="display: flex; align-items: baseline; justify-content: space-between">
+                <span style="font-size: 12px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">{{ op.id }}</span>
+                <span style="font-size: 11px; color: #7A8A99; font-family: 'IBM Plex Mono', monospace">{{ op.date }}</span>
+              </div>
+              <div style="font-size: 11px; color: #47596B; margin: 4px 0 9px">Трюм №{{ op.hold }} · <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0D1620">{{ op.tons }} т</span></div>
+              <sc-for list="{{ op.alloc }}" as="a" hint-placeholder-count="2">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid #F1F4F6">
+                  <span style="font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: #7A8A99; background: #F1F4F6; border-radius: 3px; padding: 1px 5px; flex-shrink: 0">{{ a.seq }}</span>
+                  <span style="font-size: 11px; flex-grow: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ a.vessel }}</span>
+                  <span style="font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: #A5231B; flex-shrink: 0">−{{ a.tons }}</span>
+                  <span style="font-size: 10px; color: {{ a.stateFg }}; flex-shrink: 0; width: 76px; text-align: right">{{ a.state }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+
+          <div style="display: flex; align-items: flex-start; gap: 7px; font-size: 11px; color: #7A4A0B; background: #FDF3E2; border: 1px solid #EBD6AC; border-radius: 5px; padding: 9px 10px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01"></path><path d="M12 11v5"></path></svg>
+            <span>Выбрать нижний слой вручную нельзя. Корректировка — отдельной операцией с причиной и записью в журнал аудита.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const n = (x, d) => {
+      const f = x.toFixed(d === undefined ? 3 : d);
+      const p = f.split('.');
+      p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      return p.join('.');
+    };
+    const PX = 0.038;
+    const SFM = '#5C4327';
+    const WHEAT = '#C79030';
+    const GHOST = 'repeating-linear-gradient(135deg, #DCE3E8 0 4px, #EFF2F4 4px 8px)';
+
+    const data = [
+      { no: 1, cargo: SFM, sf: '1.440', cap: 7037.284722222223, remain: 4082, empty: 2955.2847222222226,
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 2500, rem: 2500 }, { seq: 2, v: 'VLADIMIR', loaded: 1582, rem: 1582 } ] },
+      { no: 2, cargo: WHEAT, sf: '1.226', cap: 8942.539967373572, remain: 7073, empty: 1869.539967373572,
+        layers: [ { seq: 1, v: 'YEKATERINA', loaded: 4000, rem: 4000 }, { seq: 2, v: 'ALISA V', loaded: 3073, rem: 3073 } ] },
+      { no: 3, cargo: SFM, sf: '1.440', cap: 7315.83611111111, remain: 2825, empty: 4490.83611111111,
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 1500, rem: 1500 }, { seq: 2, v: 'VLADIMIR', loaded: 1302, rem: 1302 }, { seq: 3, v: 'YEKATERINA', loaded: 1200, rem: 23 } ] },
+      { no: 4, cargo: WHEAT, sf: '1.226', cap: 8942.539967373572, remain: 6365, empty: 2577.539967373572,
+        layers: [ { seq: 1, v: 'VLADIMIR', loaded: 3365, rem: 3365 }, { seq: 2, v: 'YEKATERINA', loaded: 3000, rem: 3000 } ] },
+      { no: 5, cargo: SFM, sf: '1.440', cap: 7327.677777777778, remain: 3338.955, empty: 3988.722777777778,
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 1862.955, rem: 1862.955 }, { seq: 2, v: 'VLADIMIR', loaded: 1500, rem: 1476 }, { seq: 3, v: 'YEKATERINA', loaded: 800, rem: 0 } ] }
+    ];
+
+    const holds = data.map((h) => {
+      const ordered = h.layers.slice().sort((a, b) => b.seq - a.seq);
+      const top = ordered[0].seq;
+      return {
+        no: h.no,
+        sf: h.sf,
+        cap: n(h.cap),
+        capPx: Math.round(h.cap * PX) + 'px',
+        remain: n(h.remain),
+        empty: n(h.empty),
+        layers: ordered.map((l) => {
+          const hPx = Math.max(30, l.loaded * PX);
+          const solidPx = l.rem === 0 ? 0 : Math.max(20, (l.rem / l.loaded) * hPx);
+          const depleted = l.rem === 0;
+          return {
+            vessel: l.v,
+            seqLabel: l.seq === top ? 'СЛОЙ ' + l.seq + ' · ВЕРХ' : 'СЛОЙ ' + l.seq,
+            hPx: Math.round(hPx) + 'px',
+            solidPx: Math.round(solidPx) + 'px',
+            bg: GHOST,
+            solid: depleted ? 'transparent' : h.cargo,
+            border: depleted ? '#B6C2CB' : h.cargo,
+            fg: depleted ? '#5E7182' : '#FFFFFF',
+            fgDim: depleted ? '#7A8A99' : 'rgba(255,255,255,0.82)',
+            seqFg: depleted ? '#7A8A99' : '#3E4B55',
+            remain: depleted ? 'списан' : n(l.rem)
+          };
+        })
+      };
+    });
+
+    const srcTotals = [
+      { name: 'ALISA V', tons: 8935.955, detail: 'трюмы №1, №2, №3, №5' },
+      { name: 'VLADIMIR', tons: 7725, detail: 'трюмы №1, №3, №4, №5' },
+      { name: 'YEKATERINA', tons: 7023, detail: 'трюмы №2, №3, №4 · в №5 списан' }
+    ];
+    const maxSrc = 8935.955;
+
+    return {
+      holds: holds,
+      onBoard: n(23683.955),
+      sources: srcTotals.map((s) => ({
+        name: s.name,
+        tons: n(s.tons),
+        detail: s.detail,
+        barW: ((s.tons / maxSrc) * 100).toFixed(1) + '%'
+      })),
+      history: [
+        { id: 'OGV-0042', date: '24.09.2026', hold: 3, tons: n(1177), alloc: [
+          { seq: 'СЛОЙ 3', vessel: 'YEKATERINA', tons: n(1177), state: 'остаток 23.000', stateFg: '#47596B' }
+        ] },
+        { id: 'OGV-0043', date: '25.09.2026', hold: 5, tons: n(824), alloc: [
+          { seq: 'СЛОЙ 3', vessel: 'YEKATERINA', tons: n(800), state: 'слой закрыт', stateFg: '#A5231B' },
+          { seq: 'СЛОЙ 2', vessel: 'VLADIMIR', tons: n(24), state: 'остаток 1 476.000', stateFg: '#47596B' }
+        ] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

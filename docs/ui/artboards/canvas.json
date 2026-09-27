@@ -1,0 +1,51 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-27T10:00:00Z" },
+  "title": "VesselAssistant — десктоп-интерфейс",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 980, "title": "1 · Load / Stowage Plan", "is_interactive": true, "radius": 10 },
+    "CargoLayers.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 980, "title": "2 · Слои груза (LIFO)", "is_interactive": true, "radius": 10 },
+    "Sof.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 980, "title": "3 · Statement of Facts", "radius": 10 },
+    "AddLot.dc.html": { "x": 0, "y": 1440, "w": 720, "h": 860, "title": "4 · Добавление партии + AT-05", "is_interactive": true, "radius": 10 },
+    "Discharge.dc.html": { "x": 800, "y": 1440, "w": 760, "h": 860, "title": "5 · Выгрузка: превью LIFO", "radius": 10 },
+    "Documents.dc.html": { "x": 1640, "y": 1440, "w": 1440, "h": 860, "title": "6 · Документы и ревизии", "radius": 10 },
+    "Reference.dc.html": { "x": 0, "y": 2720, "w": 1440, "h": 1000, "title": "7 · Справочники + Crane Correction", "radius": 10 },
+    "DesignSystem.dc.html": { "x": 1520, "y": 2720, "w": 1240, "h": 1560, "title": "8 · Дизайн-система", "radius": 10 }
+  },
+  "order": [
+    "Main.dc.html",
+    "CargoLayers.dc.html",
+    "Sof.dc.html",
+    "AddLot.dc.html",
+    "Discharge.dc.html",
+    "Documents.dc.html",
+    "Reference.dc.html",
+    "DesignSystem.dc.html"
+  ],
+  "notes": {
+    "t1": { "x": 0, "y": -300, "text": "Рабочие экраны рейса", "kind": "title1", "maxW": 4480 },
+    "t2": { "x": 0, "y": 1140, "text": "Ввод, операции, документы", "kind": "title1", "maxW": 3080 },
+    "t3": { "x": 0, "y": 2420, "text": "Справочники и дизайн-система", "kind": "title1", "maxW": 2760 },
+    "n1": {
+      "x": 4600,
+      "y": 0,
+      "w": 420,
+      "maxH": 620,
+      "fill": "red",
+      "text": "UX-аудит текущего MVP\n\n1. Три плоские вкладки на 7 экранов из ТЗ §10. Рейс выбирается <select> в топбаре — не видно судна, портов, дат.\n\n2. Ввод спрятан в раскрывающейся строке таблицы: трюм → «Add lot» → form-row из 5 инпутов. Таблица прыгает, контекст теряется.\n\n3. Открыт может быть только один трюм (expandedHoldId — строка), любое действие делает полный refresh() всего рейса.\n\n4. LIFO — главная бизнес-логика — показан текстовым <ul>. Оператор не видит, что именно спишется.\n\n5. AT-05 overload = window.confirm() без цифр вместимости и перегруза.\n\n6. Ошибки — сырой String(err): «Error: OVERLOAD:{...}» моноширинным шрифтом.\n\n7. max-width 1200px по центру: 10 числовых колонок жмутся, по краям пусто.",
+      "size": "s"
+    },
+    "n2": {
+      "x": 4600,
+      "y": 700,
+      "w": 420,
+      "maxH": 560,
+      "fill": "teal",
+      "text": "Решения в этом макете\n\n• Навигационный рельс на 7 разделов ТЗ §10 вместо трёх вкладок. Рейс — постоянный контекст в шапке.\n\n• Отдельный экран «Слои груза»: стек сверху вниз, цвет по грузу, остатки по судам-источникам (ТЗ §10, сейчас отсутствует).\n\n• Выгрузка показывает превью LIFO-списания ДО подтверждения: какой слой, сколько, что останется.\n\n• Overload — inline-панель с capacity, проекцией и перегрузом, а не алерт.\n\n• Плотная таблица на всю ширину + шкала заполнения к 98%.\n\n• IBM Plex Sans / Mono, tabular-nums, группировка разрядов: 23 683.955.\n\n• Все числа в макете — из fixtures/kavkaz-iv.ts, суммы сходятся.",
+      "size": "s"
+    }
+  },
+  "designSystems": []
+}
