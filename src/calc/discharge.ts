@@ -1,3 +1,4 @@
+import { InsufficientCargoError } from './errors';
 import type { DischargeAllocation, Layer } from './types';
 
 /**
@@ -5,7 +6,7 @@ import type { DischargeAllocation, Layer } from './types';
  * the most recently loaded lot (highest load_sequence) is on top and
  * is written off first. Mutates `layers[].remaining_tons` for the caller.
  *
- * Throws if total available cargo across active layers is less than `qty`.
+ * Throws `InsufficientCargoError` if active layers hold less than `qty`.
  */
 export function dischargeFromHold(
   operationId: string,
@@ -43,9 +44,7 @@ export function dischargeFromHold(
   }
 
   if (qtyLeft > 0) {
-    throw new Error(
-      `Insufficient cargo in hold ${holdId}: ${qtyLeft} tons short`,
-    );
+    throw new InsufficientCargoError(holdId, qtyLeft);
   }
 
   return allocations;

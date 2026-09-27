@@ -1,5 +1,6 @@
 import { normalizeTime, timeToMinutes } from '../calc/time';
 import type { Db } from './db';
+import { withVoyageGuard, type MutationOptions } from './voyageGuard';
 
 export interface SofEvent {
   id: string;
@@ -67,10 +68,10 @@ function validate(input: { event_date: string; time_from?: string | null; time_t
 export class SofService {
   constructor(private readonly db: Db) {}
 
-  async create(input: CreateSofEventInput): Promise<SofEvent> {
+  async create(input: CreateSofEventInput, opts?: MutationOptions): Promise<SofEvent> {
     const validated = validate(input);
     const id = crypto.randomUUID();
-    await this.db.execute(
+    await withVoyageGuard(this.db, input.voyage_id, opts, () => this.db.execute(
       `INSERT INTO sof_events (
          id, voyage_id, event_date, time_from, time_to,
          category, description, daily_qty, total_qty
@@ -86,7 +87,7 @@ export class SofService {
         input.daily_qty ?? null,
         input.total_qty ?? null,
       ],
-    );
+    ));
     return (await this.get(id))!;
   }
 
@@ -112,7 +113,7 @@ export class SofService {
     );
   }
 
-  async update(id: string, patch: UpdateSofEventInput): Promise<void> {
+  async update(id: string, patch: UpdateSofEventInput, opts?: MutationOptions): Promise<void> {
     const current = await this.get(id);
     if (!current) throw new Error(`SOF event ${id} not found`);
     const next = {
@@ -125,7 +126,7 @@ export class SofService {
       total_qty: patch.total_qty === undefined ? current.total_qty : patch.total_qty,
     };
     const validated = validate(next);
-    await this.db.execute(
+    await withVoyageGuard(this.db, current.voyage_id, opts, () => this.db.execute(
       `UPDATE sof_events
           SET event_date = ?, time_from = ?, time_to = ?,
               category = ?, description = ?, daily_qty = ?, total_qty = ?
@@ -140,10 +141,18 @@ export class SofService {
         next.total_qty,
         id,
       ],
-    );
+    ));
   }
 
-  async delete(id: string): Promise<void> {
-    await this.db.execute(`DELETE FROM sof_events WHERE id = ?`, [id]);
+  /** Deleting an unknown id is a no-op. */
+  async delete(id: string, opts?: MutationOptions): Promise<void> {
+    const [row] = await this.db.select<{ voyage_id: string }>(
+      `SELECT voyage_id FROM sof_events WHERE id = ?`,
+      [id],
+    );
+    if (!row) return;
+    await withVoyageGuard(this.db, row.voyage_id, opts, () =>
+      this.db.execute(`DELETE FROM sof_events WHERE id = ?`, [id]),
+    );
   }
 }

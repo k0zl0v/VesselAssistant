@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { KAVKAZ_IV_HOLDS } from '../../fixtures/kavkaz-iv';
 import { CargoLotService } from '../CargoLotService';
+import { AppError } from '../errors';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
+import type { BatchStatement, Db, SqlValue } from '../db';
 import type { NodeDb } from '../db-node';
 
 describe('OgvService — integration (AT-07 / AT-08 / AT-12)', () => {
@@ -142,7 +145,10 @@ describe('OgvService — integration (AT-07 / AT-08 / AT-12)', () => {
         voyage_id: voyageId, hold_id: holdId, tons: 5000,
         event_date: '2026-05-01',
       }),
-    ).rejects.toThrow(/Insufficient cargo/);
+    ).rejects.toMatchObject({
+      code: 'ogv.insufficient_cargo',
+      params: { hold_no: 1, short_tons: 2200 },
+    });
 
     // No operation row should exist; layers remain untouched.
     const ops = await db.select<{ count: number }>(
@@ -156,5 +162,83 @@ describe('OgvService — integration (AT-07 / AT-08 / AT-12)', () => {
       { source_vessel: 'DIANA MARIA', remaining_tons: 1600 },
       { source_vessel: 'VELES', remaining_tons: 1200 },
     ]);
+  });
+
+  it('hypothesis 11: a layer written between the read and the batch → batch.stale, discharge not applied', async () => {
+    // Another writer takes 1 t off VELES after discharge() has read the layers.
+    const racing: Db = {
+      execute: (sql: string, params?: SqlValue[]) => db.execute(sql, params),
+      select: <T>(sql: string, params?: SqlValue[]) => db.select<T>(sql, params),
+      transaction: <T>(fn: (tx: Db) => Promise<T>) => db.transaction(fn),
+      executeBatch: async (batch: BatchStatement[]) => {
+        await db.execute(
+          `UPDATE cargo_layers SET remaining_tons = remaining_tons - 1 WHERE voyage_id = ? AND source_vessel = 'VELES'`,
+          [voyageId],
+        );
+        return db.executeBatch(batch);
+      },
+    };
+
+    await expect(
+      new OgvService(racing).discharge({ voyage_id: voyageId, hold_id: holdId, tons: 500, event_date: '2026-05-01' }),
+    ).rejects.toMatchObject({ code: 'batch.stale' });
+
+    const [ops] = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM operations`);
+    const [allocs] = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM discharge_allocations`);
+    expect([ops!.c, allocs!.c]).toEqual([0, 0]);
+    expect(await ogv.availableBySource(voyageId)).toEqual([
+      { source_vessel: 'DIANA MARIA', remaining_tons: 1600 },
+      { source_vessel: 'VELES', remaining_tons: 1199 },
+    ]);
+  });
+});
+
+describe('OgvService — D6: insufficient cargo is a coded error (S-4 rejection)', () => {
+  let db: NodeDb;
+  let voyageId: string;
+  let holdIds: string[];
+
+  async function layerState(): Promise<{ id: string; remaining_tons: number; layer_status: string }[]> {
+    return db.select(`SELECT id, remaining_tons, layer_status FROM cargo_layers ORDER BY id`);
+  }
+
+  beforeEach(async () => {
+    db = await openTestDb();
+    const seed = await seedReferenceData(db, {
+      vesselName: 'NORD STAR',
+      holdNos: KAVKAZ_IV_HOLDS.map((h) => h.hold_no),
+    });
+    holdIds = seed.holdIds;
+    voyageId = (await new VoyageService(db, NOOP_AUTO_BACKUP).create({
+      vessel_id: seed.vesselId, voyage_no: 'NS-1',
+    })).id;
+    const lots = new CargoLotService(db);
+    for (const [i, h] of KAVKAZ_IV_HOLDS.entries()) {
+      await lots.add({
+        voyage_id: voyageId, source_vessel: 'BARGE', cargo_id: seed.cargoId,
+        hold_id: holdIds[i]!, sf: h.sf, planned_tons: h.loaded_tons, loaded_tons: h.loaded_tons,
+      });
+    }
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  it('4003 t from hold 3 (4002 t aboard) → ogv.insufficient_cargo { hold_no: 3, short_tons ≈ 1 }, layers untouched', async () => {
+    const hold3 = KAVKAZ_IV_HOLDS.findIndex((h) => h.hold_no === 3);
+    const before = await layerState();
+
+    const e = await new OgvService(db)
+      .discharge({ voyage_id: voyageId, hold_id: holdIds[hold3]!, tons: 4003, event_date: '2026-05-01' })
+      .then(() => new Error('promise resolved instead of rejecting'), (err: unknown) => err);
+
+    expect(e).toBeInstanceOf(AppError);
+    expect((e as AppError).code).toBe('ogv.insufficient_cargo');
+    expect((e as AppError).params.hold_no).toBe(3);
+    expect((e as AppError).params.short_tons).toBeCloseTo(1, 3);
+    expect(await layerState()).toEqual(before);
+    const [ops] = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM operations`);
+    expect(ops!.c).toBe(0);
   });
 });

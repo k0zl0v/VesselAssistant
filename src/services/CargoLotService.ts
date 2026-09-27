@@ -1,6 +1,8 @@
 import { wouldOverload } from '../calc/capacity';
 import type { Db } from './db';
-import type { AddLotInput, CargoLot } from './types';
+import { AppError } from './errors';
+import { PROTEIN_ALLOWED, type AddLotInput, type CargoLot } from './types';
+import { withVoyageGuard, type MutationOptions } from './voyageGuard';
 
 /**
  * Marker prefix for overload-guard errors (AT-05 / TZ §8 rule 2).
@@ -25,14 +27,18 @@ export class CargoLotService {
    * parameter row untouched — matching the original Excel which stores
    * one SF per hold.
    */
-  async add(input: AddLotInput): Promise<CargoLot> {
-    return await this.db.transaction(async (tx) => {
+  async add(input: AddLotInput, opts?: MutationOptions): Promise<CargoLot> {
+    const protein = input.protein_percent;
+    if (protein != null && !PROTEIN_ALLOWED.includes(protein)) {
+      throw new AppError('protein.invalid', { value: protein });
+    }
+    return withVoyageGuard(this.db, input.voyage_id, opts, () => this.db.transaction(async (tx) => {
       const vesselRows = await tx.select<{ vessel_id: string }>(
         `SELECT vessel_id FROM voyages WHERE id = ?`,
         [input.voyage_id],
       );
       const vesselId = vesselRows[0]?.vessel_id;
-      if (!vesselId) throw new Error(`voyage ${input.voyage_id} not found`);
+      if (!vesselId) throw new AppError('voyage.not_found', { voyage_id: input.voyage_id });
 
       // Overload guard (TZ §8 rule 2, AT-05). We check BEFORE inserting so a
       // refused lot doesn't pollute the layer table. The SF used here is the
@@ -45,7 +51,7 @@ export class CargoLotService {
       );
       const hold_volume_m3 = holdRows[0]?.volume_m3;
       if (hold_volume_m3 == null) {
-        throw new Error(`hold ${input.hold_id} not found`);
+        throw new AppError('hold.not_found', { hold_id: input.hold_id });
       }
       const remainRows = await tx.select<{ remain: number | null }>(
         `SELECT COALESCE(SUM(remaining_tons), 0) AS remain
@@ -148,7 +154,7 @@ export class CargoLotService {
         [lotId],
       );
       return rows[0]!;
-    });
+    }));
   }
 
   async listByVoyage(voyage_id: string): Promise<CargoLot[]> {

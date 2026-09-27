@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { dischargeFromHold } from '../discharge';
+import { InsufficientCargoError } from '../errors';
 import type { Layer } from '../types';
 
 const makeLayer = (overrides: Partial<Layer>): Layer => ({
@@ -94,6 +95,21 @@ describe('dischargeFromHold validation', () => {
     expect(() => dischargeFromHold('OP', 'H1', 200, layers)).toThrow(
       /Insufficient cargo in hold H1/,
     );
+  });
+
+  it('throws InsufficientCargoError carrying the hold and the deficit', () => {
+    const layers: Layer[] = [
+      makeLayer({ id: 'L1', loaded_tons: 4002, remaining_tons: 4002, load_sequence: 1 }),
+    ];
+    let caught: unknown;
+    try {
+      dischargeFromHold('OP', 'H1', 4003, layers);
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(InsufficientCargoError);
+    expect((caught as InsufficientCargoError).hold_id).toBe('H1');
+    expect((caught as InsufficientCargoError).short_tons).toBeCloseTo(1, 9);
   });
 
   it('ignores layers from other holds', () => {

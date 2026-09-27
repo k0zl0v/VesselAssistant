@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CargoLotService, OVERLOAD_ERROR_PREFIX } from '../CargoLotService';
+import { AppError } from '../errors';
+import { PROTEIN_ALLOWED } from '../types';
 import { VoyageService } from '../VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
@@ -278,5 +280,62 @@ describe('CargoLotService — integration', () => {
         hold_id: holdIds[0]!, sf: 0, planned_tons: 100, loaded_tons: 100,
       }),
     ).rejects.toThrow(/SF must be > 0/);
+  });
+
+  describe('error codes and FR-19 protein (fix 8, fix 9)', () => {
+    async function codeOf(p: Promise<unknown>): Promise<AppError> {
+      const e = await p.then(() => new Error('promise resolved instead of rejecting'), (err: unknown) => err);
+      expect(e).toBeInstanceOf(AppError);
+      return e as AppError;
+    }
+
+    async function countRows(table: 'cargo_lots' | 'hold_cargo_parameters'): Promise<number> {
+      const [row] = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM ${table}`);
+      return row!.c;
+    }
+
+    it('unknown voyage → voyage.not_found with the voyage id', async () => {
+      const e = await codeOf(lots.add({
+        voyage_id: 'no-such-voyage', source_vessel: 'X', cargo_id: cargoId,
+        hold_id: holdIds[0]!, sf: 1.25, planned_tons: 100, loaded_tons: 100,
+      }));
+      expect(e.code).toBe('voyage.not_found');
+      expect(e.params).toEqual({ voyage_id: 'no-such-voyage' });
+    });
+
+    it('unknown hold → hold.not_found with the hold id', async () => {
+      const e = await codeOf(lots.add({
+        voyage_id: voyageId, source_vessel: 'X', cargo_id: cargoId,
+        hold_id: 'no-such-hold', sf: 1.25, planned_tons: 100, loaded_tons: 100,
+      }));
+      expect(e.code).toBe('hold.not_found');
+      expect(e.params).toEqual({ hold_id: 'no-such-hold' });
+    });
+
+    it.each([12.0, 99.9])('S-1 rejection: protein %s → protein.invalid, nothing inserted', async (value) => {
+      const e = await codeOf(lots.add({
+        voyage_id: voyageId, source_vessel: 'VELES', cargo_id: cargoId,
+        hold_id: holdIds[0]!, sf: 1.25, planned_tons: 100, loaded_tons: 100,
+        protein_percent: value,
+      }));
+      expect(e.code).toBe('protein.invalid');
+      expect(e.params).toEqual({ value });
+      expect(await countRows('cargo_lots')).toBe(0);
+      expect(await countRows('hold_cargo_parameters')).toBe(0);
+    });
+
+    it.each(PROTEIN_ALLOWED)('protein %s is stored on the lot and on hold_cargo_parameters', async (value) => {
+      const lot = await lots.add({
+        voyage_id: voyageId, source_vessel: 'VELES', cargo_id: cargoId,
+        hold_id: holdIds[0]!, sf: 1.25, planned_tons: 100, loaded_tons: 100,
+        protein_percent: value,
+      });
+      expect(lot.protein_percent).toBe(value);
+      const [param] = await db.select<{ protein_percent: number }>(
+        `SELECT protein_percent FROM hold_cargo_parameters WHERE voyage_id = ? AND hold_id = ?`,
+        [voyageId, holdIds[0]!],
+      );
+      expect(param!.protein_percent).toBe(value);
+    });
   });
 });

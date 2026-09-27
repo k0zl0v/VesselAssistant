@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AppError } from '../errors';
+import { SessionService } from '../SessionService';
 import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
@@ -150,5 +152,61 @@ describe('SofService — integration', () => {
     await sof.delete(ev.id);
     const list = await sof.list(voyageId);
     expect(list).toHaveLength(0);
+  });
+
+  describe('S-14: correcting a closed voyage', () => {
+    let lateEventId: string;
+
+    beforeEach(async () => {
+      await sof.create({
+        voyage_id: voyageId, event_date: '2026-05-01', time_from: '22:00', time_to: '24:00',
+      });
+      lateEventId = (
+        await sof.create({ voyage_id: voyageId, event_date: '2026-05-02', time_from: '00:00', time_to: '04:00' })
+      ).id;
+      await new VoyageService(db, NOOP_AUTO_BACKUP).close(voyageId);
+    });
+
+    it('supervisor with a reason changes time_to; audit keeps old/new/user/role/reason', async () => {
+      await new SessionService(db).start({ operator_name: 'Olga Supervisor', operator_role: 'supervisor' });
+
+      await sof.update(lateEventId, { time_to: '03:30' }, { closed_voyage_reason: 'clock drift on the log' });
+
+      expect((await sof.get(lateEventId))!.time_to).toBe('03:30');
+      const voyage = await new VoyageService(db, NOOP_AUTO_BACKUP).get(voyageId);
+      expect(voyage!.status).toBe('closed');
+      const [entry] = await db.select<{
+        old_value: string; new_value: string; user_id: string; user_role: string; reason: string;
+      }>(
+        `SELECT old_value, new_value, user_id, user_role, reason FROM audit_log
+          WHERE entity_type = 'sof_events' AND entity_id = ? AND action = 'update'`,
+        [lateEventId],
+      );
+      expect(JSON.parse(entry!.old_value!).time_to).toBe('04:00');
+      expect(JSON.parse(entry!.new_value!).time_to).toBe('03:30');
+      expect(entry).toMatchObject({
+        user_id: 'Olga Supervisor',
+        user_role: 'supervisor',
+        reason: 'clock drift on the log',
+      });
+    });
+
+    it('supervisor without a reason → voyage.closed_reason_required, event keeps 04:00', async () => {
+      await new SessionService(db).start({ operator_name: 'Olga Supervisor', operator_role: 'supervisor' });
+
+      await expect(sof.update(lateEventId, { time_to: '03:30' })).rejects.toMatchObject({
+        code: 'voyage.closed_reason_required',
+      });
+      expect((await sof.get(lateEventId))!.time_to).toBe('04:00');
+    });
+
+    it('operator, even with a reason → voyage.closed, event keeps 04:00', async () => {
+      const e = await sof
+        .update(lateEventId, { time_to: '03:30' }, { closed_voyage_reason: 'clock drift on the log' })
+        .then(() => new Error('promise resolved instead of rejecting'), (err: unknown) => err);
+      expect(e).toBeInstanceOf(AppError);
+      expect((e as AppError).code).toBe('voyage.closed');
+      expect((await sof.get(lateEventId))!.time_to).toBe('04:00');
+    });
   });
 });
