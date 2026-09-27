@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AutoBackupTrigger } from '../AutoBackupService';
 import { CargoLotService } from '../CargoLotService';
-import { isAppError } from '../errors';
+import { AppError, isAppError } from '../errors';
 import { OgvService } from '../OgvService';
 import { VoyageService } from '../VoyageService';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData } from './helpers';
 import type { NodeDb } from '../db-node';
-import type { BatchStatement, SqlValue } from '../db';
+import type { SqlValue } from '../db';
 
 describe('VoyageService — integration', () => {
   let db: NodeDb;
@@ -208,61 +208,65 @@ describe('VoyageService — integration', () => {
       expect(isAppError(err) && [err.code, err.params]).toEqual(['voyage.not_found', { voyage_id: 'missing' }]);
     });
 
-    it('the executeBatch that copy() now uses is all-or-nothing: a failing statement mid-batch leaves no partial voyage row', async () => {
-      // copy() migrated off db.transaction onto executeBatch (docs/adr/0002-atomic-writes-execute-batch.md);
-      // this drives the same batch shape directly against executeBatch, not through copy().
+    it('copy() itself is atomic: a mid-batch failure injected via a spy on executeBatch leaves no partial voyage or hold_cargo_parameters row', async () => {
       const sourceId = await seedSourceVoyage();
-      const source = (await svc.get(sourceId))!;
-      const params = await db.select<{
-        vessel_id: string;
-        hold_id: string;
-        cargo_id: string;
-        protein_percent: number | null;
-        sf: number;
-        fill_percent: number;
-      }>(
-        `SELECT vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent FROM hold_cargo_parameters WHERE voyage_id = ?`,
+      const priorParams = await db.select<{ id: string }>(
+        `SELECT id FROM hold_cargo_parameters WHERE voyage_id = ?`,
         [sourceId],
       );
-      expect(params.length).toBeGreaterThanOrEqual(2); // need >1 row to prove an EARLIER hcp insert is rolled back too
+      expect(priorParams.length).toBeGreaterThanOrEqual(2); // need >1 row to prove an EARLIER hcp insert is rolled back too
 
-      const copyId = crypto.randomUUID();
-      const now = new Date().toISOString();
-      const markerVoyageNo = 'V-ATOMIC-FAIL';
+      let capturedCopyId: string | undefined;
+      const realExecuteBatch = db.executeBatch.bind(db);
+      const spy = vi.spyOn(db, 'executeBatch').mockImplementation(async (batch) => {
+        capturedCopyId = batch[0]!.params[0] as string;
+        // Force the same failure copy() would hit on a stale read: an impossible
+        // expectRowsAffected on the LAST statement, so every earlier INSERT already ran.
+        const tampered = batch.map((stmt, i) =>
+          i === batch.length - 1 ? { ...stmt, expectRowsAffected: 999 } : stmt,
+        );
+        return realExecuteBatch(tampered);
+      });
 
-      const batch: BatchStatement[] = [
-        {
-          sql: `INSERT INTO voyages (
-                 id, vessel_id, voyage_no,
-                 loading_port_id, discharging_port_id, status,
-                 created_at, updated_at
-               ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
-          params: [copyId, source.vessel_id, markerVoyageNo, source.loading_port_id, source.discharging_port_id, now, now],
-        },
-        ...params.map((p, i) => {
-          // A single-row INSERT always affects 1 row, so `expectRowsAffected: 2` on the last
-          // statement forces `batch.stale` only after every earlier statement already ran.
-          const lastStatementOverride = i === params.length - 1 ? { expectRowsAffected: 2 } : {};
-          return {
-            sql: `INSERT INTO hold_cargo_parameters
-                  (id, voyage_id, vessel_id, hold_id, cargo_id, protein_percent, sf, fill_percent)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            params: [crypto.randomUUID(), copyId, p.vessel_id, p.hold_id, p.cargo_id, p.protein_percent, p.sf, p.fill_percent],
-            ...lastStatementOverride,
-          };
-        }),
-      ];
-
-      const err = await db.executeBatch(batch).then(
+      const err = await svc.copy(sourceId, 'V-ATOMIC-FAIL').then(
         () => null,
         (e: unknown) => e,
       );
-      expect(isAppError(err) && err.code).toBe('batch.stale');
+      spy.mockRestore();
 
-      const leftover = await db.select(`SELECT * FROM voyages WHERE voyage_no = ?`, [markerVoyageNo]);
-      expect(leftover).toEqual([]);
-      const leftoverParams = await db.select(`SELECT * FROM hold_cargo_parameters WHERE voyage_id = ?`, [copyId]);
-      expect(leftoverParams).toEqual([]);
+      expect(isAppError(err) && err.code).toBe('batch.stale');
+      expect(await db.select(`SELECT * FROM voyages WHERE id = ?`, [capturedCopyId!])).toEqual([]);
+      expect(
+        await db.select(`SELECT * FROM hold_cargo_parameters WHERE voyage_id = ?`, [capturedCopyId!]),
+      ).toEqual([]);
+    });
+
+    it('known-bad pole: a non-atomic executeBatch stand-in DOES leave a partial voyage row, proving the assertion above has teeth', async () => {
+      const sourceId = await seedSourceVoyage();
+
+      let capturedCopyId: string | undefined;
+      const spy = vi.spyOn(db, 'executeBatch').mockImplementation(async (batch) => {
+        capturedCopyId = batch[0]!.params[0] as string;
+        // Simulate the exact defect executeBatch (docs/adr/0002-atomic-writes-execute-batch.md)
+        // exists to rule out: statements committed one at a time, no rollback on a later failure.
+        for (const [i, stmt] of batch.entries()) {
+          if (i === batch.length - 1) throw new AppError('batch.stale', {});
+          await db.execute(stmt.sql, stmt.params);
+        }
+        return [];
+      });
+
+      const err = await svc.copy(sourceId, 'V-NONATOMIC-FAIL').then(
+        () => null,
+        (e: unknown) => e,
+      );
+      spy.mockRestore();
+
+      expect(isAppError(err) && err.code).toBe('batch.stale');
+      const leftover = await db.select(`SELECT * FROM voyages WHERE id = ?`, [capturedCopyId!]);
+      expect(leftover).not.toEqual([]); // the known-bad pole: a partial row survives
+
+      await db.execute(`DELETE FROM voyages WHERE id = ?`, [capturedCopyId!]); // clean up this test's own deliberately-broken write
     });
   });
 });
