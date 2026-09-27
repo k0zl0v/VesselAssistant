@@ -33,12 +33,11 @@ jobs:
         with:
           filters: |
             rust:
-              - 'src-tauri/**'
-              - 'src/services/db-*.ts'
-              - 'src/services/__tests__/fixtures/batch-cases.json'
-              - 'e2e-smoke/**'
-              - 'package-lock.json'
-              - '.github/workflows/ci.yml'
+              - '**'
+              - '!**/*.md'
+              - '!.claude/**'
+              - '!.vscode/**'
+              - '!.gitignore'
 
   web:
     runs-on: ubuntu-latest
@@ -93,7 +92,9 @@ jobs:
         shell: bash
         env:
           CAPABILITIES_REF: ${{ inputs.capabilities_ref }}
-        run: git checkout "$CAPABILITIES_REF" -- src-tauri/capabilities/default.json
+        run: |
+          git fetch --depth=1 origin "$CAPABILITIES_REF"
+          git checkout FETCH_HEAD -- src-tauri/capabilities/default.json
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}

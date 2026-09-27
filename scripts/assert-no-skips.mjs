@@ -8,8 +8,8 @@ Each report is detected by content:
   Vitest --reporter=json      numTotalTests + testResults[].assertionResults[]
   Playwright --reporter=json  stats + suites[]
   cargo test log              every "test result: ... N ignored ..." line
-exit 0  every report ran >= 1 test, none skipped/todo/pending/ignored
-exit 1  a skip, or a report that ran 0 tests
+exit 0  every report ran >= 1 test, none skipped/todo/pending/ignored, no cargo test failed
+exit 1  a skip, a cargo test failure, or a report that ran 0 tests
 exit 2  no arguments, unreadable file, unrecognised format`;
 
 const NOT_RUN = new Set(['skipped', 'pending', 'todo', 'disabled']);
@@ -51,7 +51,7 @@ function checkCargo(text) {
     ran += Number(passed) + Number(failed);
     if (Number(ignored) > 0) skipped.push(line);
     // A skip is "checked nothing"; a failure is worse — it checked and it's red. Same
-    // gate (a non-empty `skipped` fails the run in `main` below), cargo-only.
+    // gate (a non-empty `skipped` fails the run in the top-level loop below), cargo-only.
     if (Number(failed) > 0) skipped.push(`${failed} failed: ${line}`);
   }
   return { kind: 'cargo', ran, skipped, results: results.length };
@@ -98,7 +98,7 @@ for (const path of paths) {
     failed = true;
   }
   if (result.skipped.length > 0) {
-    console.error(`assert-no-skips: ${path} (${result.kind}) has ${result.skipped.length} not-run test(s):`);
+    console.error(`assert-no-skips: ${path} (${result.kind}) has ${result.skipped.length} problem(s) (skip and/or failure):`);
     for (const s of result.skipped) console.error(`  ${s}`);
     failed = true;
   }
