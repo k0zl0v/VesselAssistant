@@ -99,6 +99,9 @@ describe('AddLotForm', () => {
     await enterLot('B', '285');
 
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(confirm).toHaveBeenCalledWith(
+      'Эта погрузка превышает 98% вместимости на 1 т. Продолжить?',
+    );
     expect(submitted).toHaveLength(1);
     expect(submitted[0]!.acknowledge_overload).toBeUndefined();
     expect(await lotsIn(seed.holdIds[0]!)).toEqual([{ source_vessel: 'A', loaded_tons: 500 }]);
@@ -112,6 +115,9 @@ describe('AddLotForm', () => {
 
     await vi.waitFor(() => expect(submitted).toHaveLength(2));
     expect(confirm).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledWith(
+      'Эта погрузка превышает 98% вместимости на 1 т. Продолжить?',
+    );
     expect(submitted[1]!.acknowledge_overload).toBe(true);
     expect(await lotsIn(seed.holdIds[0]!)).toEqual([
       { source_vessel: 'A', loaded_tons: 500 },

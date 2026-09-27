@@ -15,6 +15,10 @@ test('S-4: OGV discharge recalculates the load plan; a short hold is rejected wh
   const layersBefore = await layers();
 
   await page.getByTestId('hold-expand-3').click();
+  await expect(holdCell(page, 3, 'hold-sf')).toHaveText('1.440');
+  await expect(holdCell(page, 3, 'hold-remain')).toHaveText('4002.000');
+  await expect(page.getByTestId('hold-lot-1')).toContainText('SFM');
+  await expect(page.getByTestId('hold-lot-1')).toContainText('BARGE 3');
   await page.getByTestId('hold-action-discharge').click();
   await page.getByTestId('discharge-tons').fill('4003');
   await page.getByTestId('discharge-submit').click();

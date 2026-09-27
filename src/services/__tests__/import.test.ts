@@ -87,6 +87,17 @@ describe('ImportService — Appendix C load plan xlsx', () => {
       expect(Math.abs(got!.remain_tons - expected.expected.remain_tons))
         .toBeLessThan(TOLERANCE);
     }
+
+    // S-12: the discharge operations the import produced (from the bottom-of-sheet
+    // aggregate cells) actually exist in `operations`, with the file's tonnage —
+    // not just reconstructable after the fact from CalculationService totals.
+    expect(
+      await db.select<{ tons: number }>(
+        `SELECT o.tons FROM operations o JOIN holds h ON h.id = o.source_hold
+          WHERE o.voyage_id = ? ORDER BY h.hold_no`,
+        [voyage_id],
+      ),
+    ).toEqual([{ tons: 1177 }, { tons: 824 }]);
   });
 
   describe('auto-backup before applyImport (FR-14)', () => {
