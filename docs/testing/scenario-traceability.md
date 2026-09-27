@@ -38,6 +38,12 @@
 | S-13. Закрытие рейса и режим только для чтения | `e2e`, приоритет | FR-01, FR-09, FR-10, FR-14 | покрыт | `e2e/specs/s-13-close-voyage.spec.ts` — `S-13: closing asks first, snapshots, audits, and leaves the voyage read-only` | — |
 | S-14. Корректировка закрытого рейса ролью с правом | `service+SQLite` | FR-01, FR-07, FR-10 | покрыт | `src/services/__tests__/sof.test.ts` — `supervisor with a reason changes time_to; audit keeps old/new/user/role/reason`, `supervisor without a reason → voyage.closed_reason_required, event keeps 04:00`, `operator, even with a reason → voyage.closed, event keeps 04:00` | — |
 
+## Требования вне сценариев
+
+Пункт FR-10 «Журнал аудита рейса экспортируется» не описан ни одним сценарием. Сценарии S-1, S-13 и S-14 проверяют запись в журнал, а не его выгрузку. Поэтому их строки в таблице не меняются.
+
+Экспорт проверяет `src/services/__tests__/audit-export.test.ts` на уровне `service+SQLite`: методы `AuditLogService.listForVoyage` и `DocumentEngine.generateAuditLog`. В выгрузку попадают записи только этого рейса, включая `discharge_allocations` удалённой операции. Записи второго рейса и `crane_coefficients` в неё не попадают. У каждой строки заполнены оператор, роль, причина, время и сущность. Кнопку `AuditExportButton` автотест не покрывает: как и `ExportButton`, она вызывает Tauri-плагины `dialog`/`fs`.
+
 ## Итог
 
 12 из 14 — `покрыт`, 2 — `частично` (S-9, S-12), 0 — `не покрыт`. S-3 закрыт FIX pass 4 (review round 3, blocking finding 3): `HoldTable` теперь помечает трюм без SF отдельным i18n-ключом `holds.error.no_sf` и классом `error`, а не нейтральным `—`. Оставшиеся два пробела частичного покрытия существовали до этой ветки и не входят в список дефектов, которые она закрывает (`Plans/01` § «Классификация: дефект vs. отложенная фича»).

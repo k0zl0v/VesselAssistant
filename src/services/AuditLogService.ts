@@ -65,6 +65,36 @@ export class AuditLogService {
     return await this.db.select<AuditEntry>(sql, params);
   }
 
+  /**
+   * The audit trail of one voyage, oldest first (FR-10 export). `crane_coefficients` is shared
+   * reference data and is left out. Allocations are matched through the operation ids the log
+   * itself recorded for the voyage, so rows survive a deleted operation (a backup restore).
+   */
+  async listForVoyage(voyage_id: string, opts: { limit?: number } = {}): Promise<AuditEntry[]> {
+    const params: SqlValue[] = Array<SqlValue>(4).fill(voyage_id);
+    let sql = `WITH voyage_ops(id) AS (
+         SELECT id FROM operations WHERE voyage_id = ?
+         UNION
+         SELECT entity_id FROM audit_log
+          WHERE entity_type = 'operations'
+            AND ? IN (json_extract(old_value, '$.voyage_id'), json_extract(new_value, '$.voyage_id'))
+       )
+       SELECT id, entity_type, entity_id, action, old_value, new_value, user_id, user_role, reason, created_at
+         FROM audit_log
+        WHERE (entity_type = 'voyages' AND entity_id = ?)
+           OR (entity_type IN ('cargo_lots', 'cargo_layers', 'operations', 'sof_events', 'hold_cargo_parameters')
+               AND ? IN (json_extract(old_value, '$.voyage_id'), json_extract(new_value, '$.voyage_id')))
+           OR (entity_type = 'discharge_allocations'
+               AND (json_extract(old_value, '$.operation_id') IN (SELECT id FROM voyage_ops)
+                    OR json_extract(new_value, '$.operation_id') IN (SELECT id FROM voyage_ops)))
+        ORDER BY created_at, id`;
+    if (opts.limit !== undefined) {
+      sql += ` LIMIT ?`;
+      params.push(opts.limit);
+    }
+    return await this.db.select<AuditEntry>(sql, params);
+  }
+
   /** Distinct entity_type values currently present in the log. */
   async listEntityTypes(): Promise<string[]> {
     const rows = await this.db.select<{ entity_type: string }>(

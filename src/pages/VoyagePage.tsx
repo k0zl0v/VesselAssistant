@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AuditExportButton } from '../components/AuditExportButton';
 import { ExportButton } from '../components/ExportButton';
 import { HoldTable } from '../components/HoldTable';
 import { NewVoyageForm } from '../components/NewVoyageForm';
@@ -243,6 +244,13 @@ export function VoyagePage() {
             <div className="voyage-actions">
               {selectedVessel && (
                 <ExportButton
+                  voyage_id={selected.id}
+                  voyage_no={selected.voyage_no}
+                  vessel_name={selectedVessel.name}
+                />
+              )}
+              {selectedVessel && (
+                <AuditExportButton
                   voyage_id={selected.id}
                   voyage_no={selected.voyage_no}
                   vessel_name={selectedVessel.name}

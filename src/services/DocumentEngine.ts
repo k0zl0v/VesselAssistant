@@ -1,5 +1,7 @@
 import ExcelJS from 'exceljs';
+import { AuditLogService } from './AuditLogService';
 import { CalculationService } from './CalculationService';
+import { AppError } from './errors';
 import { SofService } from './SofService';
 import type { Db } from './db';
 import type { Voyage } from './types';
@@ -74,23 +76,78 @@ export class DocumentEngine {
     // ── Sheet 4: CRANE CORR. ─────────────────────────────────────────
     await this.buildCraneCorrSheet(wb);
 
-    // Critical: assert no formulas leaked in across ALL sheets.
-    wb.eachSheet((sheet) => {
-      sheet.eachRow((row) => {
-        row.eachCell((cell) => {
-          if (
-            cell.value !== null &&
-            typeof cell.value === 'object' &&
-            'formula' in (cell.value as object)
-          ) {
-            throw new Error(
-              `Cell ${sheet.name}!${cell.address} contains a formula — exports must be values only`,
-            );
-          }
-        });
-      });
+    assertNoFormulas(wb);
+    const buffer = await wb.xlsx.writeBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  /** FR-10: one voyage's audit trail as a single-sheet XLSX, raw JSON snapshots kept verbatim. */
+  async generateAuditLog(voyage_id: string): Promise<Uint8Array> {
+    const [voyage] = await this.db.select<{ voyage_no: string; vessel_name: string }>(
+      `SELECT v.voyage_no AS voyage_no, vs.name AS vessel_name
+         FROM voyages v JOIN vessels vs ON vs.id = v.vessel_id
+        WHERE v.id = ?`,
+      [voyage_id],
+    );
+    if (!voyage) throw new AppError('voyage.not_found', { voyage_id });
+    const entries = await new AuditLogService(this.db).listForVoyage(voyage_id);
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'VesselAssistant';
+    wb.created = new Date();
+    const sheet = wb.addWorksheet(safeSheetName('AUDIT LOG'));
+    sheet.columns = [
+      { width: 20 }, // Time
+      { width: 22 }, // Entity
+      { width: 38 }, // Entity ID
+      { width: 8 },  // Action
+      { width: 16 }, // Operator
+      { width: 12 }, // Role
+      { width: 28 }, // Reason
+      { width: 60 }, // Old value
+      { width: 60 }, // New value
+    ];
+
+    sheet.getCell('A1').value = `Audit log — m/v ${voyage.vessel_name}, Voyage No ${voyage.voyage_no}`;
+    sheet.getCell('A1').font = { bold: true, size: 14 };
+    sheet.getCell('A2').value = `Generated: ${new Date().toISOString()}`;
+
+    const HEADER_ROW = 4;
+    const headers = [
+      'Time',
+      'Entity',
+      'Entity ID',
+      'Action',
+      'Operator',
+      'Role',
+      'Reason',
+      'Old value',
+      'New value',
+    ];
+    headers.forEach((label, i) => {
+      const cell = sheet.getCell(HEADER_ROW, i + 1);
+      cell.value = label;
+      cell.font = { bold: true };
+      cell.fill = HEADER_FILL;
+      cell.alignment = { horizontal: 'left' };
+      cell.border = { bottom: { style: 'thin' } };
     });
 
+    entries.forEach((e, i) => {
+      sheet.getRow(HEADER_ROW + 1 + i).values = [
+        e.created_at,
+        e.entity_type,
+        e.entity_id,
+        e.action,
+        e.user_id ?? '',
+        e.user_role ?? '',
+        e.reason ?? '',
+        e.old_value ?? '',
+        e.new_value ?? '',
+      ];
+    });
+
+    assertNoFormulas(wb);
     const buffer = await wb.xlsx.writeBuffer();
     return new Uint8Array(buffer);
   }
@@ -434,6 +491,25 @@ export class DocumentEngine {
       rowNum++;
     }
   }
+}
+
+/** Last-line defence: exports carry values only, never formulas (TZ §6 FR-22). */
+function assertNoFormulas(wb: ExcelJS.Workbook): void {
+  wb.eachSheet((sheet) => {
+    sheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        if (
+          cell.value !== null &&
+          typeof cell.value === 'object' &&
+          'formula' in (cell.value as object)
+        ) {
+          throw new Error(
+            `Cell ${sheet.name}!${cell.address} contains a formula — exports must be values only`,
+          );
+        }
+      });
+    });
+  });
 }
 
 /** Excel sheet name limits: max 31 chars, no [ ] : * ? / \ */

@@ -298,6 +298,9 @@ export const ru: Dict = {
   'audit.col.user': 'Пользователь',
   'audit.col.role': 'Роль',
   'audit.col.reason': 'Причина',
+  'audit.export.dialog.title': 'Сохранить журнал аудита рейса',
+  'audit.export.button': 'Экспорт журнала аудита (XLSX)',
+  'audit.export.exporting': 'Экспорт…',
 
   // Export
   'export.dialog.title': 'Сохранить Load Plan',

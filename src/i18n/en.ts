@@ -294,6 +294,9 @@ export const en = {
   'audit.col.user': 'User',
   'audit.col.role': 'Role',
   'audit.col.reason': 'Reason',
+  'audit.export.dialog.title': 'Save voyage audit log',
+  'audit.export.button': 'Export audit log (XLSX)',
+  'audit.export.exporting': 'Exporting…',
 
   // Export
   'export.dialog.title': 'Save Load Plan',
