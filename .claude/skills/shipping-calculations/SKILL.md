@@ -158,7 +158,7 @@ Aggregates that must hold within tolerance 0.001:
 
 `wouldOverload` in `src/calc/capacity.ts` is the predicate for AT-05 / TZ §8 rule 2. It returns `{ capacity_tons, projected_remain_tons, overshoot_tons, overloads }`. `CargoLotService.add` calls it BEFORE inserting the lot and throws `OVERLOAD:<json>` when overshooting unless `acknowledge_overload: true` is set. The 1e-6 fp tolerance prevents false positives on exact-fit lots.
 
-UI side: `AddLotForm` catches the `OVERLOAD:` prefix, parses the JSON payload, shows `confirm("This load exceeds 98% capacity by X t. Continue anyway?")`, and re-submits with the acknowledge flag on yes.
+UI side: `AddLotForm` catches the `OVERLOAD:` prefix, parses the JSON payload, shows a localized confirm dialog via `t('lot.confirm.overload', { hold_no, capacity, overshoot })` (`src/i18n/en.ts`/`ru.ts`), and re-submits with the acknowledge flag on yes.
 
 ## Common pitfalls
 

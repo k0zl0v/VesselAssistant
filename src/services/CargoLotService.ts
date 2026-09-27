@@ -7,8 +7,8 @@ import { withVoyageGuard, type MutationOptions } from './voyageGuard';
 /**
  * Marker prefix for overload-guard errors (AT-05 / TZ §8 rule 2).
  * The full message is `OVERLOAD:<json>` where `<json>` carries the
- * OverloadCheckResult plus `hold_id` so the UI can show a concrete
- * overshoot figure and offer "Continue anyway?".
+ * OverloadCheckResult plus `hold_id` so the UI can show a localized
+ * confirm dialog via `t('lot.confirm.overload', ...)`.
  */
 export const OVERLOAD_ERROR_PREFIX = 'OVERLOAD:';
 
