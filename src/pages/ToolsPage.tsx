@@ -2,23 +2,18 @@ import { BackupPanel } from '../components/BackupPanel';
 import { ImportPanel } from '../components/ImportPanel';
 import { useT } from '../i18n';
 import { PageHeader } from '../shell/PageHeader';
+import '../styles/tools.css';
 
 export function ToolsPage() {
   const t = useT();
   return (
     <>
-      <PageHeader title={t('nav.tools')} meta={t('tools.intro')} />
+      <PageHeader title={t('nav.tools')} meta={t('tools.meta')} />
       <div className="page-body">
-
-      <section className="reference-block">
-        <h2>{t('tools.backup_section')}</h2>
-        <BackupPanel />
-      </section>
-
-      <section className="reference-block">
-        <h2>{t('tools.import_section')}</h2>
-        <ImportPanel />
-      </section>
+        <div className="tools-grid">
+          <BackupPanel />
+          <ImportPanel />
+        </div>
       </div>
     </>
   );

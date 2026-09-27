@@ -186,6 +186,11 @@
   --refs-calc-width: 306px;   /* «Пересчёт веса» side panel */
   --refs-calc-narrow: 116px;  /* side / date selects in the calculator */
   --text-result: 23px;        /* corrected weight on the chrome tile */
+
+  /* ---- Экран: tools ---- */
+  --tools-backup-col: 400px; /* backup card: narrow fixed column, import preview takes the rest */
+  --audit-diff-gap: 14px;
+  --audit-diff-width: 42%; /* the diff is the content; the other columns size to theirs */
 }
 
 /* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,

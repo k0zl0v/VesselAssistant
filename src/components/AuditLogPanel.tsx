@@ -1,171 +1,199 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getDb } from '../db';
-import { formatTons } from '../calc/round';
-import { useT } from '../i18n';
-import {
-  AuditLogService,
-  type AuditEntry,
-} from '../services/AuditLogService';
+import { useT, type StringKey } from '../i18n';
+import { describeError } from '../i18n/errors';
+import { AuditLogService, type AuditEntry } from '../services/AuditLogService';
+import { AuditDiff } from './tools/AuditDiff';
+import { formatAuditTime, shortId } from './tools/auditFormat';
+import { EmptyState, ErrorState, Skeleton } from './ui/states';
+import '../styles/tools.css';
 
-/** Compact rendering of a single value from a JSON snapshot. */
-function fmtValue(v: unknown): string {
-  if (v === null || v === undefined) return '∅';
-  if (typeof v === 'number') return formatTons(v);
-  if (typeof v === 'boolean') return v ? 'true' : 'false';
-  return String(v);
-}
+export const AUDIT_LIMIT = 200;
 
-const MAX_DIFF_CHARS = 160;
+const ENTITY_LABELS: Record<string, StringKey> = {
+  voyages: 'audit.entity.voyages',
+  cargo_lots: 'audit.entity.cargo_lots',
+  cargo_layers: 'audit.entity.cargo_layers',
+  operations: 'audit.entity.operations',
+  discharge_allocations: 'audit.entity.discharge_allocations',
+  hold_cargo_parameters: 'audit.entity.hold_cargo_parameters',
+  crane_coefficients: 'audit.entity.crane_coefficients',
+  sof_events: 'audit.entity.sof_events',
+};
 
-function truncate(s: string): string {
-  return s.length <= MAX_DIFF_CHARS ? s : s.slice(0, MAX_DIFF_CHARS - 1) + '…';
-}
+const ACTION_CHIP: Record<AuditEntry['action'], string> = {
+  insert: 'chip chip-positive',
+  update: 'chip chip-accent',
+  delete: 'chip chip-danger',
+};
 
-function safeParse(json: string | null): Record<string, unknown> | null {
-  if (json === null) return null;
-  try {
-    const parsed = JSON.parse(json);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
+const ROLE_LABELS: Record<string, StringKey> = {
+  operator: 'session.role.operator',
+  supervisor: 'session.role.supervisor',
+  admin: 'session.role.admin',
+  viewer: 'session.role.viewer',
+};
 
-function summarizeInsert(json: string | null): string {
-  const obj = safeParse(json);
-  if (!obj) return '—';
-  const parts: string[] = [];
-  for (const [k, v] of Object.entries(obj)) {
-    if (k === 'id') continue;
-    if (v === null || v === undefined) continue;
-    parts.push(`${k}: ${fmtValue(v)}`);
-  }
-  return truncate(parts.join(', ')) || '(empty)';
-}
-
-function summarizeUpdate(oldJson: string | null, newJson: string | null): string {
-  const oldObj = safeParse(oldJson) ?? {};
-  const newObj = safeParse(newJson) ?? {};
-  const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-  const diffs: string[] = [];
-  for (const k of keys) {
-    if (k === 'id') continue;
-    const before = oldObj[k] ?? null;
-    const after = newObj[k] ?? null;
-    if (before === after) continue;
-    // For numbers, also treat near-equal as equal after formatting.
-    if (
-      typeof before === 'number' &&
-      typeof after === 'number' &&
-      formatTons(before) === formatTons(after)
-    ) {
-      continue;
-    }
-    diffs.push(`${k}: ${fmtValue(before)} → ${fmtValue(after)}`);
-  }
-  return truncate(diffs.join(', ')) || '(no changes)';
-}
-
-function summarize(entry: AuditEntry): string {
-  if (entry.action === 'insert') return summarizeInsert(entry.new_value);
-  if (entry.action === 'delete') return '(deleted)';
-  return summarizeUpdate(entry.old_value, entry.new_value);
-}
+type Load =
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string; details: string }
+  | { kind: 'ready'; entries: AuditEntry[] };
 
 export function AuditLogPanel() {
   const t = useT();
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
-  const [filter, setFilter] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
+  const [load, setLoad] = useState<Load>({ kind: 'loading' });
+  const seq = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        setLoading(true);
-        const db = await getDb();
-        const svc = new AuditLogService(db);
-        const [rows, types] = await Promise.all([
-          svc.list({ limit: 200 }),
-          svc.listEntityTypes(),
-        ]);
-        if (cancelled) return;
-        setEntries(rows);
-        setEntityTypes(types);
-      } catch (e) {
-        if (!cancelled) setError(String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const entityLabel = (type: string): string => {
+    const key = ENTITY_LABELS[type];
+    return key ? t(key) : type;
+  };
+  const roleLabel = (role: string): string => {
+    const key = ROLE_LABELS[role];
+    return key ? t(key) : role;
+  };
+
+  const fetchEntries = useCallback(async (entity: string) => {
+    const mine = ++seq.current;
+    setLoad({ kind: 'loading' });
+    try {
+      const svc = new AuditLogService(await getDb());
+      const [rows, types] = await Promise.all([
+        svc.list({ limit: AUDIT_LIMIT, entity_type: entity || undefined }),
+        svc.listEntityTypes(),
+      ]);
+      if (mine !== seq.current) return;
+      setEntityTypes(types);
+      setLoad({ kind: 'ready', entries: rows });
+    } catch (e) {
+      if (mine !== seq.current) return;
+      setLoad({ kind: 'error', message: describeError(e), details: e instanceof Error ? e.message : String(e) });
+    }
   }, []);
 
-  const visible = useMemo(() => {
-    if (!filter) return entries;
-    return entries.filter((e) => e.entity_type === filter);
-  }, [entries, filter]);
+  useEffect(() => {
+    void fetchEntries(filter);
+  }, [fetchEntries, filter]);
 
   return (
-    <section className="audit-log-panel">
-      <h3>{t('audit.title')}</h3>
-      <p className="hint">{t('audit.intro')}</p>
-      <div className="actions">
-        <label>
-          {t('audit.entity_label')}{' '}
+    <div className="audit-panel" data-testid="audit-panel">
+      <div className="toolbar">
+        <div className="audit-filter">
+          <label className="field-label" htmlFor="audit-entity">
+            {t('audit.filter.label')}
+          </label>
           <select
+            id="audit-entity"
+            className="input"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            disabled={loading}
+            data-testid="audit-entity-filter"
           >
             <option value="">{t('audit.entity_all')}</option>
-            {entityTypes.map((typeName) => (
-              <option key={typeName} value={typeName}>
-                {typeName}
+            {entityTypes.map((type) => (
+              <option key={type} value={type}>
+                {entityLabel(type)}
               </option>
             ))}
           </select>
-        </label>
+        </div>
+        <span className="toolbar-spacer" />
+        {load.kind === 'ready' && (
+          <span className="page-stamp" data-testid="audit-count">
+            {t('audit.count', { count: load.entries.length })}
+          </span>
+        )}
+        <button
+          type="button"
+          className="btn"
+          onClick={() => void fetchEntries(filter)}
+          disabled={load.kind === 'loading'}
+          data-testid="audit-refresh"
+        >
+          {t('audit.refresh')}
+        </button>
       </div>
-      {error && <p className="error">{error}</p>}
-      {loading ? (
-        <p className="hint">{t('audit.loading')}</p>
-      ) : visible.length === 0 ? (
-        <p className="hint">{t('audit.empty')}</p>
-      ) : (
-        <table className="audit-log-table">
-          <thead>
-            <tr>
-              <th>{t('audit.col.time')}</th>
-              <th>{t('audit.col.entity')}</th>
-              <th>{t('audit.col.id')}</th>
-              <th>{t('audit.col.action')}</th>
-              <th>{t('audit.col.user')}</th>
-              <th>{t('audit.col.role')}</th>
-              <th>{t('audit.col.reason')}</th>
-              <th>{t('audit.col.diff')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((e) => (
-              <tr key={e.id}>
-                <td>{e.created_at}</td>
-                <td>{e.entity_type}</td>
-                <td className="mono">{e.entity_id}</td>
-                <td>{e.action}</td>
-                <td>{e.user_id ?? '—'}</td>
-                <td>{e.user_role ?? '—'}</td>
-                <td>{e.reason ?? '—'}</td>
-                <td className="diff">{summarize(e)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      {load.kind === 'loading' && <Skeleton rows={8} />}
+
+      {load.kind === 'error' && (
+        <ErrorState
+          title={t('audit.error.title')}
+          message={load.message}
+          hint={t('audit.error.hint')}
+          details={load.details}
+          testId="audit-error"
+          actions={
+            <button type="button" className="btn btn-sm" onClick={() => void fetchEntries(filter)}>
+              {t('audit.retry')}
+            </button>
+          }
+        />
       )}
-    </section>
+
+      {load.kind === 'ready' && load.entries.length === 0 && (
+        <EmptyState
+          icon="list"
+          title={t('audit.empty.title')}
+          text={filter ? t('audit.empty.filtered', { entity: entityLabel(filter) }) : t('audit.empty.text')}
+          testId="audit-empty"
+          actions={
+            filter ? (
+              <button type="button" className="btn btn-sm" onClick={() => setFilter('')}>
+                {t('audit.entity_all')}
+              </button>
+            ) : undefined
+          }
+        />
+      )}
+
+      {load.kind === 'ready' && load.entries.length > 0 && (
+        <div className="table-card">
+          <table className="data-table audit-table" data-testid="audit-table">
+            <thead>
+              <tr>
+                <th className="col-time">{t('audit.col.time')}</th>
+                <th>{t('audit.col.entity')}</th>
+                <th className="col-id">{t('audit.col.id')}</th>
+                <th>{t('audit.col.action')}</th>
+                <th>{t('audit.col.user')}</th>
+                <th>{t('audit.col.role')}</th>
+                <th>{t('audit.col.reason')}</th>
+                <th className="col-diff">{t('audit.col.diff')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {load.entries.map((e) => (
+                <tr key={e.id} data-testid="audit-row">
+                  <td className="mono audit-time" title={e.created_at}>
+                    {formatAuditTime(e.created_at)}
+                  </td>
+                  <td>{entityLabel(e.entity_type)}</td>
+                  <td className="mono audit-id" title={e.entity_id}>
+                    {shortId(e.entity_id)}
+                  </td>
+                  <td>
+                    <span className={ACTION_CHIP[e.action] ?? 'chip'}>
+                      {t(`audit.action.${e.action}`)}
+                    </span>
+                  </td>
+                  <td>{e.user_id ?? <span className="zero">—</span>}</td>
+                  <td className="muted">
+                    {e.user_role ? roleLabel(e.user_role) : <span className="zero">—</span>}
+                  </td>
+                  <td className="audit-reason">{e.reason ?? <span className="zero">—</span>}</td>
+                  <td>
+                    <AuditDiff entry={e} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+    </div>
   );
 }

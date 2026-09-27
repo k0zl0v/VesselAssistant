@@ -1,0 +1,266 @@
+/* Import · Backups and Audit log — built from DesignSystem.dc.html (cards, data-table, states). */
+
+/* ===== Import · Backups ============================================== */
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: var(--tools-backup-col) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .tools-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tools-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tools-text {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.tools-hint {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.tools-muted {
+  color: var(--ink-faint);
+}
+
+.tools-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tools-actions-end {
+  padding-top: var(--space-1);
+}
+
+.tools-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tools-banner {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  line-height: 1.45;
+}
+
+.tools-banner > svg {
+  flex-shrink: 0;
+}
+
+.tools-path {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-auto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line-soft);
+}
+
+.tools-subtitle {
+  margin: 0;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-col);
+  text-transform: uppercase;
+}
+
+.tools-confirm-title {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.tools-confirm-line {
+  display: block;
+  margin-top: 3px;
+}
+
+/* Key/value list: label column + value column; `.tools-kv-row` lays the pairs out in one line. */
+.tools-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-small);
+}
+
+.tools-kv > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.tools-kv dt {
+  color: var(--ink-faint);
+}
+
+.tools-kv dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.tools-kv-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.tools-kv-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tools-kv-row dt {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-col);
+  color: var(--ink-col);
+  text-transform: uppercase;
+}
+
+.tools-preview-table .tools-hold-no {
+  font-weight: 600;
+}
+
+.tools-preview-table tr.tools-row-rejected td {
+  background: var(--warning-row);
+}
+
+.tools-preview-table .tools-cell-rejected {
+  color: var(--warning-ink);
+  font-weight: 600;
+}
+
+/* ===== Audit log ===================================================== */
+
+.audit-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.audit-filter .field-label {
+  margin: 0;
+}
+
+.audit-filter .input {
+  width: 220px;
+}
+
+.audit-table td {
+  height: auto;
+  min-height: var(--row-height);
+  padding-top: 9px;
+  padding-bottom: 9px;
+  vertical-align: top;
+}
+
+.audit-table .col-time {
+  width: 150px;
+}
+
+.audit-table .col-id {
+  width: 80px;
+}
+
+.audit-table .col-diff {
+  width: var(--audit-diff-width);
+}
+
+.audit-time,
+.audit-id {
+  font-size: var(--text-small);
+  white-space: nowrap;
+}
+
+.audit-id {
+  color: var(--ink-muted);
+}
+
+.audit-reason {
+  font-size: var(--text-small);
+}
+
+.audit-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px var(--audit-diff-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-small);
+}
+
+.audit-diff li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.audit-diff-field {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.audit-diff-before,
+.audit-diff-after {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.audit-diff-before {
+  color: var(--ink-muted);
+}
+
+.audit-diff-removed {
+  text-decoration: line-through;
+}
+
+.audit-diff-arrow {
+  color: var(--ink-faint);
+}
+
+.audit-diff-after {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.audit-diff-more {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
