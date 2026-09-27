@@ -126,6 +126,7 @@ export const en = {
   'sof.col.category': 'Category',
   'sof.col.description': 'Description',
   'sof.delete_aria': 'Delete event',
+  'sof.delete.confirm': 'Delete this SOF event?',
 
   // SOF add event form
   'sof.form.title': 'Add event',

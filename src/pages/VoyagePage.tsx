@@ -7,6 +7,7 @@ import { VoyageTotals } from '../components/VoyageTotals';
 import { getAutoBackup } from '../autoBackup';
 import { getDb } from '../db';
 import { useT } from '../i18n';
+import { describeError } from '../i18n/errors';
 import { seedKavkazDemo } from '../seedDemo';
 import {
   CalculationService,
@@ -55,6 +56,8 @@ export function VoyagePage() {
   const t = useT();
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [copyVoyageNo, setCopyVoyageNo] = useState<string | null>(null);
 
   async function refresh(opts?: RefreshOpts): Promise<void> {
     const db = await getDb();
@@ -97,7 +100,7 @@ export function VoyagePage() {
 
   useEffect(() => {
     refresh().catch((e: unknown) =>
-      setState({ kind: 'error', message: String(e) }),
+      setState({ kind: 'error', message: describeError(e) }),
     );
   }, []);
 
@@ -107,11 +110,20 @@ export function VoyagePage() {
       return await fn();
     } catch (e) {
       setState((s) =>
-        s.kind === 'ready' ? s : { kind: 'error', message: String(e) },
+        s.kind === 'ready' ? s : { kind: 'error', message: describeError(e) },
       );
       throw e;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function voyageAction(fn: () => Promise<void>): Promise<void> {
+    setActionError(null);
+    try {
+      await withBusy(fn);
+    } catch (e) {
+      setActionError(describeError(e));
     }
   }
 
@@ -122,7 +134,7 @@ export function VoyagePage() {
     return (
       <main className="container">
         <h1>{t('app.brand')}</h1>
-        <p className="error">{t('app.db_error', { message: state.message })}</p>
+        <p className="error" data-testid="voyage-load-error">{t('app.db_error', { message: state.message })}</p>
       </main>
     );
   }
@@ -151,6 +163,7 @@ export function VoyagePage() {
         <div className="topbar-actions">
           {voyages.length > 0 && (
             <select
+              data-testid="voyage-select"
               value={selectedId ?? ''}
               onChange={(e) =>
                 void withBusy(() =>
@@ -174,6 +187,7 @@ export function VoyagePage() {
             onClick={() => void refresh({ selectedId, showNewVoyage: true, subTab })}
             disabled={busy}
             className="secondary"
+            data-testid="voyage-new"
           >
             {t('voyage.new')}
           </button>
@@ -186,6 +200,7 @@ export function VoyagePage() {
               })
             }
             disabled={busy}
+            data-testid="voyage-seed-demo"
           >
             {t('voyage.seed_demo')}
           </button>
@@ -210,6 +225,7 @@ export function VoyagePage() {
       {voyages.length === 0 && !showNewVoyage && (
         <p
           className="hint"
+          data-testid="voyage-empty-hint"
           dangerouslySetInnerHTML={{ __html: t('voyage.empty_hint') }}
         />
       )}
@@ -217,9 +233,9 @@ export function VoyagePage() {
       {selected && calc && (
         <>
           <section className="voyage-card">
-            <h2>
+            <h2 data-testid="voyage-heading">
               {t('voyage.heading', { voyage_no: selected.voyage_no })}{' '}
-              <span className={`status status-${selected.status}`}>
+              <span className={`status status-${selected.status}`} data-testid="voyage-status">
                 {t(selected.status === 'open' ? 'voyage.status.open' : 'voyage.status.closed')}
               </span>
             </h2>
@@ -234,20 +250,78 @@ export function VoyagePage() {
               )}
               {selected.status === 'open' && (
                 <button
-                  onClick={() =>
-                    void withBusy(async () => {
+                  onClick={() => {
+                    if (!window.confirm(t('voyage.close.confirm', { voyage_no: selected.voyage_no }))) return;
+                    void voyageAction(async () => {
                       const db = await getDb();
                       await new VoyageService(db, await getAutoBackup()).close(selected.id);
                       await refresh({ selectedId: selected.id, subTab });
-                    })
-                  }
+                    });
+                  }}
                   disabled={busy}
                   className="secondary"
+                  data-testid="voyage-close"
                 >
                   {t('voyage.close')}
                 </button>
               )}
+              {copyVoyageNo === null && (
+                <button
+                  type="button"
+                  onClick={() => setCopyVoyageNo('')}
+                  disabled={busy}
+                  className="secondary"
+                  data-testid="voyage-copy"
+                >
+                  {t('voyage.copy')}
+                </button>
+              )}
             </div>
+            {copyVoyageNo !== null && (
+              <form
+                className="form-row"
+                data-testid="voyage-copy-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const voyage_no = copyVoyageNo.trim();
+                  if (!voyage_no) return;
+                  void voyageAction(async () => {
+                    const db = await getDb();
+                    const copy = await new VoyageService(db, await getAutoBackup()).copy(selected.id, voyage_no);
+                    setCopyVoyageNo(null);
+                    await refresh({ selectedId: copy.id });
+                  });
+                }}
+              >
+                <input
+                  type="text"
+                  value={copyVoyageNo}
+                  onChange={(e) => setCopyVoyageNo(e.target.value)}
+                  placeholder={t('voyage.copy.voyage_no')}
+                  aria-label={t('voyage.copy.voyage_no')}
+                  required
+                  autoFocus
+                  data-testid="voyage-copy-no"
+                />
+                <button type="submit" disabled={busy || !copyVoyageNo.trim()} data-testid="voyage-copy-submit">
+                  {t('voyage.copy.submit')}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setCopyVoyageNo(null)}
+                  disabled={busy}
+                  data-testid="voyage-copy-cancel"
+                >
+                  {t('voyage.copy.cancel')}
+                </button>
+              </form>
+            )}
+            {actionError && (
+              <p className="error" data-testid="voyage-error">
+                {actionError}
+              </p>
+            )}
           </section>
 
           <nav className="subtabs">
@@ -258,6 +332,7 @@ export function VoyagePage() {
               }
               className={`subtab ${subTab === 'holds' ? 'active' : ''}`}
               disabled={busy}
+              data-testid="voyage-subtab-holds"
             >
               {t('voyage.subtab.holds')}
             </button>
@@ -268,6 +343,7 @@ export function VoyagePage() {
               }
               className={`subtab ${subTab === 'sof' ? 'active' : ''}`}
               disabled={busy}
+              data-testid="voyage-subtab-sof"
             >
               {t('voyage.subtab.sof', { count: sofEvents.length })}
             </button>

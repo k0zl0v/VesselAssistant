@@ -34,14 +34,14 @@ export function SofPanel({
   };
 
   return (
-    <section className="sof-panel">
+    <section className="sof-panel" data-testid="sof-panel">
       <h3>{t('sof.title')}</h3>
       {events.length === 0 ? (
-        <p className="hint inline">{t('sof.empty')}</p>
+        <p className="hint inline" data-testid="sof-empty">{t('sof.empty')}</p>
       ) : (
         <>
           {overlapping.size > 0 && (
-            <p className="warning">
+            <p className="warning" data-testid="sof-overlap-warning">
               {t(
                 overlapping.size === 1
                   ? 'sof.warning.overlap_one'
@@ -50,7 +50,7 @@ export function SofPanel({
               )}
             </p>
           )}
-          <table className="sof-table">
+          <table className="sof-table" data-testid="sof-log">
             <thead>
               <tr>
                 <th>{t('sof.col.date')}</th>
@@ -63,20 +63,24 @@ export function SofPanel({
             </thead>
             <tbody>
               {events.map((e, i) => (
-                <tr key={e.id} className={overlapping.has(i) ? 'overlap' : ''}>
-                  <td>{e.event_date}</td>
-                  <td className="num">{fmtTime(e.time_from)}</td>
-                  <td className="num">{fmtTime(e.time_to)}</td>
-                  <td>{labelFor(e.category)}</td>
-                  <td>{e.description ?? '—'}</td>
+                <tr key={e.id} className={overlapping.has(i) ? 'overlap' : ''} data-testid="sof-row">
+                  <td data-testid="sof-row-date">{e.event_date}</td>
+                  <td className="num" data-testid="sof-row-from">{fmtTime(e.time_from)}</td>
+                  <td className="num" data-testid="sof-row-to">{fmtTime(e.time_to)}</td>
+                  <td data-testid="sof-row-category">{labelFor(e.category)}</td>
+                  <td data-testid="sof-row-description">{e.description ?? '—'}</td>
                   {voyageOpen && (
                     <td>
                       <button
                         type="button"
                         className="secondary danger"
                         disabled={busy}
-                        onClick={() => void onDelete(e.id)}
+                        onClick={() => {
+                          if (!window.confirm(t('sof.delete.confirm'))) return;
+                          void onDelete(e.id);
+                        }}
                         aria-label={t('sof.delete_aria')}
+                        data-testid="sof-row-delete"
                       >
                         ✕
                       </button>

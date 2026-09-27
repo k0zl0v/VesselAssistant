@@ -62,30 +62,32 @@ export function HoldTable({
           const expanded = expandedHoldId === h.hold_id;
           return (
             <Fragment key={h.hold_id}>
-              <tr className={expanded ? 'expanded' : ''}>
+              <tr className={expanded ? 'expanded' : ''} data-testid={`hold-row-${h.hold_no}`}>
                 <td>
                   <button
                     type="button"
                     onClick={() => onToggleExpand(expanded ? null : h.hold_id)}
                     className="expand-btn secondary"
                     aria-label={t('holds.toggle_aria')}
+                    data-testid={`hold-expand-${h.hold_no}`}
                   >
                     {expanded ? '▾' : '▸'}
                   </button>
                 </td>
                 <td>№{h.hold_no}</td>
-                <td className="num">{formatTons(h.volume_m3)}</td>
-                <td className="num">{h.sf === null ? '—' : h.sf.toFixed(3)}</td>
-                <td className="num">{formatTons(h.loaded_tons)}</td>
-                <td className="num">{formatTons(h.discharged_tons)}</td>
-                <td className="num">{formatTons(h.remain_tons)}</td>
-                <td className="num">{fmt(h.capacity_tons_98)}</td>
+                <td className="num" data-testid="hold-volume">{formatTons(h.volume_m3)}</td>
+                <td className="num" data-testid="hold-sf">{h.sf === null ? '—' : h.sf.toFixed(3)}</td>
+                <td className="num" data-testid="hold-loaded">{formatTons(h.loaded_tons)}</td>
+                <td className="num" data-testid="hold-discharged">{formatTons(h.discharged_tons)}</td>
+                <td className="num" data-testid="hold-remain">{formatTons(h.remain_tons)}</td>
+                <td className="num" data-testid="hold-capacity-98">{fmt(h.capacity_tons_98)}</td>
                 <td
                   className={`num ${h.empty_space_98 !== null && h.empty_space_98 < 0 ? 'negative' : ''}`}
+                  data-testid="hold-empty-98"
                 >
                   {fmt(h.empty_space_98)}
                 </td>
-                <td className="num">{fmtPercent(h.empty_volume_percent)}</td>
+                <td className="num" data-testid="hold-empty-vol-pct">{fmtPercent(h.empty_volume_percent)}</td>
               </tr>
               {expanded && (
                 <ExpansionRow
@@ -134,7 +136,7 @@ function ExpansionRow({
   const topSeq = lots.length > 0 ? lots[lots.length - 1]!.load_sequence : null;
 
   return (
-    <tr className="expansion">
+    <tr className="expansion" data-testid="hold-expansion">
       <td colSpan={COL_COUNT}>
         <div className="expansion-content">
           <div className="lots-list">
@@ -146,9 +148,9 @@ function ExpansionRow({
             {lots.length === 0 ? (
               <p className="hint inline">{t('holds.lots.empty')}</p>
             ) : (
-              <ul>
+              <ul data-testid="hold-lots">
                 {lots.map((l) => (
-                  <li key={l.cargo_lot_id}>
+                  <li key={l.cargo_lot_id} data-testid={`hold-lot-${l.load_sequence}`}>
                     {t('holds.lots.line', {
                       seq: l.load_sequence,
                       vessel: l.source_vessel,
@@ -174,6 +176,7 @@ function ExpansionRow({
                   type="button"
                   onClick={() => setTab(tab === 'add' ? null : 'add')}
                   className="secondary"
+                  data-testid="hold-action-add-lot"
                 >
                   {t('holds.action.add_lot')}
                 </button>
@@ -182,6 +185,7 @@ function ExpansionRow({
                   onClick={() => setTab(tab === 'discharge' ? null : 'discharge')}
                   className="secondary"
                   disabled={lots.every((l) => l.remaining_tons === 0)}
+                  data-testid="hold-action-discharge"
                 >
                   {t('holds.action.discharge')}
                 </button>

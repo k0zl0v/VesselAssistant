@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
+import { describeError } from '../i18n/errors';
 import type { Cargo } from '../services/ReferenceService';
-import type { AddLotInput } from '../services/types';
+import { PROTEIN_ALLOWED, type AddLotInput } from '../services/types';
 
 const OVERLOAD_PREFIX = 'OVERLOAD:';
 
@@ -30,8 +31,6 @@ interface Props {
   onSubmit: (input: AddLotInput) => Promise<void>;
   busy: boolean;
 }
-
-const PROTEIN_OPTIONS = [10.5, 11.5, 12.5, 13.5] as const;
 
 export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Props) {
   const t = useT();
@@ -97,11 +96,11 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
               setSourceVessel('');
               setTons('');
             } catch (err2) {
-              setError(String(err2 instanceof Error ? err2.message : err2));
+              setError(describeError(err2));
             }
             return;
           }
-          setError(String(err instanceof Error ? err.message : err));
+          setError(describeError(err));
         }
       }}
     >
@@ -112,8 +111,9 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
         value={sourceVessel}
         onChange={(e) => setSourceVessel(e.target.value)}
         required
+        data-testid="lot-source-vessel"
       />
-      <select value={cargoId} onChange={(e) => setCargoId(e.target.value)}>
+      <select value={cargoId} onChange={(e) => setCargoId(e.target.value)} data-testid="lot-cargo">
         {cargoes.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -121,9 +121,9 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
         ))}
       </select>
       {cargoIsWheat && (
-        <select value={protein} onChange={(e) => setProtein(e.target.value)}>
+        <select value={protein} onChange={(e) => setProtein(e.target.value)} data-testid="lot-protein">
           <option value="">{t('lot.protein_none')}</option>
-          {PROTEIN_OPTIONS.map((p) => (
+          {PROTEIN_ALLOWED.map((p) => (
             <option key={p} value={p}>
               {p.toFixed(1)} %
             </option>
@@ -138,6 +138,7 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
         value={sf}
         onChange={(e) => setSf(e.target.value)}
         required
+        data-testid="lot-sf"
         style={{ width: '5rem' }}
       />
       <input
@@ -148,12 +149,13 @@ export function AddLotForm({ cargoes, voyage_id, hold_id, onSubmit, busy }: Prop
         value={tons}
         onChange={(e) => setTons(e.target.value)}
         required
+        data-testid="lot-tons"
         style={{ width: '7rem' }}
       />
-      <button type="submit" disabled={busy}>
+      <button type="submit" disabled={busy} data-testid="lot-submit">
         {t('lot.add')}
       </button>
-      {error && <span className="error inline">{error}</span>}
+      {error && <span className="error inline" data-testid="lot-error">{error}</span>}
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../i18n';
+import { describeError } from '../i18n/errors';
 import type { DischargeInput } from '../services/types';
 
 interface Props {
@@ -40,7 +41,7 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
           setTons('');
           setDescription('');
         } catch (err) {
-          setError(String(err));
+          setError(describeError(err));
         }
       }}
     >
@@ -50,6 +51,7 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
         step="0.001"
         min="0.001"
         placeholder={t('discharge.tons_placeholder')}
+        data-testid="discharge-tons"
         value={tons}
         onChange={(e) => setTons(e.target.value)}
         required
@@ -60,17 +62,19 @@ export function DischargeForm({ voyage_id, hold_id, onSubmit, busy }: Props) {
         value={date}
         onChange={(e) => setDate(e.target.value)}
         required
+        data-testid="discharge-date"
       />
       <input
         type="text"
         placeholder={t('discharge.description_placeholder')}
+        data-testid="discharge-description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <button type="submit" disabled={busy}>
+      <button type="submit" disabled={busy} data-testid="discharge-submit">
         {t('discharge.submit')}
       </button>
-      {error && <span className="error inline">{error}</span>}
+      {error && <span className="error inline" data-testid="discharge-error">{error}</span>}
     </form>
   );
 }

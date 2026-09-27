@@ -32,6 +32,7 @@ export function AddSofEventForm({ voyage_id, onSubmit, busy }: Props) {
   return (
     <form
       className="form-row sof-form"
+      data-testid="sof-form"
       onSubmit={async (e) => {
         e.preventDefault();
         setError(null);
@@ -57,12 +58,14 @@ export function AddSofEventForm({ voyage_id, onSubmit, busy }: Props) {
         value={date}
         onChange={(e) => setDate(e.target.value)}
         required
+        data-testid="sof-form-date"
       />
       <input
         type="text"
         value={timeFrom}
         onChange={(e) => setTimeFrom(e.target.value)}
         placeholder={t('sof.form.from_placeholder')}
+        data-testid="sof-form-from"
         pattern="\d{1,2}:\d{2}"
         title={t('sof.form.time_title')}
         style={{ width: '6.5rem' }}
@@ -72,11 +75,12 @@ export function AddSofEventForm({ voyage_id, onSubmit, busy }: Props) {
         value={timeTo}
         onChange={(e) => setTimeTo(e.target.value)}
         placeholder={t('sof.form.to_placeholder')}
+        data-testid="sof-form-to"
         pattern="\d{1,2}:\d{2}"
         title={t('sof.form.time_title')}
         style={{ width: '6.5rem' }}
       />
-      <select value={category} onChange={(e) => applyTemplate(e.target.value)}>
+      <select value={category} onChange={(e) => applyTemplate(e.target.value)} data-testid="sof-form-category">
         {SOF_CATEGORIES.map((c) => (
           <option key={c.key} value={c.key}>
             {translate(categoryLabelKey(c.key))}
@@ -88,12 +92,13 @@ export function AddSofEventForm({ voyage_id, onSubmit, busy }: Props) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder={t('sof.form.description_placeholder')}
+        data-testid="sof-form-description"
         style={{ flex: 1, minWidth: '14rem' }}
       />
-      <button type="submit" disabled={busy}>
+      <button type="submit" disabled={busy} data-testid="sof-form-submit">
         {t('sof.form.add')}
       </button>
-      {error && <span className="error inline">{error}</span>}
+      {error && <span className="error inline" data-testid="sof-form-error">{error}</span>}
     </form>
   );
 }

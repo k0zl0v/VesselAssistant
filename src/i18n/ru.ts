@@ -130,6 +130,7 @@ export const ru: Dict = {
   'sof.col.category': 'Категория',
   'sof.col.description': 'Описание',
   'sof.delete_aria': 'Удалить событие',
+  'sof.delete.confirm': 'Удалить это событие SOF?',
 
   // SOF add event form
   'sof.form.title': 'Добавить событие',
