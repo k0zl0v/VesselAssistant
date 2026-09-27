@@ -5,7 +5,7 @@ description: Use when bumping the project version, tagging a release, working on
 
 # Release flow
 
-Production releases are produced by GitHub Actions on tag push. The workflow at `.github/workflows/release.yml` runs `tauri build` on **macOS arm64** (`macos-14`) and **Windows x64** (`windows-latest`) in parallel, attaching all bundles to a draft GitHub Release.
+Production releases are produced by GitHub Actions on tag push. The workflow at `.github/workflows/release.yml` runs `npm test` then `cargo test --manifest-path src-tauri/Cargo.toml` then `npm run typecheck` before `tauri build`, on **macOS arm64** (`macos-14`) and **Windows x64** (`windows-latest`) in parallel, attaching all bundles to a draft GitHub Release. The `cargo test` step is the only place the Rust layer (migrations, `execute_batch` atomicity — `src-tauri/tests/`) is checked on `macos-14`; it doesn't touch the macOS-webview gap (`docs/adr/0003-test-pyramid-and-ipc-bridge.md`), which stays a manual `npm run tauri dev` check before release.
 
 ## Versions live in three files — keep them aligned
 

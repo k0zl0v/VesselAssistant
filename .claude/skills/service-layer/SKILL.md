@@ -16,14 +16,20 @@ src/services/
   db-node.ts             # tests-only impl over better-sqlite3
   types.ts               # cross-service domain types
 
-  VoyageService.ts       # voyages CRUD + close (idempotent)
+  errors.ts              # AppError + AppErrorCode
+  voyageGuard.ts         # withVoyageGuard — closed-voyage mutation guard
+  SessionService.ts      # operator identity (app_session): start/current
+  AutoBackupService.ts   # snapshot/rotate(10)/startTimer — AutoBackupHook
+  BackupStore.ts         # BackupStore interface + MemoryBackupStore (tests)
+
+  VoyageService.ts       # voyages CRUD + close (idempotent) + copy
   ReferenceService.ts    # vessels, cargoes, holds, cranes
   CargoLotService.ts     # add (lot + layer + auto-SF), list (overload guard)
-  OgvService.ts          # availableBySource, discharge (LIFO + transactional)
+  OgvService.ts          # availableBySource, discharge (LIFO, executeBatch)
   CalculationService.ts  # one big SQL → per-hold view-model + totals
   SofService.ts          # SOF events CRUD with HH:MM normalization
   CraneCorrectionService.ts  # findCoefficient + correctWeight
-  AuditLogService.ts     # read-only viewer over audit_log
+  AuditLogService.ts     # read-only viewer over audit_log (+ user_role/reason)
   BackupService.ts       # exportToJson / importFromJson (15-table envelope)
   ImportService.ts       # parse KAVKAZ-style xlsx → applyImport
   DocumentEngine.ts      # generateLoadPlan(voyage_id) → 4-sheet xlsx bytes
@@ -31,7 +37,7 @@ src/services/
   sofCategories.ts       # 17 SOF event templates
 
   __tests__/
-    helpers.ts           # openTestDb (applies 0001 + 0002), seedReferenceData
+    helpers.ts           # openTestDb (reads src-tauri/migrations/ by filename), seedReferenceData, NOOP_AUTO_BACKUP
     *.test.ts            # one file per service
 ```
 
@@ -43,8 +49,12 @@ export interface Db {
   execute(sql: string, params?: SqlValue[]): Promise<void>;
   select<T>(sql: string, params?: SqlValue[]): Promise<T[]>;
   transaction<T>(fn: (tx: Db) => Promise<T>): Promise<T>;
+  /** All statements on one connection in one IMMEDIATE transaction; any failure rolls back everything. */
+  executeBatch(batch: BatchStatement[]): Promise<number[]>;
 }
 ```
+
+`executeBatch` is the newer of the two mutation primitives — for **new** multi-table writes, prefer it over `db.transaction`: `TauriDb.executeBatch` calls the Rust `execute_batch` command, which acquires one connection from `tauri-plugin-sql`'s own pool and runs the whole batch inside a single `BEGIN IMMEDIATE`, removing the "two writers" risk that `db.transaction`'s separate IPC calls (`BEGIN`/statements/`COMMIT`) don't fully rule out. `OgvService.discharge` is the current example; see `docs/adr/0002-atomic-writes-execute-batch.md` for the rejected alternatives. `db.transaction` stays the pattern for existing multi-table mutations (`CargoLotService`, `SofService`, `ImportService`, `BackupService.importFromJson`, `VoyageService.copy`) — not deprecated, just not the default for new code.
 
 All services accept `Db` in their constructor. **Don't import a specific impl** — that breaks test isolation. The two impls:
 
@@ -77,10 +87,16 @@ Parameters use `?` positional placeholders (works for both impls). SQL string id
    Throw inside the callback → transaction rolls back. No partial state ever observed.
 
 4. **IDs:** `crypto.randomUUID()` for all `TEXT PRIMARY KEY` columns. The only INTEGER AUTOINCREMENT key is `audit_log.id`.
-5. **No manual audit log writes.** SQL triggers in migration 0002 cover all 8 audited tables. If you mutate an audited table, a row will appear in `audit_log` automatically. Don't duplicate.
-6. **Errors are JS `Error` objects** with descriptive messages. UI catches and shows. Special prefix conventions:
-   - `OVERLOAD:<json>` from `CargoLotService.add` — `AddLotForm` parses payload to show overshoot tons.
-   Other services use plain Error.
+5. **No manual audit log writes.** SQL triggers in migrations 0002/0003 cover all 8 audited tables and stamp the actor from `app_session`. If you mutate an audited table, a row will appear in `audit_log` automatically. Don't duplicate.
+6. **Errors are `AppError`** (`src/services/errors.ts`), not a plain `Error`/string:
+   ```ts
+   export class AppError extends Error {
+     constructor(readonly code: AppErrorCode, readonly params: Record<string, string | number> = {}) {}
+   }
+   ```
+   Throw `new AppError('voyage.not_found', { voyage_id })` etc. UI never sees the raw error — it calls `describeError(e)` (`src/i18n/errors.ts`), which maps a known `AppError` code to a localized, parameterized string and falls back to `error.unexpected` + `reportError(e)` for anything else. **Never `setError(String(e))`** in new code (see `CLAUDE.md` → What NOT to do). The one legacy exception: `CargoLotService.add`'s `OVERLOAD:<json>` prefix (`AddLotForm` still parses it to show overshoot tons) — inherited, not a pattern to repeat.
+7. **A mutating method on a voyage-scoped service that a closed voyage should reject** goes through `withVoyageGuard(db, voyage_id, opts, fn)` (`src/services/voyageGuard.ts`) — see `CargoLotService.add`, `OgvService.discharge`, `SofService.create/update/delete` for the pattern. It resolves `voyage.not_found` / `voyage.closed` / `voyage.closed_reason_required` and clears `app_session.override_reason` after `fn` runs (even on throw).
+8. **A service that mutates data reachable by "close voyage / import Excel / import project file / restore backup"** takes an `AutoBackupHook` as a constructor parameter — not optional, not defaulted to a no-op in production code. `VoyageService`, `ImportService`, `BackupService` are the current three; each snapshots (`hook.snapshot(trigger)`) before the mutation, and a throwing hook aborts the whole action. Tests use `NOOP_AUTO_BACKUP` from `src/services/__tests__/helpers.ts` — never import it outside `__tests__/`.
 
 ## Integration tests
 

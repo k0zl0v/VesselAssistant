@@ -109,3 +109,17 @@ The `appendix-c-voyage.json` fixture should be reconstructed from the original E
 - **Constructing fixtures with rounded inputs.** Rounding is for output only — fixture inputs use the raw Excel values.
 - **Skipping AT-09.** Hardcoded `KAVKAZ IV` in a test is the most common regression for this rule.
 - **Not asserting `discharge_allocations`.** AT-07/08 must verify the allocation rows, not just `remaining_tons`.
+
+## Adding a scenario and its autotest
+
+`AT-01..AT-13` are the customer-facing acceptance criteria (TZ §12, table above). `S-1..S-14` are a separate, product-facing numbering — user scenarios in `Requirements/scenarios.md` (vault, not this repo) — each with its own automation-level field. Adding one:
+
+1. **Read the scenario's own `Уровень автоматизации` field** in `Requirements/scenarios.md` — it names the level (`calc`, `service+SQLite`, `UI-компонент`, `e2e`) and the reason. Don't guess a level from the scenario's prose; the field is authoritative.
+2. **File it per that level's convention:**
+   - `calc` → `src/calc/__tests__/<name>.test.ts`.
+   - `service+SQLite` → `src/services/__tests__/<service>.test.ts`, test name prefixed `S-N: ...`.
+   - `UI-компонент` → `src/components/__tests__/<Component>.test.tsx`, same `S-N:` prefix, `openTestDb()` + `@testing-library/react`.
+   - `e2e` → `e2e/specs/s-NN-<slug>.spec.ts`, one `test('S-N: ...', ...)` per scenario, using `e2e/fixtures.ts`'s `test.extend` (`host`/`db`/`login`).
+3. **Seed via the existing helpers**, don't hand-roll: `openTestDb`/`seedReferenceData` (service/UI levels), `e2e/seeds.ts` (e2e level) — add a new `seedX` there if the scenario needs a precondition no existing seed produces.
+4. **Add a row to `docs/testing/scenario-traceability.md`** — `Сценарий | Уровень | Покрывает FR/AT | Статус | Тесты | Пробел/причина`. `частично`/`не покрыт` always carry a reason; a reason like "out of this branch's scope" is legitimate, a missing reason is not.
+5. **CI job it enters** (`.github/workflows/ci.yml`): `calc`/`service+SQLite`/`UI-компонент` all run inside `npm run test:unit` in job `web`; `e2e` runs inside `npm run test:e2e`, same job. Nothing scenario-specific runs in `rust`/`windows-smoke` unless the scenario is Windows-capability-specific (hypothesis 10 style) — those go in `e2e-smoke/specs/`, not here.

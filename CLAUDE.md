@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации (Load/Stowage Plan, OGV, Crane Correction, SOF). Работает автономно на судовом ПК без backend и постоянного интернета.
 
-**Статус:** MVP закрыт по 22 FR + 13 AT. 113 unit/integration-тестов зелёные. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
+**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 338 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Source of truth
 
@@ -64,10 +64,14 @@ Services (src/services/) — TS, бизнес-логика
 Db interface (src/services/db.ts)
    ↓                                   ↓
 TauriDb (prod, plugin-sql)          NodeDb (tests, better-sqlite3)
+   ↓                  ↓
+   |          --execute_batch--> src-tauri/src/{batch,commands}.rs (Rust,
+   |                              одна IMMEDIATE-транзакция на пуле плагина)
    ↓
 SQLite (локальный файл)
-   ↑
-SQL триггеры audit_log (src-tauri/migrations/0002_audit_triggers.sql)
+   ↑                    ↑
+SQL триггеры audit_log   app_session → триггеры подставляют user_id/user_role/reason
+(0002_audit_triggers.sql, переписаны в 0003_operator_context.sql)
 ```
 
 Pure функции (`src/calc/`) — ниже всего, без зависимостей: `round`, `capacity`, `discharge` (LIFO), `time` (SOF intervals).
@@ -94,39 +98,61 @@ src/
     types.ts sofCategories.ts
     __tests__/             # 78 integration-тестов в openTestDb
   components/              # AddLotForm, AddSofEventForm, AuditLogPanel,
-                           # BackupPanel, CraneCorrectionPanel,
-                           # DischargeForm, ExportButton, HoldTable,
-                           # ImportPanel, LanguageSwitcher,
-                           # NewVoyageForm, SofPanel, VoyageTotals
+                           # BackupPanel, CraneCorrectionPanel, DischargeForm,
+                           # ErrorBoundary, ExportButton, HoldTable,
+                           # ImportPanel, LanguageSwitcher, NewVoyageForm,
+                           # SessionGate, SofPanel, VoyageTotals
   pages/                   # VoyagePage, ReferencePage, ToolsPage
   i18n/                    # index.ts (store + useT hook)
-                           # en.ts, ru.ts (~190 keys, en/ru parity)
-                           # __tests__/i18n.test.ts
+                           # en.ts, ru.ts (~244 keys, en/ru parity)
+                           # errors.ts (describeError), __tests__/
   fixtures/
     kavkaz-iv.ts           # Appendix C baseline (real xlsx values)
 
+e2e/                       # Playwright over `vite preview` + hand-written IPC bridge
+  fixtures.ts seeds.ts tsconfig.json
+  tauri-bridge/            # init-script.ts, node-side.ts, install.ts + contract test
+  specs/                   # app-boot, s-01/s-04/s-07/s-13 (приоритетные сценарии)
+
+e2e-smoke/                 # Windows-only: WebdriverIO + tauri-driver, реальный Tauri-хост
+  wdio.conf.ts tauri-ipc.ts specs/smoke.spec.ts
+
+docs/
+  adr/                     # README.md (MADR short, нумерация 0001+) + записи
+  analysis/                # пост-MVP разбор (У1)
+  testing/                 # scenario-traceability.md (S-1..S-14 → уровень/тесты/статус)
+
 src-tauri/
-  src/lib.rs               # Tauri Builder + plugins + migrations Vec
+  src/lib.rs               # Tauri Builder + plugins + migrations()
   src/main.rs              # vessel_assistant_lib::run()
+  src/batch.rs             # run_batch — одна IMMEDIATE-транзакция, typed bind, rollback
+  src/commands.rs          # execute_batch Tauri-команда, соединение из пула plugin-sql
   migrations/
     0001_initial_schema.sql
     0002_audit_triggers.sql
+    0003_operator_context.sql
+    0004_immutability_guards.sql
+    0005_protein_percent_guard.sql
+  tests/                   # common/mod.rs (fresh_db), batch.rs, migrations.rs — 11 тестов
   capabilities/default.json
   Cargo.toml tauri.conf.json
   icons/
 
 scripts/
   inspect-xlsx.mjs         # одноразовый дампер xlsx (для разведки)
+  generate-import-fixture.ts  # генератор коммитящейся XLSX-фикстуры импорта
+  assert-no-skips.mjs      # падает при любом skipped/todo/pending/N ignored
 
 .github/
-  workflows/release.yml    # macOS arm64 + Windows x64 на тег v*.*.*
+  workflows/release.yml    # macOS arm64 + Windows x64 на тег v*.*.*, + cargo test
+  workflows/ci.yml         # push/PR/nightly/dispatch — см. «Пирамида тестов»
 ```
 
 ## Commands
 
 - `npm install` — зависимости.
-- `npm test` / `npm run test:watch` — Vitest (113 тестов).
-- `npm run typecheck` — `tsc --noEmit`.
+- `npm test` / `npm run test:watch` — Vitest (338 тестов). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
+- `npm run typecheck` — три прогона `tsc --noEmit`: корень, `e2e/`, `e2e-smoke/`.
 - `npm run build` — production UI (`tsc && vite build`). Initial bundle ~285 KB / 84 KB gzip + ленивые ExcelJS/DocumentEngine/ImportService чанки.
 - `npm run dev` — только Vite (без Tauri runtime; `TauriDb` упадёт).
 - `npm run tauri dev` — desktop dev. Требует `. "$HOME/.cargo/env"` в свежем shell.
@@ -143,17 +169,36 @@ git push origin main --tags
 # GitHub Actions соберёт macOS arm64 + Windows x64 → draft Release
 ```
 
+## Пирамида тестов
+
+| Уровень | Что доказывает | Команда | Фикстуры |
+|---|---|---|---|
+| `calc` (`src/calc/__tests__/`) | Чистые функции (`round`/`capacity`/`discharge`/`time`) детерминированы, без БД | `npx vitest run src/calc` | inline данные + `src/fixtures/kavkaz-iv.ts` |
+| `services` (`src/services/__tests__/`) | Бизнес-логика через реальный SQLite (`better-sqlite3`, `openTestDb`) | `npx vitest run src/services` | `openTestDb()` — применяет всё из `src-tauri/migrations/` по имени файла |
+| `components` (`src/components/__tests__/`) | React-компонент + `openTestDb`/jsdom, без Tauri | `npx vitest run src/components` | те же `openTestDb`/`seedReferenceData` |
+| `e2e` (`e2e/specs/`) | UI → сервис → SQLite одним прогоном, через рукописный мост `window.__TAURI_INTERNALS__` (не `mockIPC` — теряет третий аргумент `invoke`, нужный `plugin-fs`) над честной сборкой `vite preview` | `npm run test:e2e` | `e2e/seeds.ts`, коммиченная `appendix-c-load-plan.xlsx` |
+| `windows-smoke` (`e2e-smoke/specs/`) | То же самое, но настоящий Tauri-хост (`tauri-driver` + `msedgedriver`), только Windows | `npm run test:smoke` (только на `windows-latest`) | реальные IPC-команды на живом пуле `plugin-sql` |
+| `rust` (`src-tauri/tests/`) | Миграции зарегистрированы и непрерывны, `execute_batch` атомарен на одном соединении | `npm run test:rust` | `common::fresh_db()` — те же файлы `src-tauri/migrations/` через `sqlx::Migrator` |
+
+- **Фикстуры — только коммиченные файлы**, никаких личных путей (`existsSync`/`console.warn`-скип запрещены — см. «What NOT to do»). `appendix-c-load-plan.xlsx` генерируется `scripts/generate-import-fixture.ts` из `src/fixtures/kavkaz-iv.ts` и коммитится; `import-fixture-freshness.test.ts` гейтит дрейф.
+- **CI (`«.github/workflows/ci.yml»`)** — `changes` (path-filter на `src-tauri/**`/`db-*.ts`/lock-файл) → `web` (typecheck + Vitest json + Playwright json + `scripts/assert-no-skips.mjs`) → `rust`/`windows-smoke` (условно на `changes.rust` или `schedule`/`workflow_dispatch`). `assert-no-skips.mjs` — жёсткий гейт: `skipped`/`todo`/`pending`/`N ignored` > 0 роняет сборку, пропущенная джоба ничего не доказывает (`CLAUDE.md` уровня vault, § «Диагностика падений»).
+- **Пробел: macOS-webview не покрыт автотестом.** Нет headless-раннера для нативного WKWebView. Компенсация — ручной `npm run tauri dev` перед релизом + `cargo test` на `macos-14` внутри `release.yml` (проверяет Rust-слой, не сам webview).
+- **Node 22 в CI, Node 26 локально.** `.github/workflows/{ci,release}.yml` пинят `node-version: 22`; разработческая машина может стоять на более новом Node — расхождение известно, разрыва пока не наблюдалось.
+
 ## Conventions
 
 - **TypeScript strict mode**, никаких `any`. Type-only импорты через `import type` где можно.
 - **Расчётные функции (`src/calc/`) pure и детерминированные**. Не читают БД, не зависят от `Date.now()` — время передаётся параметром.
 - **Сервисы (`src/services/`) зависят только от интерфейса `Db`** — не от конкретной импл. Это позволяет интеграционным тестам работать через in-memory better-sqlite3.
-- **Транзакционность мутаций.** Любая операция, затрагивающая >1 таблицы (например, `CargoLotService.add` пишет lot + layer + параметры; `OgvService.discharge` — operations + allocations + layers), оборачивается в `db.transaction(async (tx) => { ... })`. Откат при exception.
+- **Транзакционность мутаций.** Операция, затрагивающая >1 таблицы, либо оборачивается в `db.transaction(async (tx) => { ... })` (`CargoLotService.add`, `SofService`, `ImportService`, `BackupService.importFromJson`, `VoyageService.copy` — откат при exception), либо, для новых многотабличных записей, собирается как один `Db.executeBatch(BatchStatement[])` (`OgvService.discharge` — единственный текущий пример): все statement'ы идут на одно соединение из пула `tauri-plugin-sql`, `BEGIN IMMEDIATE`→`COMMIT`/`ROLLBACK` считает Rust (`src-tauri/src/batch.rs`), а не JS. Новый код с многотабличной записью — `executeBatch`, не `db.transaction` (снимает риск «два писателя», см. `docs/adr/0002-atomic-writes-execute-batch.md`).
+- **Guard закрытого рейса — `withVoyageGuard`** (`src/services/voyageGuard.ts`). Оборачивает `CargoLotService.add`, `OgvService.discharge`, `SofService.create/update/delete`: закрытый рейс отклоняет мутацию, если вызывающий не `supervisor`/`admin` с непустой причиной (пишется в `audit_log`, чистится после). Новый мутирующий метод сервиса — тоже через этот guard, если рейс может быть закрыт.
+- **Ошибки сервисов — `AppError`** (`src/services/errors.ts`), не голый `Error`/строка. UI переводит через `describeError(e)` (`src/i18n/errors.ts`) — никогда `String(e)` (см. «What NOT to do»). Исключение: `CargoLotService.add`'s `OVERLOAD:<json>` (унаследовано, не мигрировано — вне скоупа этой ветки).
+- **Автобэкап — обязательный параметр конструктора.** `VoyageService`/`ImportService`/`BackupService` принимают `AutoBackupHook` последним аргументом; продовый код всегда передаёт реальный `AutoBackupService` (`src/autoBackup.ts`), тесты — `NOOP_AUTO_BACKUP` (`src/services/__tests__/helpers.ts`). Не подставлять no-op в прод-код.
 - **ID — `crypto.randomUUID()`**. SQLite `id` колонки — `TEXT PRIMARY KEY`. Исключение: `audit_log.id` — `INTEGER AUTOINCREMENT`.
 - **Округление только на границе UI/экспорта** через `formatTons` (или `numFmt = '0.000'` в ExcelJS). В БД и расчётах храним полную точность IEEE 754 double.
 - **Все публичные функции CalculationService покрыты тестами**, включая Appendix C baseline (`src/fixtures/kavkaz-iv.ts` → On Board = 23683.955, Total Empty 98% = 15881.924).
-- **Новая SQL миграция?** Три действия: создать `src-tauri/migrations/NNNN_*.sql`, добавить в `Vec<Migration>` в `src-tauri/src/lib.rs`, добавить чтение/применение в `src/services/__tests__/helpers.ts` `openTestDb`.
-- **Аудит — автоматический.** SQL триггеры в миграции 0002 пишут в `audit_log` для каждого `INSERT/UPDATE/DELETE` восьми ключевых таблиц. Сервисы аудит-логирование не вызывают.
+- **Новая SQL миграция?** Два действия: создать `src-tauri/migrations/NNNN_*.sql`, добавить в `migrations()` (`src-tauri/src/lib.rs`). Мирроить в тестах вручную не нужно — `src/services/__tests__/helpers.ts` `openTestDb` читает каталог `src-tauri/migrations/` по маске `\d{4}_.+\.sql` и применяет по имени файла. Страж — `cargo test` (`src-tauri/tests/migrations.rs`): падает, если число файлов ≠ длине `migrations()` или версии не непрерывны с 1.
+- **Аудит — автоматический, актор — `app_session`.** SQL-триггеры (`0002_audit_triggers.sql`, актор-колонки добавлены `0003_operator_context.sql`) пишут в `audit_log` для каждого `INSERT/UPDATE/DELETE` восьми ключевых таблиц, подставляя `user_id`/`user_role`/`reason` из единственной строки `app_session` (id=1, пишет `SessionService.start()`/`withVoyageGuard`). Сервисы аудит-логирование не вызывают.
 - **i18n:** все user-facing строки — через `t('key')`. Новый ключ → добавить в `src/i18n/en.ts` И `src/i18n/ru.ts` (typecheck заставит). Тесты сервисов пишут английские error-messages — это OK, они не пропускаются в UI без `t()`.
 - **ExcelJS — динамический импорт.** Любой компонент/сервис, тянущий `exceljs`, должен загружаться через `await import('../services/...')` в момент клика, иначе initial bundle вырастет с 285 KB до 1.2 MB.
 - **Коммиты на английском**, conventional-commits (`feat`, `fix`, `chore`, `docs`, `ci`, `refactor`, `test`).
@@ -173,6 +218,9 @@ git push origin main --tags
 - ❌ **Делать API-вызовы к внешним сервисам** в основных функциях (offline-first).
 - ❌ **Запускать Rust команды без `. "$HOME/.cargo/env"`** в свежем shell — `--no-modify-path` использовался при установке `rustup`.
 - ❌ **`cargo check`/`cargo build` через `cd src-tauri`** — лучше через `--manifest-path src-tauri/Cargo.toml`. cwd может неожиданно сброситься.
+- ❌ **`setError(String(e))` в новых обработчиках.** Через `describeError(e)`. Оставшиеся семь мест со старым `String(e)` (`BackupPanel.tsx`, `ExportButton.tsx`, `ImportPanel.tsx`, `CraneCorrectionPanel.tsx`, `AuditLogPanel.tsx`, `NewVoyageForm.tsx`, `AddSofEventForm.tsx`, `ReferencePage.tsx`) — известный долг, не образец для нового кода.
+- ❌ **`it.skip`/`maybeIt`/`existsSync`-скип, зависящий от наличия личного файла.** Отсутствующая фикстура — красный тест, не пропущенный (`scripts/assert-no-skips.mjs` это гейтит). Фикстуры — коммиченные файлы, не личные пути разработчика.
+- ❌ **`BEGIN`/`COMMIT` вручную через `plugin-sql` в новом коде.** Для одной таблицы — обычный `execute`; для нескольких — `db.transaction` (JS-уровень) или `executeBatch` (Rust-уровень, атомарность на одном соединении). Ручной `BEGIN` через plugin-sql не гарантирует то же соединение на последующих вызовах.
 
 ## Lessons from MVP build (для будущих изменений)
 
@@ -192,8 +240,10 @@ git push origin main --tags
 
 - `shipping-calculations` — формулы из §5, LIFO, AT-05 overload guard, контрольные значения.
 - `excel-export` — структура листов, defensive no-formula sweep, lazy-import requirement, Load Plan FIRST правило.
-- `acceptance-tests` — сценарии AT-01..AT-13 с указанием где покрыты.
-- `db-migrations` — схема таблиц из §9, audit triggers, helpers.ts mirror, регистрация миграций в lib.rs.
-- `service-layer` — Db interface, транзакции, как добавить новый сервис.
+- `acceptance-tests` — сценарии AT-01..AT-13 с указанием где покрыты, плюс как заводить новый пользовательский сценарий (`S-N` из `Requirements/scenarios.md`) и его автотест.
+- `db-migrations` — схема таблиц из §9, audit triggers (актор — `app_session`), регистрация миграций в `lib.rs` (2 шага + `cargo test`-страж).
+- `service-layer` — Db interface, `AppError`/`executeBatch`/`withVoyageGuard`, автобэкап-DI, как добавить новый сервис.
 - `i18n` — useT, en/ru parity, ключевые соглашения.
-- `release-flow` — версии в 3 файлах, тег формат, GitHub Actions.
+- `release-flow` — версии в 3 файлах, тег формат, GitHub Actions, macOS Rust-покрытие в релизной сборке.
+
+Архитектурные решения без «истории вопроса» в самом коде — `docs/adr/` (MADR short form, `docs/adr/README.md` — конвенция и список).
