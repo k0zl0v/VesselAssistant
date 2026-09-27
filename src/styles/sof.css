@@ -1,0 +1,317 @@
+/* Statement of Facts (docs/ui/artboards/Sof.dc.html). */
+
+/* New tokens — to be moved into tokens.css by the lead. */
+:root {
+  --sof-loading: var(--accent);
+  --sof-discharging: var(--cargo-fallback);
+  --sof-weather: var(--warning);
+  --sof-port: var(--ink-faint);
+  --sof-other: var(--chrome-ink-dim);
+  --sof-bar-ink: var(--accent-ink);
+  --sof-bar-line: rgba(0, 0, 0, 0.08);
+  --sof-track: var(--surface-readonly);
+  --sof-day-col: 72px;
+  --sof-track-height: 24px;
+  --sof-bar-height: 18px;
+  --sof-point-width: 4px;
+  --sof-axis: #9aa8b3;
+  --sof-axis-text: 9px;
+}
+
+.sof-g-loading { --sof-color: var(--sof-loading); }
+.sof-g-discharging { --sof-color: var(--sof-discharging); }
+.sof-g-weather { --sof-color: var(--sof-weather); }
+.sof-g-port { --sof-color: var(--sof-port); }
+.sof-g-other { --sof-color: var(--sof-other); }
+
+.sof-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Summary tiles --------------------------------------------------- */
+
+.sof-stats {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sof-stat {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--space-3) 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.sof-stat-label {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.sof-stat-value {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-metric);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.sof-stat-value.warn { color: var(--warning-ink); }
+.sof-stat-value.danger { color: var(--danger); }
+
+.sof-stat-note {
+  margin-top: 2px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Overlap warning ------------------------------------------------- */
+
+.sof-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft-line);
+  border-left: 3px solid var(--warning);
+  border-radius: 6px;
+  color: var(--warning);
+}
+
+.sof-warning-text {
+  flex-grow: 1;
+  font-size: var(--text-small);
+  line-height: 1.45;
+  color: var(--warning-ink);
+}
+
+.sof-warning .btn {
+  border-color: var(--warning-soft-line);
+  color: var(--warning-ink);
+}
+
+/* ---- Timeline -------------------------------------------------------- */
+
+.sof-timeline {
+  padding: 14px var(--space-4) var(--space-3);
+}
+
+.sof-timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: 11px;
+}
+
+.sof-timeline-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.sof-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.sof-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.sof-swatch {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--sof-color);
+}
+
+.sof-swatch.sm {
+  width: 8px;
+  height: 8px;
+}
+
+.sof-axis,
+.sof-day {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.sof-axis-spacer,
+.sof-day-label {
+  width: var(--sof-day-col);
+  flex-shrink: 0;
+}
+
+.sof-axis-ticks {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--sof-axis-text);
+  color: var(--sof-axis);
+}
+
+.sof-day-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.sof-track {
+  position: relative;
+  flex-grow: 1;
+  height: var(--sof-track-height);
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--sof-track);
+}
+
+.sof-bar {
+  position: absolute;
+  top: 3px;
+  display: flex;
+  align-items: center;
+  height: var(--sof-bar-height);
+  padding: 0 6px;
+  overflow: hidden;
+  border: 1px solid var(--sof-bar-line);
+  border-radius: var(--radius-tag);
+  background: var(--sof-color);
+}
+
+.sof-bar.point {
+  min-width: var(--sof-point-width);
+  padding: 0;
+}
+
+.sof-bar.overlap {
+  border: 2px solid var(--danger);
+}
+
+.sof-bar-label {
+  overflow: hidden;
+  font-size: var(--text-micro);
+  color: var(--sof-bar-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- Events table ---------------------------------------------------- */
+
+.sof-table td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.sof-table .col-date { width: 108px; }
+.sof-table .col-time { width: 76px; }
+.sof-table .col-dur { width: 84px; }
+.sof-table .col-cat { width: 210px; }
+.sof-table .col-actions { width: 132px; }
+
+.sof-table td.num {
+  text-align: left;
+}
+
+.sof-table .cell-date,
+.sof-table .cell-dur {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.sof-table .cell-dur.zero,
+.sof-table .cell-to.empty {
+  color: var(--ink-zero);
+}
+
+.sof-table .cell-desc {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.sof-table tr.overlap td {
+  background: var(--warning-row);
+}
+
+.sof-table tr.overlap .cell-to {
+  color: var(--warning-ink);
+}
+
+.sof-table .cell-to.empty {
+  color: var(--ink-zero);
+}
+
+.sof-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+
+.sof-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.sof-row-actions .btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.sof-row-actions .btn:hover:not(:disabled),
+.sof-row-actions .btn:focus-visible {
+  border-color: var(--line-strong);
+}
+
+.sof-row-actions .btn-icon {
+  width: var(--control-sm);
+  padding: 0;
+}
+
+.sof-table tr.sof-confirm-row td {
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-raised);
+}
+
+.sof-table-foot {
+  padding: 9px var(--space-4);
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+  background: var(--surface-raised);
+  border-top: 1px solid var(--line-soft);
+}
+
+.sof-inline-error {
+  margin-top: var(--space-2);
+}
+
+/* ---- Dialog form ----------------------------------------------------- */
+
+.sof-form .input.time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
