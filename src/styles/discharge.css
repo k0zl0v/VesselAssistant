@@ -1,0 +1,442 @@
+/* Discharge dialog with the LIFO preview (docs/ui/artboards/Discharge.dc.html)
+   and the «OGV · Operations» screen. */
+
+:root {
+  --discharge-step-width: 40px;   /* номер шага списания слева от слоя */
+  --discharge-col-off: 130px;     /* колонка «Списать» */
+  --discharge-col-after: 148px;   /* колонка «Останется» */
+  --discharge-bar-width: 210px;   /* шкала «списано / остаётся» слоя */
+  --discharge-bar-height: 7px;
+  --discharge-tons-width: 150px;
+  --discharge-date-width: 148px;
+  --text-tile: 15px;              /* значение в тайле «после операции» */
+  --text-tag: 9px;                /* метка слоя «СЛОЙ 3 · ВЕРХ» */
+}
+
+/* ===== Dialog: fields ================================================ */
+
+.discharge-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 18px var(--space-6);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.discharge-holds {
+  align-self: flex-start;
+  flex-wrap: wrap;
+  height: auto;
+  min-height: var(--control-md);
+}
+
+.discharge-holds button {
+  min-height: var(--control-md);
+}
+
+.discharge-holds button:disabled {
+  cursor: default;
+}
+
+.discharge-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.discharge-field-tons {
+  width: var(--discharge-tons-width);
+  flex-shrink: 0;
+}
+
+.discharge-field-date {
+  width: var(--discharge-date-width);
+  flex-shrink: 0;
+}
+
+.discharge-field-desc {
+  flex-grow: 1;
+}
+
+.discharge-row .input {
+  height: var(--control-md);
+}
+
+.input.discharge-tons {
+  font-weight: 600;
+  text-align: left;
+}
+
+/* ===== Dialog: availability + quick chips ============================ */
+
+.discharge-available {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-sm);
+  padding: var(--space-2) var(--space-6) 0;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.discharge-available strong {
+  color: var(--ink);
+}
+
+.discharge-quick {
+  display: flex;
+  gap: 6px;
+}
+
+/* ===== Dialog: LIFO preview ========================================== */
+
+.discharge-preview {
+  padding: var(--space-4) var(--space-6) var(--space-4);
+}
+
+.discharge-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+
+.discharge-preview-title {
+  margin: 0;
+  font-size: var(--text-card);
+  font-weight: 600;
+}
+
+.discharge-badge {
+  padding: 2px 7px;
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  font-size: var(--text-caption);
+}
+
+.discharge-preview-hint {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+}
+
+.discharge-shortage {
+  align-items: flex-start;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  line-height: 1.45;
+}
+
+.discharge-shortage svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.discharge-layers {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.discharge-layer {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.discharge-layer:last-child {
+  border-bottom: 0;
+}
+
+.discharge-step {
+  display: flex;
+  width: var(--discharge-step-width);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.discharge-step.closed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.discharge-layer-main {
+  flex-grow: 1;
+  min-width: 0;
+  padding: 11px 14px;
+}
+
+.discharge-layer-title {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+
+.discharge-seq {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: var(--radius-tag);
+  background: var(--line-soft);
+  color: var(--ink-col);
+  font-size: var(--text-tag);
+  text-transform: uppercase;
+}
+
+.discharge-vessel {
+  overflow: hidden;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discharge-cargo {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.discharge-layer-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 7px;
+}
+
+.discharge-bar {
+  display: flex;
+  width: var(--discharge-bar-width);
+  height: var(--discharge-bar-height);
+  flex-shrink: 1;
+  min-width: 60px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--track);
+}
+
+.discharge-bar-off {
+  height: 100%;
+  background: var(--danger);
+}
+
+.discharge-bar-keep {
+  height: 100%;
+}
+
+.discharge-of {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.discharge-layer-num {
+  width: var(--discharge-col-off);
+  flex-shrink: 0;
+  padding: 11px 14px;
+  border-left: 1px solid var(--line-soft);
+  text-align: right;
+}
+
+.discharge-layer-num.after {
+  width: var(--discharge-col-after);
+  padding-right: var(--space-4);
+}
+
+.discharge-num-label {
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.discharge-num-value {
+  margin-top: 2px;
+  font-size: var(--text-card);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.discharge-num-value.off,
+.discharge-num-value.closed {
+  color: var(--danger);
+}
+
+.discharge-num-value.closed {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+}
+
+/* ===== Dialog: hold after the operation ============================== */
+
+.discharge-after {
+  margin-top: var(--space-4);
+  padding: 14px var(--space-4);
+  border: 1px solid var(--track);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+
+.discharge-after-title {
+  margin-bottom: 11px;
+  color: var(--ink-col);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.discharge-after-tiles {
+  display: flex;
+  gap: 10px;
+}
+
+.discharge-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px var(--space-3);
+  border: 1px solid var(--track);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.discharge-tile-label {
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.discharge-tile-value {
+  margin-top: 4px;
+  font-size: var(--text-tile);
+  font-weight: 600;
+}
+
+.discharge-tile-value.warn {
+  color: var(--warning-ink);
+}
+
+.discharge-tile-value.over,
+.discharge-tile-value.negative {
+  color: var(--danger);
+}
+
+.discharge-tile-delta {
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+}
+
+.discharge-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: 13px;
+  color: var(--ink-muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.discharge-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+.discharge-error {
+  margin: 0 var(--space-6) var(--space-3);
+}
+
+/* ===== OGV · Operations screen ======================================= */
+
+.ogv-table .col-date {
+  width: 118px;
+}
+
+.ogv-table .col-hold {
+  width: 110px;
+}
+
+.ogv-table .col-tons {
+  width: 120px;
+}
+
+.ogv-table .col-layers {
+  width: 46%;
+}
+
+.ogv-table td {
+  vertical-align: top;
+}
+
+.ogv-table .hold-no {
+  font-weight: 600;
+}
+
+.ogv-table .ogv-tons {
+  font-weight: 600;
+}
+
+.ogv-allocs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  column-gap: 10px;
+  row-gap: 5px;
+  align-items: baseline;
+}
+
+.ogv-alloc {
+  display: contents;
+}
+
+.ogv-alloc-seq {
+  padding: 1px 5px;
+  border-radius: var(--radius-tag);
+  background: var(--line-soft);
+  color: var(--ink-faint);
+  font-size: var(--text-tag);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ogv-alloc-vessel {
+  overflow: hidden;
+  font-size: var(--text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ogv-alloc-tons {
+  color: var(--danger);
+  font-size: var(--text-small);
+  text-align: right;
+}
+
+.ogv-alloc-state {
+  min-width: 96px;
+  color: var(--ink-muted);
+  font-size: var(--text-micro);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ogv-alloc-state.closed {
+  color: var(--danger);
+}
+
+.ogv-alert {
+  margin-bottom: var(--space-4);
+}
