@@ -10,9 +10,10 @@ on:
     inputs:
       capabilities_ref:
         description: >
-          Git ref to check out src-tauri/capabilities/default.json from before the
-          windows-smoke build (hypothesis 10: measure write_text_file/read_text_file
-          against a prior commit's capabilities instead of the branch's own).
+          Commit SHA (full or abbreviated), tag, or branch name of origin to check out
+          src-tauri/capabilities/default.json from before the windows-smoke build
+          (hypothesis 10: measure write_text_file/read_text_file against a prior
+          commit's capabilities instead of the branch's own).
         required: false
         default: ''
 
@@ -28,9 +29,16 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
     steps:
       - uses: actions/checkout@v4
+      # schedule/workflow_dispatch run rust/windows-smoke unconditionally; skipping the filter
+      # there keeps its schedule-payload error (dorny/paths-filter#100) from failing
+      # `changes`, which would skip both dependents via the implicit success().
       - uses: dorny/paths-filter@v3
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         id: filter
         with:
+          # Default 'some' makes a file match if ANY pattern does, so '**' alone
+          # wins and the '!' lines never exclude; 'every' requires all of them.
+          predicate-quantifier: 'every'
           filters: |
             rust:
               - '**'
@@ -86,15 +94,26 @@ jobs:
     if: needs.changes.outputs.rust == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
+      # Full history + tags: `git fetch --depth=1 origin <sha>` rejects an abbreviated
+      # SHA ("couldn't find remote ref"), so capabilities_ref is resolved locally instead.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check out capabilities from capabilities_ref (hypothesis 10 measurement)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.capabilities_ref != '' }}
         shell: bash
         env:
           CAPABILITIES_REF: ${{ inputs.capabilities_ref }}
         run: |
-          git fetch --depth=1 origin "$CAPABILITIES_REF"
-          git checkout FETCH_HEAD -- src-tauri/capabilities/default.json
+          if git rev-parse --verify --quiet "${CAPABILITIES_REF}^{commit}" >/dev/null; then
+            ref="$CAPABILITIES_REF"
+          elif git rev-parse --verify --quiet "origin/${CAPABILITIES_REF}^{commit}" >/dev/null; then
+            ref="origin/$CAPABILITIES_REF"
+          else
+            echo "::error::capabilities_ref '$CAPABILITIES_REF' is not a commit, tag or branch of origin"
+            exit 1
+          fi
+          git checkout "$ref" -- src-tauri/capabilities/default.json
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
