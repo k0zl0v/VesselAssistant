@@ -25,9 +25,17 @@ export async function attachPage(page: Page, host: TauriBridgeHost): Promise<Err
   return errors;
 }
 
-/** `<dd>` of the `VoyageTotals` row whose `<dt>` is exactly `label`. */
-export function totalsValue(page: Page, label: string): Locator {
-  return page.locator('dl.totals > div').filter({ has: page.getByText(label, { exact: true }) }).locator('dd');
+/** Metric tiles of the Load Plan header row, by testid suffix. */
+export type MetricKey = 'on-board' | 'total-loaded' | 'total-discharged' | 'total-empty-98' | 'total-empty-100';
+
+/** Value of a Load Plan metric tile (number only; the unit is a separate span). */
+export function totalsValue(page: Page, key: MetricKey): Locator {
+  return page.getByTestId(`metric-${key}-value`);
+}
+
+/** `'25 684.955'` → the UI form with U+202F between thousands (formatTons). */
+export function g(tons: string): string {
+  return tons.replace(/ /g, '\u202F');
 }
 
 export function holdCell(page: Page, holdNo: number, testId: string): Locator {

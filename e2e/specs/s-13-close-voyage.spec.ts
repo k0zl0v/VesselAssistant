@@ -27,32 +27,29 @@ test('S-13: closing asks first, snapshots, audits, and leaves the voyage read-on
     );
   await login('Иван Петров');
 
-  // A second window, opened before the close, still shows the add-lot form of the open voyage.
+  // A second window, opened before the close, still shows the add-lot dialog of the open voyage.
   const stale = await context.newPage();
   const staleErrors = await attachPage(stale, host);
   await loginOn(stale, 'Иван Петров');
-  await stale.getByTestId('hold-expand-1').click();
   await stale.getByTestId('hold-action-add-lot').click();
+  await stale.getByTestId('lot-hold-1').click();
+  await stale.getByTestId('lot-cargo-SFM').click();
 
   const expectedPrompt = ru['voyage.close.confirm'].replace('{voyage_no}', voyageNo);
-  const prompts: string[] = [];
-  page.once('dialog', async (d) => {
-    prompts.push(d.message());
-    await d.dismiss();
-  });
+  // Closing is confirmed inline (no window.confirm): the panel states the consequence.
+  const confirm = page.getByTestId('voyage-close-confirm');
   await page.getByTestId('voyage-close').click();
-  await expect.poll(() => prompts).toEqual([expectedPrompt]);
+  await expect(confirm).toContainText(expectedPrompt);
+  await page.getByTestId('voyage-close-confirm-cancel').click();
+  await expect(confirm).toHaveCount(0);
   await expect(page.getByTestId('voyage-status')).toHaveText(ru['voyage.status.open']);
   expect(await status()).toBe('open');
   expect(snapshots()).toEqual([]);
 
-  page.once('dialog', async (d) => {
-    prompts.push(d.message());
-    await d.accept();
-  });
   await page.getByTestId('voyage-close').click();
+  await expect(confirm).toContainText(expectedPrompt);
+  await page.getByTestId('voyage-close-confirm-confirm').click();
   await expect(page.getByTestId('voyage-status')).toHaveText(ru['voyage.status.closed']);
-  expect(prompts).toEqual([expectedPrompt, expectedPrompt]);
   expect(await status()).toBe('closed');
   expect(snapshots()).toHaveLength(1);
   const snapshot = JSON.parse(host.fs.readText(snapshots()[0]!)!) as { tables: { voyages: { status: string }[] } };
@@ -68,9 +65,9 @@ test('S-13: closing asks first, snapshots, audits, and leaves the voyage read-on
   await expect(page.getByTestId('voyage-close')).toHaveCount(0);
   const afterClose = await dataCounts();
 
-  await page.getByTestId('hold-expand-1').click();
-  await expect(page.getByTestId('hold-expansion')).toBeVisible();
+  await expect(page.getByTestId('voyage-closed-note')).toBeVisible();
   await expect(page.getByTestId('hold-action-add-lot')).toHaveCount(0);
+  await expect(page.getByTestId('hold-action-discharge')).toHaveCount(0);
 
   await stale.getByTestId('lot-source-vessel').fill('LATE BARGE');
   await stale.getByTestId('lot-tons').fill('10');

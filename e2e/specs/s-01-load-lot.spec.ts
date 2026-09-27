@@ -1,6 +1,5 @@
-import { ru } from '../../src/i18n/ru';
 import { CargoLotService } from '../../src/services/CargoLotService';
-import { expect, holdCell, test } from '../fixtures';
+import { expect, g, holdCell, test } from '../fixtures';
 import { seedS1 } from '../seeds';
 
 test('S-1: a VELES lot is loaded over DIANA MARIA through the form, recalculated and audited with the operator name', async ({
@@ -12,25 +11,34 @@ test('S-1: a VELES lot is loaded over DIANA MARIA through the form, recalculated
   const holdId = seeded.holdIdByNo.get(1)!;
   await login('Иван Петров');
 
-  await expect(holdCell(page, 1, 'hold-loaded')).toHaveText('1600.000');
-  await page.getByTestId('hold-expand-1').click();
+  await expect(holdCell(page, 1, 'hold-loaded')).toHaveText(g('1 600.000'));
   await page.getByTestId('hold-action-add-lot').click();
-  await page.getByTestId('lot-source-vessel').fill('VELES');
-  await page.getByTestId('lot-cargo').selectOption({ label: 'WHEAT' });
-  await page.getByTestId('lot-protein').selectOption('12.5');
-  await page.getByTestId('lot-sf').fill('1.25');
-  await page.getByTestId('lot-tons').fill('1200');
-  await page.getByTestId('lot-submit').click();
+  const dialog = page.getByTestId('add-lot-dialog');
+  await dialog.getByTestId('lot-hold-1').click();
+  await dialog.getByTestId('lot-source-vessel').fill('VELES');
+  await dialog.getByTestId('lot-cargo-WHEAT').click();
+  await dialog.getByTestId('lot-protein-12.5').click();
+  await dialog.getByTestId('lot-sf').fill('1.25');
+  await dialog.getByTestId('lot-tons').fill('1200');
+  await dialog.getByTestId('lot-submit').click();
+  await expect(dialog).toHaveCount(0);
 
-  await expect(holdCell(page, 1, 'hold-loaded')).toHaveText('2800.000');
-  await expect(holdCell(page, 1, 'hold-remain')).toHaveText('2800.000');
+  await expect(holdCell(page, 1, 'hold-loaded')).toHaveText(g('2 800.000'));
+  await expect(holdCell(page, 1, 'hold-remain')).toHaveText(g('2 800.000'));
   // CapacityTons98 = 100000 / 1.25 × 0.98 = 78400.000
-  await expect(holdCell(page, 1, 'hold-empty-98')).toHaveText('75600.000');
-  await expect(page.getByTestId('hold-expansion')).toContainText(ru['holds.lots.title_top'].replace('{seq}', '2'));
-  await expect(page.getByTestId('hold-lot-2')).toContainText('#2 VELES');
-  await expect(page.getByTestId('hold-lot-2')).toContainText('1200.000');
-  await expect(page.getByTestId('hold-lot-1')).toContainText('#1 DIANA MARIA');
-  await expect(page.getByTestId('hold-lot-1')).toContainText('1600.000');
+  await expect(holdCell(page, 1, 'hold-empty-98')).toHaveText(g('75 600.000'));
+
+  // The layers screen shows the new lot on top of the stack (LIFO order, top first).
+  await page.getByTestId('nav-layers').click();
+  const top = page.getByTestId('layer-1-2');
+  await expect(top).toContainText('VELES');
+  await expect(top).toContainText(g('1 200.000'));
+  await expect(page.getByTestId('layer-1-1')).toContainText('DIANA MARIA');
+  await expect(page.getByTestId('layer-1-1')).toContainText(g('1 600.000'));
+  const order = await page.getByTestId('layers-hold-1').locator('[data-testid^="layer-1-"]').evaluateAll((els) =>
+    els.map((el) => el.getAttribute('data-testid')),
+  );
+  expect(order).toEqual(['layer-1-2', 'layer-1-1']);
 
   expect(
     await db.select(
