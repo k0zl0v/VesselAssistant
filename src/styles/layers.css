@@ -1,0 +1,496 @@
+/* Cargo layers by hold (docs/ui/artboards/CargoLayers.dc.html). */
+
+/* New tokens from the artboard — to be moved into tokens.css by the lead. */
+:root {
+  --layers-stack-height: max(404px, calc(100vh - 400px));
+  --layers-block-min: 30px;
+  --layers-solid-min: 26px;
+  --layers-block-min-labelled: 42px;
+  --layers-label-row: 14px;
+  --layers-block-gap: 3px;
+  --layers-gap: 22px;
+  --layer-ink: #ffffff;
+  --layer-ink-dim: rgba(255, 255, 255, 0.82);
+  --layer-seq-ink: #3e4b55;
+  --line-faint: #f1f4f6;
+}
+
+.layers-body {
+  display: flex;
+  flex-direction: column;
+  padding: 18px var(--content-pad) var(--space-5);
+}
+
+.layers-layout {
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--layers-gap);
+}
+
+/* ---- Header LIFO note ---------------------------------------------- */
+
+.layers-lifo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-right: var(--space-1);
+  padding: 6px 11px;
+  font-size: var(--text-small);
+  color: var(--accent-press);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius-control);
+  white-space: nowrap;
+}
+
+/* ---- Stacks ---------------------------------------------------------- */
+
+.layers-main {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.layers-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.layers-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layers-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.layers-swatch-discharged {
+  background: var(--layer-discharged-fill);
+  border: 1px dashed var(--layer-discharged-line);
+}
+
+.layers-swatch-cap {
+  width: 14px;
+  border-top: 2px dashed var(--danger);
+}
+
+.layers-legend-spacer {
+  flex-grow: 1;
+}
+
+.layers-legend-scale {
+  color: var(--ink-faint);
+}
+
+.layers-board {
+  flex-grow: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: 18px 18px 0;
+}
+
+.layers-hold {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.layers-stack {
+  position: relative;
+  height: var(--layers-stack-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.layers-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 2px dashed var(--danger);
+  pointer-events: none;
+}
+
+.layers-cap-label {
+  transform: translateY(-13px);
+  padding: 0 3px;
+  font-size: var(--text-micro);
+  color: var(--danger);
+  background: var(--surface);
+}
+
+.layers-block {
+  position: relative;
+  flex-shrink: 0;
+  height: var(--layer-h);
+  min-height: var(--layers-block-min);
+  margin-bottom: var(--layers-block-gap);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border: 1px solid var(--layer-color);
+  border-radius: var(--radius-tag);
+  background: var(--layer-discharged-fill);
+}
+
+.layers-block.depleted {
+  background: transparent;
+  border: 1px dashed var(--layer-discharged-line);
+}
+
+.layers-solid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: var(--layer-solid);
+  min-height: var(--layers-solid-min);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  line-height: 1.2;
+  background: var(--layer-color);
+  color: var(--layer-ink);
+}
+
+/* A closed layer keeps only its label row: «СЛОЙ 3 · ВЕРХ … слой закрыт». */
+.layers-closed {
+  position: absolute;
+  top: 3px;
+  right: 7px;
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+}
+
+.layers-vessel {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layers-remain {
+  font-size: var(--text-micro);
+  white-space: nowrap;
+}
+
+.layers-solid .layers-remain {
+  color: var(--layer-ink-dim);
+}
+
+.layers-seq {
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--layer-seq-ink);
+}
+
+.layers-block.label-on-fill {
+  min-height: var(--layers-block-min-labelled);
+}
+
+/* The fill reaches the label row: keep the vessel and tons below it. */
+.layers-block.label-on-fill .layers-solid {
+  padding-top: var(--layers-label-row);
+}
+
+.layers-block.label-on-fill .layers-seq {
+  color: var(--layer-ink-dim);
+}
+
+.layers-block.depleted .layers-seq {
+  color: var(--ink-faint);
+}
+
+.layers-block.top .layers-seq {
+  font-weight: 600;
+}
+
+/* Hold caption doubles as the hold picker for «Выгрузить из трюма» — never a layer picker.
+   It carries .btn only to escape the legacy global button rule in App.css. */
+.btn.layers-caption {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 10px 2px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-body);
+  font-weight: 400;
+  white-space: normal;
+  text-align: left;
+}
+
+.btn.layers-caption:hover:not(:disabled) {
+  border-color: var(--line);
+  background: var(--surface-sunken);
+}
+
+.btn.layers-caption:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.layers-hold.selected .btn.layers-caption {
+  border-top: 2px solid var(--accent);
+  padding-top: 9px;
+}
+
+.layers-hold.selected .layers-hold-no {
+  color: var(--accent-press);
+}
+
+.layers-caption-row,
+.layers-caption-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.layers-caption-line {
+  margin-top: 2px;
+  white-space: nowrap;
+  font-size: var(--text-caption);
+}
+
+.layers-caption-row + .layers-caption-line {
+  margin-top: var(--space-1);
+}
+
+.layers-hold-no {
+  font-family: var(--font-mono);
+  font-size: var(--text-card);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.layers-hold-sf {
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.layers-hold-remain {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.layers-hold-remain.negative {
+  color: var(--danger);
+}
+
+/* ---- Inspector ------------------------------------------------------ */
+
+.layers-inspector {
+  width: var(--inspector-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.layers-panel {
+  padding: 15px var(--space-4);
+}
+
+.layers-panel-title {
+  margin: 0 0 3px;
+  font-size: var(--text-card);
+  font-weight: 600;
+}
+
+.layers-panel-subtitle {
+  margin: 0 0 13px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.layers-source {
+  margin-bottom: var(--space-3);
+}
+
+.layers-source-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: var(--text-small);
+}
+
+.layers-source-name {
+  font-weight: 600;
+}
+
+.layers-source-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-tag);
+  background: var(--track);
+}
+
+.layers-source-bar {
+  width: var(--bar);
+  height: 100%;
+  border-radius: var(--radius-tag);
+  background: var(--accent);
+}
+
+.layers-source-detail {
+  margin-top: var(--space-1);
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+}
+
+.layers-onboard {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.layers-onboard .num {
+  font-size: var(--text-card);
+  color: var(--ink);
+}
+
+.layers-history {
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.layers-history-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.layers-history-empty {
+  margin: 0 0 10px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.layers-op {
+  margin-bottom: 10px;
+  padding: 11px var(--space-3);
+  border: 1px solid var(--track);
+  border-radius: 6px;
+}
+
+.layers-op-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.layers-op-id {
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.layers-op-date {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.layers-op-meta {
+  margin: var(--space-1) 0 9px;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.layers-op-tons {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.layers-alloc {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-top: 1px solid var(--line-faint);
+  font-size: var(--text-caption);
+}
+
+.layers-alloc-seq {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  font-size: 9px;
+  color: var(--ink-faint);
+  background: var(--line-faint);
+  border-radius: var(--radius-tag);
+}
+
+.layers-alloc-vessel {
+  flex-grow: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layers-alloc-tons {
+  flex-shrink: 0;
+  color: var(--danger);
+}
+
+.layers-alloc-state {
+  flex-shrink: 0;
+  min-width: 76px;
+  text-align: right;
+  font-size: var(--text-micro);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.layers-alloc-state.closed {
+  color: var(--danger);
+}
+
+.layers-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 9px 10px;
+  font-size: var(--text-caption);
+  color: var(--warning-ink);
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft-line);
+  border-radius: var(--radius-control);
+}
+
+.layers-footnote svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
