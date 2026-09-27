@@ -54,7 +54,7 @@ export interface Db {
 }
 ```
 
-`executeBatch` is the newer of the two mutation primitives — for **new** multi-table writes, prefer it over `db.transaction`: `TauriDb.executeBatch` calls the Rust `execute_batch` command, which acquires one connection from `tauri-plugin-sql`'s own pool and runs the whole batch inside a single `BEGIN IMMEDIATE`, removing the "two writers" risk that `db.transaction`'s separate IPC calls (`BEGIN`/statements/`COMMIT`) don't fully rule out. `OgvService.discharge` is the current example; see `docs/adr/0002-atomic-writes-execute-batch.md` for the rejected alternatives. `db.transaction` stays the pattern for existing multi-table mutations (`CargoLotService`, `SofService`, `ImportService`, `BackupService.importFromJson`, `VoyageService.copy`) — not deprecated, just not the default for new code.
+`executeBatch` is the newer of the two mutation primitives — for **new** multi-table writes, prefer it over `db.transaction`: `TauriDb.executeBatch` calls the Rust `execute_batch` command, which acquires one connection from `tauri-plugin-sql`'s own pool and runs the whole batch inside a single `BEGIN IMMEDIATE`, removing the "two writers" risk that `db.transaction`'s separate IPC calls (`BEGIN`/statements/`COMMIT`) don't fully rule out. `OgvService.discharge` and `VoyageService.copy` are the current examples; see `docs/adr/0002-atomic-writes-execute-batch.md` for the rejected alternatives. `db.transaction` stays the pattern for existing multi-table mutations (`CargoLotService`, `SofService`, `ImportService`, `BackupService.importFromJson`) — not deprecated, just not the default for new code.
 
 All services accept `Db` in their constructor. **Don't import a specific impl** — that breaks test isolation. The two impls:
 
@@ -69,19 +69,18 @@ Parameters use `?` positional placeholders (works for both impls). SQL string id
 
 1. Define types in `src/services/types.ts` (or local file if very specific).
 2. Class with `constructor(private readonly db: Db) {}`.
-3. **Transactions for multi-table mutations:** wrap in `db.transaction(async (tx) => { ... })`. The example pattern (from `OgvService.discharge`):
+3. **Transactions for multi-table mutations:** wrap in `db.transaction(async (tx) => { ... })`. The example pattern (from `CargoLotService.add`):
 
    ```ts
-   return await this.db.transaction(async (tx) => {
-     const opId = crypto.randomUUID();
-     await tx.execute(`INSERT INTO operations ...`, [opId, ...]);
-     const layers = await tx.select<...>(`SELECT ... FROM cargo_layers ...`);
-     // call pure calc function
-     const allocations = dischargeFromHold(opId, holdId, qty, layers);
-     for (const a of allocations) await tx.execute(`INSERT INTO discharge_allocations ...`);
-     for (const l of layers) if (changed) await tx.execute(`UPDATE cargo_layers ...`);
-     return { ... };
-   });
+   return withVoyageGuard(this.db, input.voyage_id, opts, () => this.db.transaction(async (tx) => {
+     const vesselRows = await tx.select<{ vessel_id: string }>(
+       `SELECT vessel_id FROM voyages WHERE id = ?`, [input.voyage_id],
+     );
+     // ... validate hold + protein, run the AT-05 overload check ...
+     await tx.execute(`INSERT INTO cargo_lots (...) VALUES (...)`, [lotId, ...]);
+     await tx.execute(`INSERT INTO cargo_layers (...) VALUES (...)`, [layerId, ...]);
+     return rows[0]!;
+   }));
    ```
 
    Throw inside the callback → transaction rolls back. No partial state ever observed.
