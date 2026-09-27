@@ -1,0 +1,288 @@
+/* Documents (docs/ui/artboards/Documents.dc.html). */
+
+/* New tokens — to be moved into tokens.css by the lead. */
+:root {
+  --text-print-col: 9px;      /* column labels and sheet position tags in the print preview */
+  --radius-item: 6px;         /* list item / inset panel inside a card */
+  --shadow-sheet: 0 1px 3px rgba(13, 22, 32, 0.07); /* paper sheet in the print preview */
+  --book-width: 300px;        /* «Состав книги» column */
+  --sheet-tabs-height: 32px;  /* workbook tab strip under the preview */
+}
+
+.documents-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: 18px;
+  padding-bottom: 22px;
+}
+
+.documents-grid {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--book-width) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+/* ---- Export result -------------------------------------------------- */
+
+.doc-saved {
+  flex-wrap: wrap;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.doc-saved-title {
+  font-weight: 600;
+}
+
+.doc-saved-path {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  word-break: break-all;
+}
+
+/* ---- «Состав книги» ------------------------------------------------- */
+
+.doc-book {
+  display: flex;
+  flex-direction: column;
+  padding: 15px var(--space-4);
+}
+
+.doc-book .card-title {
+  margin-bottom: 3px;
+}
+
+.doc-book-subtitle {
+  margin: 0 0 13px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.doc-sheet-list {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex-grow: 1;
+}
+
+.doc-sheet-item {
+  padding: 11px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+  background: var(--surface);
+}
+
+.doc-sheet-item.is-first {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-line);
+}
+
+.doc-sheet-item-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.doc-sheet-pos {
+  font-family: var(--font-mono);
+  font-size: var(--text-print-col);
+  color: var(--ink-col);
+  background: var(--line-soft);
+  border-radius: var(--radius-tag);
+  padding: 1px 5px;
+}
+
+.doc-sheet-name {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.doc-sheet-note {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+
+.doc-filename {
+  background: var(--surface-sunken);
+  border: 1px solid var(--track);
+  border-radius: var(--radius-item);
+  padding: 11px var(--space-3);
+}
+
+.doc-filename-label {
+  margin-bottom: 6px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-col);
+}
+
+.doc-filename-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.doc-filename-note {
+  margin-top: 6px;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+/* ---- «Предпросмотр» ------------------------------------------------- */
+
+.doc-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.doc-preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 13px var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.doc-values-badge {
+  font-size: var(--text-caption);
+  color: var(--positive);
+  background: var(--positive-soft);
+  border: 1px solid var(--positive-soft-line);
+  border-radius: var(--radius-tag);
+  padding: 2px 7px;
+}
+
+.doc-preview-well {
+  flex-grow: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  background: var(--surface-readonly);
+  overflow: auto;
+}
+
+.doc-sheet {
+  min-height: 100%;
+  padding: 14px var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-sheet);
+}
+
+.doc-sheet-title {
+  margin-bottom: 2px;
+  font-size: var(--text-body);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.doc-sheet-subtitle {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-micro);
+  color: var(--ink-muted);
+}
+
+.doc-print-table,
+.doc-print-summary {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-print-table {
+  width: 100%;
+}
+
+.doc-print-table th {
+  padding: 5px 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--line-soft);
+  font-size: var(--text-print-col);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.doc-print-table th.is-num {
+  text-align: right;
+}
+
+.doc-print-table td,
+.doc-print-summary td,
+.doc-print-summary th {
+  padding: var(--space-1) 6px;
+  border: 1px solid var(--line);
+  font-size: var(--text-micro);
+  white-space: nowrap;
+}
+
+.doc-print-table .mono {
+  font-family: var(--font-mono);
+}
+
+.doc-print-total td {
+  padding: 5px 6px;
+  border-color: var(--line-strong);
+  background: var(--surface-readonly);
+  font-weight: 700;
+}
+
+.doc-print-summary {
+  margin-top: var(--space-3);
+}
+
+.doc-print-summary th {
+  font-weight: 600;
+  text-align: left;
+  background: var(--surface-sunken);
+}
+
+.doc-print-summary td {
+  min-width: 110px;
+}
+
+.doc-preview .is-negative {
+  color: var(--danger);
+}
+
+.doc-sheet-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: var(--sheet-tabs-height);
+  padding: 0 var(--space-4);
+  background: var(--track);
+  border-top: 1px solid var(--line-strong);
+}
+
+.doc-sheet-tab {
+  padding: 6px var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background: var(--line);
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.doc-sheet-tab.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
