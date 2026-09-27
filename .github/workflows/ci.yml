@@ -35,6 +35,8 @@ jobs:
             rust:
               - 'src-tauri/**'
               - 'src/services/db-*.ts'
+              - 'src/services/__tests__/fixtures/batch-cases.json'
+              - 'e2e-smoke/**'
               - 'package-lock.json'
               - '.github/workflows/ci.yml'
 
@@ -75,7 +77,9 @@ jobs:
       # cargo test does not need dist/ (measured at У4 step 22: renaming dist/ away left
       # 11/11 Rust tests green) — no npm/build step before it.
       - run: mkdir -p test-results
-      - run: cargo test --manifest-path src-tauri/Cargo.toml 2>&1 | tee test-results/rust.log
+      - name: Run cargo test (pipefail so a failing test fails this step, not just tee)
+        shell: bash
+        run: cargo test --manifest-path src-tauri/Cargo.toml 2>&1 | tee test-results/rust.log
       - run: node scripts/assert-no-skips.mjs test-results/rust.log
 
   windows-smoke:
@@ -86,7 +90,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check out capabilities from capabilities_ref (hypothesis 10 measurement)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.capabilities_ref != '' }}
-        run: git checkout ${{ inputs.capabilities_ref }} -- src-tauri/capabilities/default.json
+        env:
+          CAPABILITIES_REF: ${{ inputs.capabilities_ref }}
+        run: git checkout "$CAPABILITIES_REF" -- src-tauri/capabilities/default.json
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}

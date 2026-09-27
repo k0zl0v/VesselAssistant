@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { browser, expect } from '@wdio/globals';
 import { KAVKAZ_IV_HOLDS, KAVKAZ_IV_VESSEL_NAME } from '../../src/fixtures/kavkaz-iv';
@@ -83,6 +83,9 @@ describe('Windows smoke: real Tauri host behind a wdio + tauri-driver session', 
     const marker = `smoke-log-${Date.now()}`;
     await invokeIpc('plugin:log|log', { level: 3, message: marker });
     const logPath = path.join(process.env.LOCALAPPDATA ?? '', 'com.vesselassistant.app', 'logs', 'vessel-assistant.log');
-    await browser.waitUntil(async () => existsSync(logPath), { timeout: 10_000, timeoutMsg: `no log file at ${logPath}` });
+    await browser.waitUntil(
+      async () => existsSync(logPath) && readFileSync(logPath, 'utf8').includes(marker),
+      { timeout: 10_000, timeoutMsg: `log file at ${logPath} never contained marker ${marker}` },
+    );
   });
 });

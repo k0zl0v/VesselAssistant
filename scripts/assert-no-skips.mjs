@@ -50,6 +50,9 @@ function checkCargo(text) {
   for (const [line, passed, failed, ignored] of results) {
     ran += Number(passed) + Number(failed);
     if (Number(ignored) > 0) skipped.push(line);
+    // A skip is "checked nothing"; a failure is worse — it checked and it's red. Same
+    // gate (a non-empty `skipped` fails the run in `main` below), cargo-only.
+    if (Number(failed) > 0) skipped.push(`${failed} failed: ${line}`);
   }
   return { kind: 'cargo', ran, skipped, results: results.length };
 }
