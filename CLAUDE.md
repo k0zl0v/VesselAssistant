@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации (Load/Stowage Plan, OGV, Crane Correction, SOF). Работает автономно на судовом ПК без backend и постоянного интернета.
 
-**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 338 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
+**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 341 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Source of truth
 
@@ -151,7 +151,7 @@ scripts/
 ## Commands
 
 - `npm install` — зависимости.
-- `npm test` / `npm run test:watch` — Vitest (338 тестов). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
+- `npm test` / `npm run test:watch` — Vitest (341 тест). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
 - `npm run typecheck` — три прогона `tsc --noEmit`: корень, `e2e/`, `e2e-smoke/`.
 - `npm run build` — production UI (`tsc && vite build`). Initial bundle ~285 KB / 84 KB gzip + ленивые ExcelJS/DocumentEngine/ImportService чанки.
 - `npm run dev` — только Vite (без Tauri runtime; `TauriDb` упадёт).
@@ -181,7 +181,7 @@ git push origin main --tags
 | `rust` (`src-tauri/tests/`) | Миграции зарегистрированы и непрерывны, `execute_batch` атомарен на одном соединении | `npm run test:rust` | `common::fresh_db()` — те же файлы `src-tauri/migrations/` через `sqlx::Migrator` |
 
 - **Фикстуры — только коммиченные файлы**, никаких личных путей (`existsSync`/`console.warn`-скип запрещены — см. «What NOT to do»). `appendix-c-load-plan.xlsx` генерируется `scripts/generate-import-fixture.ts` из `src/fixtures/kavkaz-iv.ts` и коммитится; `import-fixture-freshness.test.ts` гейтит дрейф.
-- **CI (`«.github/workflows/ci.yml»`)** — `changes` (path-filter на `src-tauri/**`/`db-*.ts`/lock-файл) → `web` (typecheck + Vitest json + Playwright json + `scripts/assert-no-skips.mjs`) → `rust`/`windows-smoke` (условно на `changes.rust` или `schedule`/`workflow_dispatch`). `assert-no-skips.mjs` — жёсткий гейт: `skipped`/`todo`/`pending`/`N ignored` > 0 роняет сборку, пропущенная джоба ничего не доказывает (`CLAUDE.md` уровня vault, § «Диагностика падений»).
+- **CI (`«.github/workflows/ci.yml»`)** — `changes` (path-filter: **консервативный deny-list** — всё, кроме чистой документации `**/*.md`/`.claude/**`/`.vscode/**`/`.gitignore`; `npm run build`, который вызывает `tauri build`, компилирует весь `src/**`, поэтому узкий allowlist дважды отставал от реальной зависимости джобы) → `web` (typecheck + Vitest json + Playwright json + `scripts/assert-no-skips.mjs`) → `rust`/`windows-smoke` (условно на `changes.rust` или `schedule`/`workflow_dispatch`). `assert-no-skips.mjs` — жёсткий гейт: `skipped`/`todo`/`pending`/`N ignored` > 0 роняет сборку, пропущенная джоба ничего не доказывает (`CLAUDE.md` уровня vault, § «Диагностика падений»).
 - **Пробел: macOS-webview не покрыт автотестом.** Нет headless-раннера для нативного WKWebView. Компенсация — ручной `npm run tauri dev` перед релизом + `cargo test` на `macos-14` внутри `release.yml` (проверяет Rust-слой, не сам webview).
 - **Node 22 в CI, Node 26 локально.** `.github/workflows/{ci,release}.yml` пинят `node-version: 22`; разработческая машина может стоять на более новом Node — расхождение известно, разрыва пока не наблюдалось.
 
@@ -190,7 +190,7 @@ git push origin main --tags
 - **TypeScript strict mode**, никаких `any`. Type-only импорты через `import type` где можно.
 - **Расчётные функции (`src/calc/`) pure и детерминированные**. Не читают БД, не зависят от `Date.now()` — время передаётся параметром.
 - **Сервисы (`src/services/`) зависят только от интерфейса `Db`** — не от конкретной импл. Это позволяет интеграционным тестам работать через in-memory better-sqlite3.
-- **Транзакционность мутаций.** Операция, затрагивающая >1 таблицы, либо оборачивается в `db.transaction(async (tx) => { ... })` (`CargoLotService.add`, `SofService`, `ImportService`, `BackupService.importFromJson` — откат при exception), либо, для новых многотабличных записей, собирается как один `Db.executeBatch(BatchStatement[])` (`OgvService.discharge` и `VoyageService.copy` — текущие примеры): все statement'ы идут на одно соединение из пула `tauri-plugin-sql`, `BEGIN IMMEDIATE`→`COMMIT`/`ROLLBACK` считает Rust (`src-tauri/src/batch.rs`), а не JS. Новый код с многотабличной записью — `executeBatch`, не `db.transaction` (снимает риск «два писателя», см. `docs/adr/0002-atomic-writes-execute-batch.md`).
+- **Транзакционность мутаций.** Операция, затрагивающая >1 таблицы, либо оборачивается в `db.transaction(async (tx) => { ... })` (`CargoLotService.add`, `ImportService`, `BackupService.importFromJson` — откат при exception), либо, для новых многотабличных записей, собирается как один `Db.executeBatch(BatchStatement[])` (`OgvService.discharge` и `VoyageService.copy` — текущие примеры): все statement'ы идут на одно соединение из пула `tauri-plugin-sql`, `BEGIN IMMEDIATE`→`COMMIT`/`ROLLBACK` считает Rust (`src-tauri/src/batch.rs`), а не JS. Новый код с многотабличной записью — `executeBatch`, не `db.transaction` (снимает риск «два писателя», см. `docs/adr/0002-atomic-writes-execute-batch.md`).
 - **Guard закрытого рейса — `withVoyageGuard`** (`src/services/voyageGuard.ts`). Оборачивает `CargoLotService.add`, `OgvService.discharge`, `SofService.create/update/delete`: закрытый рейс отклоняет мутацию, если вызывающий не `supervisor`/`admin` с непустой причиной (пишется в `audit_log`, чистится после). Новый мутирующий метод сервиса — тоже через этот guard, если рейс может быть закрыт.
 - **Ошибки сервисов — `AppError`** (`src/services/errors.ts`), не голый `Error`/строка. UI переводит через `describeError(e)` (`src/i18n/errors.ts`) — никогда `String(e)` (см. «What NOT to do»). Исключение: `CargoLotService.add`'s `OVERLOAD:<json>` (унаследовано, не мигрировано — вне скоупа этой ветки).
 - **Автобэкап — обязательный параметр конструктора.** `VoyageService`/`ImportService`/`BackupService` принимают `AutoBackupHook` последним аргументом; продовый код всегда передаёт реальный `AutoBackupService` (`src/autoBackup.ts`), тесты — `NOOP_AUTO_BACKUP` (`src/services/__tests__/helpers.ts`). Не подставлять no-op в прод-код.
