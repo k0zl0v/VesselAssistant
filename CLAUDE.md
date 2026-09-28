@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации (Load/Stowage Plan, OGV, Crane Correction, SOF). Работает автономно на судовом ПК без backend и постоянного интернета.
 
-**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 413 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
+**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 415 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Source of truth
 
@@ -154,7 +154,7 @@ scripts/
 ## Commands
 
 - `npm install` — зависимости.
-- `npm test` / `npm run test:watch` — Vitest (413 тестов). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
+- `npm test` / `npm run test:watch` — Vitest (415 тестов). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
 - `npm run typecheck` — три прогона `tsc --noEmit`: корень, `e2e/`, `e2e-smoke/`.
 - `npm run build` — production UI (`tsc && vite build`). Initial bundle ~450 KB / 126 KB gzip (после редизайна UI; рост — код экранов и строки) + шрифты IBM Plex (локально, `@fontsource`) + ленивые ExcelJS/DocumentEngine/ImportService чанки.
 - `npm run dev` — только Vite (без Tauri runtime; `TauriDb` упадёт).
@@ -193,7 +193,7 @@ git push origin main --tags
 - **TypeScript strict mode**, никаких `any`. Type-only импорты через `import type` где можно.
 - **Расчётные функции (`src/calc/`) pure и детерминированные**. Не читают БД, не зависят от `Date.now()` — время передаётся параметром.
 - **Сервисы (`src/services/`) зависят только от интерфейса `Db`** — не от конкретной импл. Это позволяет интеграционным тестам работать через in-memory better-sqlite3.
-- **Транзакционность мутаций.** Операция, затрагивающая >1 таблицы, либо оборачивается в `db.transaction(async (tx) => { ... })` (`CargoLotService.add`, `ImportService`, `BackupService.importFromJson` — откат при exception), либо, для новых многотабличных записей, собирается как один `Db.executeBatch(BatchStatement[])` (`OgvService.discharge` и `VoyageService.copy` — текущие примеры): все statement'ы идут на одно соединение из пула `tauri-plugin-sql`, `BEGIN IMMEDIATE`→`COMMIT`/`ROLLBACK` считает Rust (`src-tauri/src/batch.rs`), а не JS. Новый код с многотабличной записью — `executeBatch`, не `db.transaction` (снимает риск «два писателя», см. `docs/adr/0002-atomic-writes-execute-batch.md`).
+- **Транзакционность мутаций.** Операция, затрагивающая >1 таблицы, либо оборачивается в `db.transaction(async (tx) => { ... })` (`ImportService`, `BackupService.importFromJson` — откат при exception), либо, для новых многотабличных записей, собирается как один `Db.executeBatch(BatchStatement[])` (`OgvService.discharge`, `VoyageService.copy`, `CargoLotService.add` — текущие примеры): все statement'ы идут на одно соединение из пула `tauri-plugin-sql`, `BEGIN IMMEDIATE`→`COMMIT`/`ROLLBACK` считает Rust (`src-tauri/src/batch.rs`), а не JS. Новый код с многотабличной записью — `executeBatch`, не `db.transaction` (снимает риск «два писателя», см. `docs/adr/0002-atomic-writes-execute-batch.md`).
 - **Guard закрытого рейса — `withVoyageGuard`** (`src/services/voyageGuard.ts`). Оборачивает `CargoLotService.add`, `OgvService.discharge`, `SofService.create/update/delete`: закрытый рейс отклоняет мутацию, если вызывающий не `supervisor`/`admin` с непустой причиной (пишется в `audit_log`, чистится после). Новый мутирующий метод сервиса — тоже через этот guard, если рейс может быть закрыт.
 - **Ошибки сервисов — `AppError`** (`src/services/errors.ts`), не голый `Error`/строка. UI переводит через `describeError(e)` (`src/i18n/errors.ts`) — никогда `String(e)` (см. «What NOT to do»). Исключение: `CargoLotService.add`'s `OVERLOAD:<json>` (унаследовано, не мигрировано — вне скоупа этой ветки).
 - **Автобэкап — обязательный параметр конструктора.** `VoyageService`/`ImportService`/`BackupService` принимают `AutoBackupHook` последним аргументом; продовый код всегда передаёт реальный `AutoBackupService` (`src/autoBackup.ts`), тесты — `NOOP_AUTO_BACKUP` (`src/services/__tests__/helpers.ts`). Не подставлять no-op в прод-код.
@@ -223,7 +223,7 @@ git push origin main --tags
 - ❌ **`cargo check`/`cargo build` через `cd src-tauri`** — лучше через `--manifest-path src-tauri/Cargo.toml`. cwd может неожиданно сброситься.
 - ❌ **`setError(String(e))` в обработчиках.** Текст ошибки — `describeError(e)`; техническая строка — только в свёрнутых «Подробностях» (`ErrorState.details`).
 - ❌ **`it.skip`/`maybeIt`/`existsSync`-скип, зависящий от наличия личного файла.** Отсутствующая фикстура — красный тест, не пропущенный (`scripts/assert-no-skips.mjs` это гейтит). Фикстуры — коммиченные файлы, не личные пути разработчика.
-- ❌ **`BEGIN`/`COMMIT` вручную через `plugin-sql` в новом коде.** Для одной таблицы — обычный `execute`; для нескольких — `executeBatch` (Rust-уровень, атомарность на одном соединении). `db.transaction` остаётся только в трёх унаследованных местах из «Conventions» (`CargoLotService.add`, `ImportService`, `BackupService.importFromJson`) и образцом для нового кода не служит. Ручной `BEGIN` через plugin-sql не гарантирует то же соединение на последующих вызовах.
+- ❌ **`BEGIN`/`COMMIT` вручную через `plugin-sql` в новом коде.** Для одной таблицы — обычный `execute`; для нескольких — `executeBatch` (Rust-уровень, атомарность на одном соединении). `db.transaction` остаётся только в двух унаследованных местах из «Conventions» (`ImportService`, `BackupService.importFromJson`) и образцом для нового кода не служит. Ручной `BEGIN` через plugin-sql не гарантирует то же соединение на последующих вызовах — наблюдалось вживую в `tauri build` на `CargoLotService.add` (лог: `cannot rollback - no transaction is active`, затем `cannot start a transaction within a transaction`); Vitest и e2e-мост этого не видят — у них одно соединение better-sqlite3.
 
 ## Lessons from MVP build (для будущих изменений)
 

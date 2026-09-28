@@ -85,7 +85,7 @@ Parameters use `?` positional placeholders (works for both impls). SQL string id
    await this.db.executeBatch(batch);
    ```
 
-   A failed statement, or an `expectRowsAffected` mismatch, rolls back the entire batch — nothing partially commits. `db.transaction` remains only on the services that already used it before this convention existed (`CargoLotService`, `ImportService`, `BackupService.importFromJson`) — it is not a pattern to reach for in new code.
+   A failed statement, or an `expectRowsAffected` mismatch, rolls back the entire batch — nothing partially commits. `db.transaction` remains only on the services that already used it before this convention existed (`ImportService`, `BackupService.importFromJson`) — it is not a pattern to reach for in new code.
 
 4. **IDs:** `crypto.randomUUID()` for all `TEXT PRIMARY KEY` columns. The only INTEGER AUTOINCREMENT key is `audit_log.id`.
 5. **No manual audit log writes.** SQL triggers in migrations 0002/0003 cover all 8 audited tables and stamp the actor from `app_session`. If you mutate an audited table, a row will appear in `audit_log` automatically. Don't duplicate.

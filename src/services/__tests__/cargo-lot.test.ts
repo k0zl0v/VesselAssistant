@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CargoLotService, OVERLOAD_ERROR_PREFIX } from '../CargoLotService';
 import { AppError } from '../errors';
 import { PROTEIN_ALLOWED } from '../types';
@@ -336,6 +336,40 @@ describe('CargoLotService — integration', () => {
         [voyageId, holdIds[0]!],
       );
       expect(param!.protein_percent).toBe(value);
+    });
+  });
+
+  describe('atomic write (ADR-0002): one executeBatch, no JS-level transaction', () => {
+    const input = () => ({
+      voyage_id: voyageId,
+      hold_id: holdIds[0]!,
+      cargo_id: cargoId,
+      source_vessel: 'ATOMIC',
+      sf: 1.25,
+      planned_tons: 100,
+      loaded_tons: 100,
+    });
+
+    it('never calls db.transaction: on TauriDb its BEGIN/INSERT/ROLLBACK can land on different pool connections', async () => {
+      const tx = vi.spyOn(db, 'transaction');
+      const batch = vi.spyOn(db, 'executeBatch');
+      await lots.add(input());
+      expect(tx).not.toHaveBeenCalled();
+      expect(batch).toHaveBeenCalledOnce();
+    });
+
+    it('a failure on the last statement of the batch leaves no lot, layer or hold SF behind', async () => {
+      const realExecuteBatch = db.executeBatch.bind(db);
+      const spy = vi.spyOn(db, 'executeBatch').mockImplementation(async (batch) =>
+        realExecuteBatch(batch.map((stmt, i) => (i === batch.length - 1 ? { ...stmt, expectRowsAffected: 999 } : stmt))),
+      );
+      await expect(lots.add(input())).rejects.toMatchObject({ code: 'batch.stale' });
+      spy.mockRestore();
+      expect(await db.select(`SELECT id FROM cargo_lots WHERE source_vessel = 'ATOMIC'`)).toEqual([]);
+      expect(await db.select(`SELECT id FROM cargo_layers WHERE source_vessel = 'ATOMIC'`)).toEqual([]);
+      expect(
+        await db.select(`SELECT id FROM hold_cargo_parameters WHERE voyage_id = ? AND hold_id = ?`, [voyageId, holdIds[0]!]),
+      ).toEqual([]);
     });
   });
 });
