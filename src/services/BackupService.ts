@@ -1,5 +1,5 @@
 import type { AutoBackupHook } from './AutoBackupService';
-import type { Db, SqlValue } from './db';
+import type { BatchStatement, Db, SqlValue } from './db';
 import { AppError } from './errors';
 import { PROTEIN_ALLOWED } from './types';
 
@@ -253,8 +253,9 @@ export class BackupService {
   }
 
   /**
-   * Restore a backup envelope into the current DB. Runs in a single
-   * transaction so a malformed file leaves the DB untouched.
+   * Restore a backup envelope into the current DB. Wipe and inserts go as one
+   * `executeBatch` (one connection, one BEGIN IMMEDIATE), so a malformed file
+   * leaves the DB untouched.
    *
    * Default `wipeFirst: true` because mixing two voyages from different
    * sources via UUID collision is bug-prone — the explicit, safe default
@@ -280,32 +281,32 @@ export class BackupService {
     const wipeFirst = opts.wipeFirst ?? true;
     await this.autoBackup.snapshot('restore');
 
-    await this.db.transaction(async (tx) => {
-      if (wipeFirst) {
-        // Reverse FK dependency order so children go first. audit_log is
-        // append-only (0004 aborts DELETE): snapshot rows merge in by explicit id.
-        for (let i = TABLES.length - 1; i >= 0; i--) {
-          if (TABLES[i]!.name === 'audit_log') continue;
-          await tx.execute(`DELETE FROM ${TABLES[i]!.name}`);
-        }
+    const batch: BatchStatement[] = [];
+    if (wipeFirst) {
+      // Reverse FK dependency order so children go first. audit_log is
+      // append-only (0004 aborts DELETE): snapshot rows merge in by explicit id.
+      for (let i = TABLES.length - 1; i >= 0; i--) {
+        if (TABLES[i]!.name === 'audit_log') continue;
+        batch.push({ sql: `DELETE FROM ${TABLES[i]!.name}`, params: [] });
       }
+    }
 
-      for (const spec of TABLES) {
-        const rows = envelope.tables[spec.name];
-        if (!rows || rows.length === 0) continue;
+    for (const spec of TABLES) {
+      const rows = envelope.tables[spec.name];
+      if (!rows || rows.length === 0) continue;
 
-        const colList = spec.columns.map((c) => `"${c}"`).join(', ');
-        const placeholders = spec.columns.map(() => '?').join(', ');
-        const sql = `INSERT INTO ${spec.name} (${colList}) VALUES (${placeholders})`;
+      const colList = spec.columns.map((c) => `"${c}"`).join(', ');
+      const placeholders = spec.columns.map(() => '?').join(', ');
+      const sql = `INSERT INTO ${spec.name} (${colList}) VALUES (${placeholders})`;
 
-        for (const row of rows) {
-          const params: SqlValue[] = spec.columns.map((c) => {
-            const v = row[c];
-            return v === undefined ? null : (v as SqlValue);
-          });
-          await tx.execute(sql, params);
-        }
+      for (const row of rows) {
+        const params: SqlValue[] = spec.columns.map((c) => {
+          const v = row[c];
+          return v === undefined ? null : (v as SqlValue);
+        });
+        batch.push({ sql, params });
       }
-    });
+    }
+    if (batch.length > 0) await this.db.executeBatch(batch);
   }
 }

@@ -118,10 +118,10 @@ HAVING ABS(computed - stored) > 0.001;
 
 ## Transactional patterns (matched in services)
 
-- **Loading a lot** (`CargoLotService.add`): in one `db.transaction(...)` — overload guard check, INSERT cargo_lots (unique sequence), INSERT cargo_layers, optional INSERT hold_cargo_parameters (only first lot per (voyage, hold, cargo)), return.
+- **Loading a lot** (`CargoLotService.add`): reads and the overload guard first, then one `executeBatch` — INSERT cargo_lots (unique sequence), INSERT cargo_layers, conditional `INSERT … SELECT … WHERE NOT EXISTS` into hold_cargo_parameters (only first lot per (voyage, hold, cargo)).
 - **Discharging** (`OgvService.discharge`): SELECT layers ORDER BY load_sequence DESC (read, outside any transaction), run pure `dischargeFromHold`, then one `Db.executeBatch(BatchStatement[])` — INSERT operations + N discharge_allocations + conditional `UPDATE cargo_layers` (`expectRowsAffected: 1` catches a stale read as `AppError('batch.stale')`). Not `db.transaction` — see `docs/adr/0002-atomic-writes-execute-batch.md` for why.
 
-Of the 13 service classes in `src/services/`, three use `db.transaction(async (tx) => { ... })` (`CargoLotService.add`, `ImportService.applyImport`, `BackupService.importFromJson`; both `Db` implementations wrap it in `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`), two use `executeBatch` (`OgvService.discharge`, `VoyageService.copy`), and the other eight use neither — they only read, or each mutating method issues a single `execute`. Re-check with `grep -n '\.transaction(\|executeBatch(' src/services/*.ts`. The three `db.transaction` users are legacy and not migrated. New multi-table writes use `executeBatch`: one connection from `tauri-plugin-sql`'s own pool, guaranteed by construction, not by hoping the pool returns the same connection across separate IPC calls (`docs/adr/0002-atomic-writes-execute-batch.md`).
+Every multi-table write in `src/services/` goes through `executeBatch` (`CargoLotService.add`, `OgvService.discharge`, `VoyageService.copy`, `ImportService.applyImport` skeleton, `BackupService.importFromJson`); the rest only read, or each mutating method issues a single `execute`. Re-check with `grep -n '\.transaction(\|executeBatch(' src/services/*.ts` — no service calls `db.transaction`. On `TauriDb` its BEGIN/statements/COMMIT are separate IPC calls the plugin pool may serve from different connections; this was observed in the built app (`cannot rollback - no transaction is active`), see `docs/adr/0002-atomic-writes-execute-batch.md`.
 
 ## Common pitfalls
 

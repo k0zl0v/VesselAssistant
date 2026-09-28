@@ -16,14 +16,15 @@
  *       row 26: Discharged
  *
  * `parseLoadPlan` is pure: it only reads the bytes and returns structured
- * data. `applyImport` is transactional and writes to the DB.
+ * data. `applyImport` writes the skeleton as one `executeBatch`, then lots and
+ * discharges through their own atomic services.
  */
 
 import ExcelJS from 'exceljs';
 import type { AutoBackupHook } from './AutoBackupService';
 import { CargoLotService } from './CargoLotService';
 import { OgvService } from './OgvService';
-import type { Db } from './db';
+import type { BatchStatement, Db } from './db';
 import { AppError } from './errors';
 import { PROTEIN_ALLOWED } from './types';
 
@@ -252,55 +253,43 @@ export class ImportService {
     const lots = new CargoLotService(this.db);
     const ogv = new OgvService(this.db);
 
-    // Phase 1: reference data + voyage skeleton inside one tx so a
-    // partial import never leaves a dangling vessel/hold.
-    const skeleton = await this.db.transaction(async (tx) => {
-      const vessel_id = await findOrCreateVessel(tx, parsed.vessel_name);
+    // Phase 1: reference data + voyage skeleton as one executeBatch so a
+    // partial import never leaves a dangling vessel/hold. Lookups run first;
+    // only the missing rows become INSERTs in the batch.
+    const batch: BatchStatement[] = [];
+    const vessel_id = await findOrQueue(this.db, batch, 'vessels', parsed.vessel_name);
 
-      // holds keyed by hold_no
-      const holdIdByNo = new Map<number, string>();
-      for (const h of parsed.holds) {
-        const id = await findOrCreateHold(tx, vessel_id, h.hold_no, h.volume_m3);
-        holdIdByNo.set(h.hold_no, id);
-      }
+    const holdIdByNo = new Map<number, string>();
+    for (const h of parsed.holds) {
+      holdIdByNo.set(h.hold_no, await findOrQueueHold(this.db, batch, vessel_id, h.hold_no, h.volume_m3));
+    }
 
-      const cargoIdByName = new Map<string, string>();
-      for (const h of parsed.holds) {
-        if (!h.cargo_name) continue;
-        if (cargoIdByName.has(h.cargo_name)) continue;
-        const id = await findOrCreateCargo(tx, h.cargo_name);
-        cargoIdByName.set(h.cargo_name, id);
-      }
+    const cargoIdByName = new Map<string, string>();
+    for (const h of parsed.holds) {
+      if (!h.cargo_name || cargoIdByName.has(h.cargo_name)) continue;
+      cargoIdByName.set(h.cargo_name, await findOrQueue(this.db, batch, 'cargoes', h.cargo_name));
+    }
 
-      const loading_port_id = parsed.loading_port
-        ? await findOrCreatePort(tx, parsed.loading_port)
-        : null;
-      const discharging_port_id = parsed.discharging_port
-        ? await findOrCreatePort(tx, parsed.discharging_port)
-        : null;
+    const loading_port_id = parsed.loading_port
+      ? await findOrQueue(this.db, batch, 'ports', parsed.loading_port)
+      : null;
+    const discharging_port_id = parsed.discharging_port
+      ? await findOrQueue(this.db, batch, 'ports', parsed.discharging_port)
+      : null;
 
-      const voyage_id = crypto.randomUUID();
-      const voyage_no = parsed.voyage_no ?? `IMPORT-${Date.now()}`;
-      const now = new Date().toISOString();
-      await tx.execute(
-        `INSERT INTO voyages (
-           id, vessel_id, voyage_no,
-           loading_port_id, discharging_port_id, status,
-           created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
-        [
-          voyage_id,
-          vessel_id,
-          voyage_no,
-          loading_port_id,
-          discharging_port_id,
-          now,
-          now,
-        ],
-      );
-
-      return { voyage_id, holdIdByNo, cargoIdByName };
+    const voyage_id = crypto.randomUUID();
+    const voyage_no = parsed.voyage_no ?? `IMPORT-${Date.now()}`;
+    const now = new Date().toISOString();
+    batch.push({
+      sql: `INSERT INTO voyages (
+         id, vessel_id, voyage_no,
+         loading_port_id, discharging_port_id, status,
+         created_at, updated_at
+       ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
+      params: [voyage_id, vessel_id, voyage_no, loading_port_id, discharging_port_id, now, now],
     });
+    await this.db.executeBatch(batch);
+    const skeleton = { voyage_id, holdIdByNo, cargoIdByName };
 
     // Phase 2: load + discharge through their proper services. Each
     // service runs its own transaction; failures here leave the
@@ -363,63 +352,52 @@ function pickLoadPlanSheet(wb: ExcelJS.Workbook): ExcelJS.Worksheet {
 
 // ───────────────────────────────────────────── helpers ─────────────
 
-async function findOrCreateVessel(tx: Db, name: string): Promise<string> {
-  const rows = await tx.select<{ id: string }>(
-    `SELECT id FROM vessels WHERE LOWER(name) = LOWER(?) LIMIT 1`,
+type NamedTable = 'vessels' | 'cargoes' | 'ports';
+
+/**
+ * Id of the row named `name` (case-insensitive) — existing, or a new id whose
+ * INSERT is queued into `batch`. A name queued earlier in the same batch is reused.
+ */
+async function findOrQueue(
+  db: Db,
+  batch: BatchStatement[],
+  table: NamedTable,
+  name: string,
+): Promise<string> {
+  const rows = await db.select<{ id: string }>(
+    `SELECT id FROM ${table} WHERE LOWER(name) = LOWER(?) LIMIT 1`,
     [name],
   );
   if (rows[0]) return rows[0].id;
-  const id = crypto.randomUUID();
-  await tx.execute(
-    `INSERT INTO vessels (id, name) VALUES (?, ?)`,
-    [id, name],
+  const pending = batch.find(
+    (st) => st.sql.startsWith(`INSERT INTO ${table} `) && String(st.params[1]).toLowerCase() === name.toLowerCase(),
   );
+  if (pending) return pending.params[0] as string;
+  const id = crypto.randomUUID();
+  batch.push({ sql: `INSERT INTO ${table} (id, name) VALUES (?, ?)`, params: [id, name] });
   return id;
 }
 
-async function findOrCreateHold(
-  tx: Db,
+async function findOrQueueHold(
+  db: Db,
+  batch: BatchStatement[],
   vessel_id: string,
   hold_no: number,
   volume_m3: number,
 ): Promise<string> {
-  const rows = await tx.select<{ id: string }>(
+  const rows = await db.select<{ id: string }>(
     `SELECT id FROM holds WHERE vessel_id = ? AND hold_no = ? LIMIT 1`,
     [vessel_id, hold_no],
   );
   if (rows[0]) return rows[0].id;
+  const pending = batch.find(
+    (st) => st.sql.startsWith('INSERT INTO holds ') && st.params[1] === vessel_id && st.params[2] === hold_no,
+  );
+  if (pending) return pending.params[0] as string;
   const id = crypto.randomUUID();
-  await tx.execute(
-    `INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES (?, ?, ?, ?)`,
-    [id, vessel_id, hold_no, volume_m3],
-  );
-  return id;
-}
-
-async function findOrCreateCargo(tx: Db, name: string): Promise<string> {
-  const rows = await tx.select<{ id: string }>(
-    `SELECT id FROM cargoes WHERE LOWER(name) = LOWER(?) LIMIT 1`,
-    [name],
-  );
-  if (rows[0]) return rows[0].id;
-  const id = crypto.randomUUID();
-  await tx.execute(
-    `INSERT INTO cargoes (id, name) VALUES (?, ?)`,
-    [id, name],
-  );
-  return id;
-}
-
-async function findOrCreatePort(tx: Db, name: string): Promise<string> {
-  const rows = await tx.select<{ id: string }>(
-    `SELECT id FROM ports WHERE LOWER(name) = LOWER(?) LIMIT 1`,
-    [name],
-  );
-  if (rows[0]) return rows[0].id;
-  const id = crypto.randomUUID();
-  await tx.execute(
-    `INSERT INTO ports (id, name) VALUES (?, ?)`,
-    [id, name],
-  );
+  batch.push({
+    sql: `INSERT INTO holds (id, vessel_id, hold_no, volume_m3) VALUES (?, ?, ?, ?)`,
+    params: [id, vessel_id, hold_no, volume_m3],
+  });
   return id;
 }

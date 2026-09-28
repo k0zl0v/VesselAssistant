@@ -54,7 +54,7 @@ export interface Db {
 }
 ```
 
-`executeBatch` is the newer of the two mutation primitives — for **new** multi-table writes, prefer it over `db.transaction`: `TauriDb.executeBatch` calls the Rust `execute_batch` command, which acquires one connection from `tauri-plugin-sql`'s own pool and runs the whole batch inside a single `BEGIN IMMEDIATE`, removing the "two writers" risk that `db.transaction`'s separate IPC calls (`BEGIN`/statements/`COMMIT`) don't fully rule out. `OgvService.discharge` and `VoyageService.copy` are the current examples; see `docs/adr/0002-atomic-writes-execute-batch.md` for the rejected alternatives. `db.transaction` stays the pattern for existing multi-table mutations (`CargoLotService`, `ImportService`, `BackupService.importFromJson`) — not deprecated, just not the default for new code.
+`executeBatch` is the only multi-table mutation primitive: `TauriDb.executeBatch` calls the Rust `execute_batch` command, which acquires one connection from `tauri-plugin-sql`'s own pool and runs the whole batch inside a single `BEGIN IMMEDIATE`, removing the "two writers" risk that `db.transaction`'s separate IPC calls (`BEGIN`/statements/`COMMIT`) don't fully rule out. Every multi-table write uses it: `OgvService.discharge`, `VoyageService.copy`, `CargoLotService.add`, the voyage skeleton of `ImportService.applyImport`, `BackupService.importFromJson`; see `docs/adr/0002-atomic-writes-execute-batch.md` for the rejected alternatives.
 
 All services accept `Db` in their constructor. **Don't import a specific impl** — that breaks test isolation. The two impls:
 
@@ -85,7 +85,7 @@ Parameters use `?` positional placeholders (works for both impls). SQL string id
    await this.db.executeBatch(batch);
    ```
 
-   A failed statement, or an `expectRowsAffected` mismatch, rolls back the entire batch — nothing partially commits. `db.transaction` remains only on the services that already used it before this convention existed (`ImportService`, `BackupService.importFromJson`) — it is not a pattern to reach for in new code.
+   A failed statement, or an `expectRowsAffected` mismatch, rolls back the entire batch — nothing partially commits. No service uses `db.transaction` any more — on `TauriDb` its BEGIN/statements/COMMIT are separate IPC calls the plugin pool may serve from different connections (observed live: `cannot rollback - no transaction is active`). Do not reintroduce it.
 
 4. **IDs:** `crypto.randomUUID()` for all `TEXT PRIMARY KEY` columns. The only INTEGER AUTOINCREMENT key is `audit_log.id`.
 5. **No manual audit log writes.** SQL triggers in migrations 0002/0003 cover all 8 audited tables and stamp the actor from `app_session`. If you mutate an audited table, a row will appear in `audit_log` automatically. Don't duplicate.
@@ -139,7 +139,7 @@ The AT-05 overload guard uses `input.sf` (the new lot's SF), NOT the cached one 
 ## Common pitfalls
 
 - **Sync `node:sqlite` import** — won't resolve under Vitest/Vite. Use `better-sqlite3`.
-- **Using single `execute()` calls for a multi-table mutation instead of `executeBatch` (new code) or `db.transaction` (the three legacy services)** — partial writes on error.
+- **Using single `execute()` calls for a multi-table mutation instead of `executeBatch`** — partial writes on error.
 - **Reading from a service inside another service's transaction.** Each service has its own `db` reference; nested transactions on better-sqlite3 require SAVEPOINTs which we don't expose. If you need cross-service work in one tx, pass `tx` explicitly or refactor.
 - **Manual audit writes** — duplicate rows. Triggers cover everything.
 - **Hardcoding SQL column lists in two places.** `BackupService.ts` keeps one canonical `TABLES` array used for SELECT, DELETE, INSERT — follow this pattern for any new bulk-table operation.

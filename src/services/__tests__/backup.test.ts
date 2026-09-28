@@ -404,3 +404,45 @@ describe('BackupService — auto-backup before restore (FR-14)', () => {
     expect((await dbB.select<{ name: string }>('SELECT name FROM vessels')).map((v) => v.name)).toEqual(['NORD STAR']);
   });
 });
+
+describe('BackupService.importFromJson — atomic write (ADR-0002)', () => {
+  let dbA: NodeDb;
+  let dbB: NodeDb;
+
+  beforeEach(async () => {
+    dbA = await openTestDb();
+    dbB = await openTestDb();
+  });
+
+  afterEach(() => {
+    dbA.close();
+    dbB.close();
+  });
+
+  it('wipe + inserts go as one executeBatch and never through db.transaction', async () => {
+    await seedFullProject(dbA);
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
+    const tx = vi.spyOn(dbB, 'transaction');
+    const batch = vi.spyOn(dbB, 'executeBatch');
+    await new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(json);
+    expect(tx).not.toHaveBeenCalled();
+    expect(batch).toHaveBeenCalledOnce();
+  });
+
+  it('a failure on the last statement leaves the target exactly as before, wipe included', async () => {
+    await seedFullProject(dbA);
+    const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
+    await seedReferenceData(dbB, { vesselName: 'NORD STAR', holdNos: [1] });
+    const before = await dbB.select('SELECT id, name FROM vessels ORDER BY id');
+
+    const realExecuteBatch = dbB.executeBatch.bind(dbB);
+    const spy = vi.spyOn(dbB, 'executeBatch').mockImplementation(async (b) =>
+      realExecuteBatch(b.map((stmt, i) => (i === b.length - 1 ? { ...stmt, expectRowsAffected: 999 } : stmt))),
+    );
+    await expect(new BackupService(dbB, NOOP_AUTO_BACKUP).importFromJson(json)).rejects.toMatchObject({
+      code: 'batch.stale',
+    });
+    spy.mockRestore();
+    expect(await dbB.select('SELECT id, name FROM vessels ORDER BY id')).toEqual(before);
+  });
+});

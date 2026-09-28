@@ -186,4 +186,43 @@ describe('ImportService — Appendix C load plan xlsx', () => {
       expect((await lotsByHold(db, result.voyage_id)).size).toBe(KAVKAZ_IV_HOLDS.length);
     });
   });
+
+  describe('applyImport skeleton — atomic write (ADR-0002)', () => {
+    it('never calls db.transaction; the skeleton is one executeBatch', async () => {
+      db = await openTestDb();
+      const importer = new ImportService(db, NOOP_AUTO_BACKUP);
+      const parsed = await importer.parseLoadPlan(readFixture());
+      const tx = vi.spyOn(db, 'transaction');
+      await importer.applyImport(parsed);
+      expect(tx).not.toHaveBeenCalled();
+    });
+
+    it('the same port on both ends is created once and linked twice', async () => {
+      db = await openTestDb();
+      const importer = new ImportService(db, NOOP_AUTO_BACKUP);
+      const parsed = { ...(await importer.parseLoadPlan(readFixture())), loading_port: 'NOVOROSSIYSK', discharging_port: 'novorossiysk' };
+      const { voyage_id } = await importer.applyImport(parsed);
+      expect(await db.select(`SELECT name FROM ports`)).toEqual([{ name: 'NOVOROSSIYSK' }]);
+      const [v] = await db.select<{ loading_port_id: string; discharging_port_id: string }>(
+        `SELECT loading_port_id, discharging_port_id FROM voyages WHERE id = ?`,
+        [voyage_id],
+      );
+      expect(v!.loading_port_id).toBe(v!.discharging_port_id);
+    });
+
+    it('a failure in the skeleton batch leaves no vessel, hold, cargo or voyage behind', async () => {
+      db = await openTestDb();
+      const importer = new ImportService(db, NOOP_AUTO_BACKUP);
+      const parsed = await importer.parseLoadPlan(readFixture());
+      const realExecuteBatch = db.executeBatch.bind(db);
+      const spy = vi.spyOn(db, 'executeBatch').mockImplementationOnce(async (b) =>
+        realExecuteBatch(b.map((stmt, i) => (i === b.length - 1 ? { ...stmt, expectRowsAffected: 999 } : stmt))),
+      );
+      await expect(importer.applyImport(parsed)).rejects.toMatchObject({ code: 'batch.stale' });
+      spy.mockRestore();
+      for (const table of ['vessels', 'holds', 'cargoes', 'voyages']) {
+        expect(await db.select(`SELECT id FROM ${table}`), table).toEqual([]);
+      }
+    });
+  });
 });
