@@ -101,7 +101,7 @@ describe('HoldTable (S-3: free space per hold for the next barge)', () => {
     await mount();
     expect(cell(6, 'hold-sf')).toBe('SF not set');
     expect(cell(6, 'hold-sf-error')).toBe('SF not set');
-    expect(screen.getByTestId('hold-sf-error').className).toContain('error');
+    expect(screen.getByTestId('hold-sf-error').className).toContain('sf-missing');
     expect(cell(6, 'hold-capacity-98')).toBe('—');
     expect(cell(6, 'hold-empty-98')).toBe('—');
     expect(cell(6, 'hold-remain')).toBe('0.000');
@@ -114,18 +114,11 @@ describe('HoldTable (S-3: free space per hold for the next barge)', () => {
           makeHoldCalc({ hold_no: 1, remain_tons: -50 }),
           makeHoldCalc({ hold_no: 2, remain_tons: 100 }),
         ]}
-        voyage_id="V-1"
-        cargoes={[]}
-        lotsByHold={{}}
-        expandedHoldId={null}
-        onToggleExpand={() => undefined}
-        onAddLot={async () => undefined}
-        onDischarge={async () => undefined}
-        busy={false}
-        voyageOpen
+        totals={{ on_board: 50, total_loaded: 200, total_discharged: 0, total_empty_100: 0, total_empty_98: 0 }}
+        summaries={{}}
       />,
     );
-    expect(cell(1, 'hold-remain')).toBe('-50.000');
+    expect(cell(1, 'hold-remain')).toBe('\u2212' + '50.000');
     expect(within(screen.getByTestId('hold-row-1')).getByTestId('hold-remain').className).toContain('negative');
     expect(cell(2, 'hold-remain')).toBe('100.000');
     expect(within(screen.getByTestId('hold-row-2')).getByTestId('hold-remain').className).not.toContain('negative');

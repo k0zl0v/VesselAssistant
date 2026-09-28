@@ -10,6 +10,7 @@ import { getDb } from '../db';
 import { useT } from '../i18n';
 import { describeError } from '../i18n/errors';
 import { formatDate } from '../shell/format';
+import { AuditExportButton } from '../components/AuditExportButton';
 import { PageHeader, voyageEyebrow } from '../shell/PageHeader';
 import { StatusChip } from '../shell/StatusChip';
 import { useVoyage } from '../shell/VoyageContext';
@@ -65,16 +66,21 @@ export function DocumentsPage() {
         title={t('nav.documents')}
         chip={isOpen ? undefined : <StatusChip status={voyage.status} />}
         actions={
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void exporter.run()}
-            disabled={exporter.busy || !vesselName}
-            data-testid="documents-generate"
-          >
-            <Icon name="export" size={14} />
-            {exporter.busy ? t('documents.generating') : t('documents.generate')}
-          </button>
+          <>
+            {data.vessel && (
+              <AuditExportButton voyage_id={voyage.id} voyage_no={voyage.voyage_no} vessel_name={data.vessel.name} />
+            )}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void exporter.run()}
+              disabled={exporter.busy || !vesselName}
+              data-testid="documents-generate"
+            >
+              <Icon name="export" size={14} />
+              {exporter.busy ? t('documents.generating') : t('documents.generate')}
+            </button>
+          </>
         }
       />
 
