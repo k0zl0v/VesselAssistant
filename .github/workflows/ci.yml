@@ -32,12 +32,12 @@ jobs:
       # schedule/workflow_dispatch run rust/windows-smoke unconditionally; skipping the filter
       # there keeps its schedule-payload error (dorny/paths-filter#100) from failing
       # `changes`, which would skip both dependents via the implicit success().
+      # predicate-quantifier below must be 'every': the default 'some' matches a file if
+      # ANY pattern does, so '**' alone always wins and the '!' lines never exclude it.
       - uses: dorny/paths-filter@v3
         if: github.event_name == 'pull_request' || github.event_name == 'push'
         id: filter
         with:
-          # Default 'some' makes a file match if ANY pattern does, so '**' alone
-          # wins and the '!' lines never exclude; 'every' requires all of them.
           predicate-quantifier: 'every'
           filters: |
             rust:

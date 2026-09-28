@@ -20,6 +20,20 @@ const capabilities: TauriCapabilities = {
 
 let tauriDriver: ChildProcess | undefined;
 
+/**
+ * `tauri-driver` proxies WebDriver calls to `msedgedriver` (Windows WebView2) and forwards
+ * them to the built app's window; one instance per wdio run, matching maxInstances: 1.
+ */
+function onPrepare(): void {
+  tauriDriver = spawn('tauri-driver', ['--port', String(TAURI_DRIVER_PORT)], {
+    stdio: [null, process.stdout, process.stderr],
+  });
+}
+
+function onComplete(): void {
+  tauriDriver?.kill();
+}
+
 export const config: WebdriverIO.Config = {
   runner: 'local',
   hostname: '127.0.0.1',
@@ -34,15 +48,6 @@ export const config: WebdriverIO.Config = {
     ui: 'bdd',
     timeout: 120_000,
   },
-
-  // `tauri-driver` proxies WebDriver calls to `msedgedriver` (Windows WebView2) and forwards
-  // them to the built app's window; one instance per wdio run, matching maxInstances: 1.
-  onPrepare: (): void => {
-    tauriDriver = spawn('tauri-driver', ['--port', String(TAURI_DRIVER_PORT)], {
-      stdio: [null, process.stdout, process.stderr],
-    });
-  },
-  onComplete: (): void => {
-    tauriDriver?.kill();
-  },
+  onPrepare,
+  onComplete,
 };
