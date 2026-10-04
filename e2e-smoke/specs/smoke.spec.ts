@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { browser, expect } from '@wdio/globals';
 import { KAVKAZ_IV_HOLDS, KAVKAZ_IV_VESSEL_NAME } from '../../src/fixtures/kavkaz-iv';
-import { ru } from '../../src/i18n/ru';
+import { en } from '../../src/i18n/en';
 import { invokeIpc, readTextFileViaIpc, writeTextFileViaIpc } from '../tauri-ipc';
 
 const DB = 'sqlite:vessel_assistant.db';
@@ -12,8 +12,9 @@ const APP_DATA = 14;
 describe('Windows smoke: real Tauri host behind a wdio + tauri-driver session', () => {
   it('step 1: the window opens and migrations have run before the app renders', async () => {
     // `session.title` only paints once `SessionService.current()` resolved a SELECT against
-    // `app_session` — impossible unless every migration up to 0005 already applied.
-    const heading = await browser.$(`h2=${ru['session.title']}`);
+    // `app_session` — impossible unless every migration up to 0005 already applied. A fresh
+    // profile has no saved language, so the UI starts in English (src/i18n/index.ts).
+    const heading = await browser.$(`h2=${en['session.title']}`);
     try {
       await heading.waitForExist({ timeout: 30_000 });
     } catch (error) {
