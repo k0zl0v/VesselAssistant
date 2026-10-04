@@ -14,7 +14,11 @@ describe('Windows smoke: real Tauri host behind a wdio + tauri-driver session', 
     // `session.title` only paints once `SessionService.current()` resolved a SELECT against
     // `app_session` — impossible unless every migration up to 0005 already applied.
     const heading = await browser.$(`h2=${ru['session.title']}`);
-    await heading.waitForExist({ timeout: 30_000 });
+    try {
+      await heading.waitForExist({ timeout: 30_000 });
+    } catch (error) {
+      throw new Error(`session.title never rendered; window URL is ${await browser.getUrl()}: ${String(error)}`);
+    }
   });
 
   it('step 2: _sqlx_migrations records exactly versions 1..5', async () => {

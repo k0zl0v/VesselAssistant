@@ -13,9 +13,12 @@ interface TauriCapabilities extends WebdriverIO.Capabilities {
   'tauri:options': { application: string };
 }
 
+// WebdriverIO 9 opens a WebDriver BiDi session by default; through tauri-driver and
+// msedgedriver that session is bound to an about:blank target instead of the app page.
 const capabilities: TauriCapabilities = {
   browserName: 'wry',
   'tauri:options': { application: APPLICATION_PATH },
+  'wdio:enforceWebDriverClassic': true,
 };
 
 let tauriDriver: ChildProcess | undefined;
