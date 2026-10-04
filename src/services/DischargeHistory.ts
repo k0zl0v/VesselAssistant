@@ -21,6 +21,14 @@ export interface DischargeOperationView {
   tons: number;
   description: string | null;
   created_at: string;
+  crane_id: string | null;
+  crane_name: string | null;
+  /** From the crane-sheet row; null when the operation was recorded without a crane. */
+  crane_mode: string | null;
+  coefficient: number | null;
+  corrected_tons: number | null;
+  /** The OGV hold the cargo went into, when recorded. */
+  ogv_hold_no: number | null;
   allocations: {
     cargo_layer_id: string;
     load_sequence: number;
@@ -59,6 +67,12 @@ interface OperationRow {
   tons: number;
   description: string | null;
   created_at: string;
+  crane_id: string | null;
+  crane_name: string | null;
+  crane_mode: string | null;
+  coefficient: number | null;
+  corrected_tons: number | null;
+  ogv_hold_no: number | null;
 }
 
 interface AllocationRow {
@@ -75,9 +89,15 @@ export async function listDischargeHistory(db: Db, voyage_id: string): Promise<D
   const [ops, allocs] = await Promise.all([
     db.select<OperationRow>(
       `SELECT op.id AS operation_id, op.event_date, op.time_from, op.time_to,
-              op.source_hold AS hold_id, h.hold_no AS hold_no, op.tons, op.description, op.created_at
+              op.source_hold AS hold_id, h.hold_no AS hold_no, op.tons, op.description, op.created_at,
+              COALESCE(sr.crane_id, op.crane_id) AS crane_id, cr.name AS crane_name, sr.mode AS crane_mode,
+              sr.coefficient AS coefficient, sr.corrected_tons AS corrected_tons, oh.hold_no AS ogv_hold_no
          FROM operations op
          JOIN holds h ON h.id = op.source_hold
+         LEFT JOIN crane_shift_records sr ON sr.id = (SELECT id FROM crane_shift_records WHERE operation_id = op.id LIMIT 1)
+         LEFT JOIN cranes cr ON cr.id = COALESCE(sr.crane_id, op.crane_id)
+         LEFT JOIN ogv_receipts r ON r.operation_id = op.id
+         LEFT JOIN ogv_holds oh ON oh.id = r.ogv_hold_id
         WHERE op.voyage_id = ? AND op.type = 'discharge'
         ORDER BY op.event_date DESC, op.created_at DESC`,
       [voyage_id],

@@ -140,6 +140,11 @@ export interface HistoryEntry {
   event_date: string;
   hold_no: number;
   tons: number;
+  crane_name: string | null;
+  crane_mode: string | null;
+  coefficient: number | null;
+  corrected_tons: number | null;
+  ogv_hold_no: number | null;
   allocations: HistoryAllocation[];
 }
 
@@ -157,6 +162,11 @@ export function buildHistory(ops: DischargeOperationView[]): HistoryEntry[] {
       event_date: op.event_date,
       hold_no: op.hold_no,
       tons: op.tons,
+      crane_name: op.crane_name,
+      crane_mode: op.crane_mode,
+      coefficient: op.coefficient,
+      corrected_tons: op.corrected_tons,
+      ogv_hold_no: op.ogv_hold_no,
       allocations: op.allocations.map((a) => {
         const after = a.layer_remaining_tons + (takenLater.get(a.cargo_layer_id) ?? 0);
         return {

@@ -9,6 +9,8 @@ import { ru } from '../../i18n/ru';
 import { CalculationService } from '../../services/CalculationService';
 import { CargoLotService } from '../../services/CargoLotService';
 import { OgvService } from '../../services/OgvService';
+import { OgvVesselService, type OgvHoldView } from '../../services/OgvVesselService';
+import type { Crane } from '../../services/ReferenceService';
 import { VoyageService } from '../../services/VoyageService';
 import { loadVoyageOverview } from '../../services/VoyageOverview';
 import { NOOP_AUTO_BACKUP, openTestDb } from '../../services/__tests__/helpers';
@@ -57,6 +59,7 @@ async function renderForm(
   voyageId: string,
   initialHoldId: string,
   handlers: { onDischarged?: () => Promise<void>; onClose?: () => void } = {},
+  extra: { cranes?: Crane[]; ogvHolds?: OgvHoldView[] } = {},
 ): Promise<void> {
   const calc = await new CalculationService(db).calculate(voyageId);
   const overview = await loadVoyageOverview(db, voyageId);
@@ -68,6 +71,8 @@ async function renderForm(
       holds={calc.holds}
       cargoNames={cargoNames}
       initialHoldId={initialHoldId}
+      cranes={extra.cranes}
+      ogvHolds={extra.ogvHolds}
       onDischarged={handlers.onDischarged ?? (async () => {})}
       onClose={handlers.onClose ?? (() => {})}
     />,
@@ -173,5 +178,79 @@ describe('DischargeForm (D6 on the UI: a short hold is reported in the interface
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onDischarged).toHaveBeenCalledOnce();
     expect((await layersOf(db, holdId)).map((l) => l.remaining_tons)).toEqual([3825, 0, 0]);
+  });
+
+  describe('crane and OGV hold', () => {
+    async function withCraneAndOgv(voyageId: string): Promise<{ cranes: Crane[]; ogvHolds: OgvHoldView[] }> {
+      const cranes: Crane[] = [
+        { id: crypto.randomUUID(), name: 'CRANE # 1', notes: null },
+        { id: crypto.randomUUID(), name: 'CRANE # 2', notes: null },
+      ];
+      for (const c of cranes) await db.execute(`INSERT INTO cranes (id, name) VALUES (?, ?)`, [c.id, c.name]);
+      await db.execute(
+        `INSERT INTO crane_working_coefficients (id, crane_id, mode, coefficient, valid_from) VALUES (?, ?, 'from_own', 1.06, '2026-01-01')`,
+        [crypto.randomUUID(), cranes[0]!.id],
+      );
+      const ogv = new OgvVesselService(db);
+      await ogv.create({
+        voyage_id: voyageId,
+        name: 'AAI PRELUDE',
+        holds: [{ hold_no: 2, planned_tons: 10869 }, { hold_no: 5, planned_tons: 8324 }],
+      });
+      return { cranes, ogvHolds: (await ogv.summary(voyageId))!.holds };
+    }
+
+    it('1177 t by scale with crane 1 (k 1.060) → corrected 1 110.377 live; LIFO and remains take the scale weight', async () => {
+      const { voyageId, holdIdByNo } = await seedEndOfS3(db);
+      const holdId = holdIdByNo.get(3)!;
+      const extra = await withCraneAndOgv(voyageId);
+      const onClose = vi.fn();
+      const user = userEvent.setup();
+      await renderForm(db, voyageId, holdId, { onClose }, extra);
+
+      // Default target: the OGV hold with the most left to load (№2).
+      expect((screen.getByTestId('discharge-ogv-hold') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe(
+        '№2 · осталось 10\u202f869.000',
+      );
+      await user.type(screen.getByTestId('discharge-tons'), '1177');
+      await waitFor(() => expect(screen.getByTestId('discharge-coef')).toHaveProperty('value', '1.060'));
+      expect(screen.getByTestId('discharge-corrected').textContent).toBe('1\u202f110.377т');
+      expect(screen.getByTestId('discharge-crane').textContent).toContain('1\u202f177.000');
+      expect(screen.getByTestId('discharge-after-remain').textContent).toContain('2\u202f825.000');
+      expect(screen.getByTestId('discharge-after-ogv-hold').textContent).toContain('1\u202f177.000');
+      expect(screen.getByTestId('discharge-after-ogv-hold').textContent).toContain('осталось 9\u202f692.000');
+
+      await user.click(screen.getByTestId('discharge-submit'));
+      await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+      expect(await layersOf(db, holdId)).toEqual([{ load_sequence: 1, remaining_tons: 2825 }]);
+      const [shift] = await db.select<{ scale_tons: number; coefficient: number; corrected_tons: number }>(
+        `SELECT scale_tons, coefficient, corrected_tons FROM crane_shift_records`,
+      );
+      expect(shift!.scale_tons).toBe(1177);
+      expect(shift!.coefficient).toBe(1.06);
+      expect(Math.round(shift!.corrected_tons * 1000) / 1000).toBe(1110.377);
+      const receipts = await db.select<{ tons: number; hold_no: number }>(
+        `SELECT r.tons, h.hold_no FROM ogv_receipts r JOIN ogv_holds h ON h.id = r.ogv_hold_id`,
+      );
+      expect(receipts).toEqual([{ tons: 1177, hold_no: 2 }]);
+    });
+
+    it('no working coefficient for the mode → the reason in Russian, submit blocked until «Без крана»', async () => {
+      const { voyageId, holdIdByNo } = await seedEndOfS3(db);
+      const extra = await withCraneAndOgv(voyageId);
+      const user = userEvent.setup();
+      await renderForm(db, voyageId, holdIdByNo.get(5)!, {}, extra);
+
+      await user.type(screen.getByTestId('discharge-tons'), '824');
+      await user.selectOptions(screen.getByTestId('discharge-crane-select'), extra.cranes[1]!.id);
+      const error = await screen.findByTestId('discharge-crane-error');
+      expect(error.textContent).toContain('нет рабочего коэффициента');
+      expect(error.textContent).not.toMatch(UUID);
+      expect(screen.getByTestId('discharge-submit')).toBeDisabled();
+
+      await user.selectOptions(screen.getByTestId('discharge-crane-select'), '');
+      expect(screen.getByTestId('discharge-submit')).toBeEnabled();
+      expect(screen.queryByTestId('discharge-corrected')).toBeNull();
+    });
   });
 });

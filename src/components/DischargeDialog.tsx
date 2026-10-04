@@ -3,6 +3,7 @@ import { getDb } from '../db';
 import { useT } from '../i18n';
 import { describeError } from '../i18n/errors';
 import type { Db } from '../services/db';
+import { OgvVesselService, type OgvHoldView } from '../services/OgvVesselService';
 import { useVoyage } from '../shell/VoyageContext';
 import { DischargeForm } from './DischargeForm';
 import { Dialog } from './ui/Dialog';
@@ -10,26 +11,36 @@ import { ErrorState } from './ui/states';
 
 interface Props {
   initialHoldId?: string;
+  initialOgvHoldId?: string;
   onClose: () => void;
 }
 
-/** Discharge with a LIFO preview, bound to the selected voyage. */
-export function DischargeDialog({ initialHoldId, onClose }: Props) {
+interface Ready {
+  db: Db;
+  /** Null when the voyage has no OGV registered. */
+  ogvHolds: OgvHoldView[] | null;
+}
+
+/** Discharge with a LIFO preview and crane correction, bound to the selected voyage and its OGV. */
+export function DischargeDialog({ initialHoldId, initialOgvHoldId, onClose }: Props) {
   const t = useT();
-  const { data, refresh } = useVoyage();
-  const [db, setDb] = useState<Db | null>(null);
+  const { data, cranes, refresh } = useVoyage();
+  const [ready, setReady] = useState<Ready | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
+  const voyageId = data?.voyage.id;
 
   useEffect(() => {
+    if (!voyageId) return;
     let live = true;
-    getDb().then(
-      (d) => live && setDb(d),
-      (e: unknown) => live && setDbError(describeError(e)),
-    );
+    (async () => {
+      const db = await getDb();
+      const summary = await new OgvVesselService(db).summary(voyageId);
+      if (live) setReady({ db, ogvHolds: summary?.holds ?? null });
+    })().catch((e: unknown) => live && setDbError(describeError(e)));
     return () => {
       live = false;
     };
-  }, []);
+  }, [voyageId]);
 
   const cargoNames = useMemo(() => {
     const out: Record<string, string[]> = {};
@@ -47,14 +58,17 @@ export function DischargeDialog({ initialHoldId, onClose }: Props) {
       </Dialog>
     );
   }
-  if (!db) return null;
+  if (!ready) return null;
   return (
     <DischargeForm
-      db={db}
+      db={ready.db}
       voyage_id={data.voyage.id}
       holds={data.calc.holds}
       cargoNames={cargoNames}
       initialHoldId={initialHoldId}
+      cranes={cranes}
+      ogvHolds={ready.ogvHolds ?? undefined}
+      initialOgvHoldId={initialOgvHoldId}
       onDischarged={refresh}
       onClose={onClose}
     />

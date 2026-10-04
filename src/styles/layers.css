@@ -410,9 +410,26 @@
 }
 
 .layers-op-meta {
-  margin: var(--space-1) 0 9px;
+  margin: var(--space-1) 0 5px;
   font-size: var(--text-caption);
   color: var(--ink-muted);
+}
+
+.layers-op-crane {
+  margin-bottom: 9px;
+  padding: 3px 7px;
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  font-size: var(--text-micro);
+}
+
+.layers-op-crane.none {
+  border-color: var(--line);
+  background: var(--surface-sunken);
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
 }
 
 .layers-op-tons {

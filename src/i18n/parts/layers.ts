@@ -32,6 +32,11 @@ export const en = {
   'layers.history.hold': 'Hold No.{no}',
   'layers.history.remain': 'remain {tons}',
   'layers.history.empty': 'No discharges yet — every layer is intact.',
+  'layers.history.by_scale': 'by scale',
+  'layers.history.crane': '{crane} · {mode} · k {k} → {tons} t',
+  'layers.history.crane_only': '{crane} · no crane-sheet line',
+  'layers.history.no_crane': 'no crane recorded',
+  'layers.history.ogv_hold': '→ OGV hold №{no}',
   'layers.footnote':
     'A lower layer cannot be picked by hand. A correction is a separate operation with a reason and an audit log entry.',
 
@@ -73,6 +78,11 @@ export const ru: { [K in keyof typeof en]: string } = {
   'layers.history.hold': 'Трюм №{no}',
   'layers.history.remain': 'остаток {tons}',
   'layers.history.empty': 'Выгрузок ещё не было — все слои целы.',
+  'layers.history.by_scale': 'по весам',
+  'layers.history.crane': '{crane} · {mode} · k {k} → {tons} т',
+  'layers.history.crane_only': '{crane} · без строки CRANE CORR.',
+  'layers.history.no_crane': 'кран не указан',
+  'layers.history.ogv_hold': '→ трюм OGV №{no}',
   'layers.footnote':
     'Выбрать нижний слой вручную нельзя. Корректировка — отдельной операцией с причиной и записью в журнал аудита.',
 

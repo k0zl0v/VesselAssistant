@@ -1,9 +1,24 @@
 import type { CSSProperties } from 'react';
 import { MINUS, formatTons } from '../../calc/round';
 import { useT } from '../../i18n';
+import type { CraneMode } from '../../services/CraneShiftService';
 import { formatDate } from '../../shell/format';
 import { Icon } from '../ui/Icon';
 import type { HistoryEntry, SourceRemain } from './model';
+
+/** «CRANE # 1 · ИЗ СЕБЯ · k 1.060 → 1 110.377 т» — the crane-sheet line of an operation. */
+function craneLine(t: ReturnType<typeof useT>, op: HistoryEntry): string {
+  if (!op.crane_name) return t('layers.history.no_crane');
+  if (op.coefficient === null || op.corrected_tons === null || !op.crane_mode) {
+    return t('layers.history.crane_only', { crane: op.crane_name });
+  }
+  return t('layers.history.crane', {
+    crane: op.crane_name,
+    mode: t(`discharge.mode.${op.crane_mode as CraneMode}`),
+    k: op.coefficient.toFixed(3),
+    tons: formatTons(op.corrected_tons),
+  });
+}
 
 interface Props {
   sources: SourceRemain[];
@@ -72,7 +87,12 @@ export function LayersInspector({ sources, onBoard, history }: Props) {
                 {t('layers.history.hold', { no: op.hold_no })} ·{' '}
                 <span className="num layers-op-tons">
                   {formatTons(op.tons)} {unit}
-                </span>
+                </span>{' '}
+                {t('layers.history.by_scale')}
+                {op.ogv_hold_no !== null && <> {t('layers.history.ogv_hold', { no: op.ogv_hold_no })}</>}
+              </div>
+              <div className={`layers-op-crane mono${op.crane_name ? '' : ' none'}`} data-testid="layers-op-crane">
+                {craneLine(t, op)}
               </div>
               {op.allocations.map((a) => (
                 <div className="layers-alloc" key={a.cargo_layer_id}>

@@ -1,5 +1,18 @@
-/* Discharge dialog with the LIFO preview (docs/ui/artboards/Discharge.dc.html)
-   and the «OGV · Operations» screen. */
+/* Discharge dialog with the LIFO preview and crane (docs/ui/artboards/Discharge.dc.html). */
+
+:root {
+  --discharge-dialog-width: 820px;
+  --discharge-ogv-width: 200px;
+  --discharge-time-width: 96px;
+  --discharge-crane-width: 150px;
+  --discharge-mode-width: 200px;
+  --discharge-coef-width: 116px;
+  --discharge-date-width-compact: 140px;
+}
+
+.dialog.wide:has(> .discharge-form) {
+  width: var(--discharge-dialog-width);
+}
 
 /* ===== Dialog: fields ================================================ */
 
@@ -37,13 +50,28 @@
   flex-shrink: 0;
 }
 
+.discharge-form .discharge-field-date {
+  width: var(--discharge-date-width-compact);
+}
+
 .discharge-field-date {
   width: var(--discharge-date-width);
   flex-shrink: 0;
 }
 
+.discharge-field-ogv {
+  width: var(--discharge-ogv-width);
+  flex-shrink: 0;
+}
+
+.discharge-field-time {
+  width: var(--discharge-time-width);
+  flex-shrink: 0;
+}
+
 .discharge-field-desc {
   flex-grow: 1;
+  min-width: 0;
 }
 
 .discharge-row .input {
@@ -75,6 +103,121 @@
 .discharge-quick {
   display: flex;
   gap: 6px;
+}
+
+/* ===== Dialog: crane and correction ================================== */
+
+.discharge-crane {
+  margin-top: var(--space-2);
+  padding: 14px var(--space-6);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface-raised);
+}
+
+.discharge-crane-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 11px;
+  color: var(--ink-muted);
+}
+
+.discharge-crane-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.discharge-crane-sub {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.discharge-crane-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+}
+
+.discharge-crane-row .field-label {
+  font-size: var(--text-micro);
+}
+
+.discharge-field-crane {
+  width: var(--discharge-crane-width);
+  flex-shrink: 0;
+}
+
+.discharge-field-mode {
+  width: var(--discharge-mode-width);
+  flex-shrink: 0;
+}
+
+.discharge-field-coef {
+  width: var(--discharge-coef-width);
+  flex-shrink: 0;
+}
+
+.input.discharge-coef {
+  border-color: var(--warning-soft-line);
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+  font-weight: 600;
+  text-align: left;
+}
+
+.discharge-corrected {
+  display: flex;
+  flex-grow: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-bottom: 2px;
+}
+
+.discharge-corrected-label {
+  max-width: 150px;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  text-align: right;
+}
+
+.discharge-corrected-value {
+  font-size: var(--text-metric);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.discharge-corrected-unit {
+  margin-left: var(--space-1);
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  font-weight: 400;
+}
+
+.discharge-crane-note {
+  margin: 10px 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.discharge-crane-note:first-of-type:only-child,
+.discharge-crane-head + .discharge-crane-note {
+  margin-top: 0;
+}
+
+.discharge-crane-error {
+  margin: 10px 0 0;
+}
+
+.discharge-footer-note {
+  flex-grow: 1;
 }
 
 /* ===== Dialog: LIFO preview ========================================== */
@@ -326,6 +469,10 @@
   margin-top: 3px;
   color: var(--ink-faint);
   font-size: var(--text-micro);
+}
+
+.discharge-tile-delta.over {
+  color: var(--danger);
 }
 
 .discharge-note {

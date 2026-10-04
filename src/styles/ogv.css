@@ -1,0 +1,676 @@
+/* OGV — the ocean-going vessel under loading (docs/ui/artboards/Ogv.dc.html). */
+
+:root {
+  --ogv-sidebar-width: 340px;
+  --ogv-hold-bar-height: 84px;
+  /* The plan line sits 78 px up the 84 px bar; a 100 % hold fills exactly to it. */
+  --ogv-hold-bar-plan: 78px;
+  --ogv-row-main: #f5fafa;
+  --ogv-over-surface: #fff8f7;
+  --ogv-dot: 8px;
+  --ogv-col-cargo: 104px;
+  --ogv-col-hold: 122px;
+  --ogv-col-tons: 128px;
+  --ogv-col-started: 150px;
+  --ogv-plan-grid-col: 112px;
+  --ogv-field-hold: 200px;
+  --ogv-field-narrow: 132px;
+}
+
+.ogv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.ogv-spacer {
+  flex-grow: 1;
+}
+
+.ogv-section-title {
+  margin: 0;
+  font-size: var(--text-card);
+  font-weight: 600;
+}
+
+.ogv-section-sub {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.ogv-strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ogv-muted {
+  color: var(--ink-muted);
+}
+
+.ogv-faint {
+  color: var(--ink-faint);
+}
+
+.ogv-dot {
+  width: var(--ogv-dot);
+  height: var(--ogv-dot);
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--dot, var(--cargo-fallback));
+}
+
+/* ===== Summary tiles ================================================= */
+
+.ogv-tiles {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.ogv-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--space-3) 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.ogv-tile-label {
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ogv-tile-value {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-metric);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ogv-tile-value.negative {
+  color: var(--danger);
+}
+
+.ogv-tile-unit {
+  margin-left: var(--space-1);
+  font-size: var(--text-small);
+  font-weight: 400;
+  opacity: 0.66;
+}
+
+.ogv-tile-note {
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.ogv-tile.key {
+  border-color: var(--chrome);
+  background: var(--chrome);
+  color: var(--accent-ink);
+}
+
+.ogv-tile.key .ogv-tile-label,
+.ogv-tile.key .ogv-tile-note {
+  color: var(--chrome-ink-muted);
+}
+
+.ogv-tile.accent {
+  border-color: var(--accent-soft-line);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+}
+
+.ogv-tile.accent .ogv-tile-label,
+.ogv-tile.accent .ogv-tile-note {
+  color: var(--accent-press);
+}
+
+/* ===== OGV holds ===================================================== */
+
+.ogv-holds {
+  padding: 14px var(--space-4);
+}
+
+.ogv-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ogv-over-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--space-2);
+  border: 1px solid var(--danger-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--text-caption);
+}
+
+.ogv-hold-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+}
+
+.ogv-hold {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.ogv-hold.over {
+  border-color: var(--danger-soft-line);
+  background: var(--ogv-over-surface);
+}
+
+.ogv-hold-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-2) 10px 7px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ogv-hold.over .ogv-hold-head {
+  border-bottom-color: var(--danger-soft-line);
+}
+
+.ogv-hold-no {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.ogv-hold-pct {
+  color: var(--ink-muted);
+  font-size: var(--text-micro);
+  font-weight: 600;
+}
+
+.ogv-hold.over .ogv-hold-pct {
+  color: var(--danger);
+}
+
+.ogv-hold-bar {
+  position: relative;
+  display: flex;
+  height: var(--ogv-hold-bar-height);
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--surface-readonly);
+}
+
+.ogv-hold-fill {
+  height: calc(var(--ogv-hold-bar-plan) * var(--fill, 0));
+  background: var(--accent);
+}
+
+.ogv-hold.over .ogv-hold-fill {
+  background: var(--danger);
+}
+
+.ogv-hold-plan-line {
+  position: absolute;
+  right: 0;
+  bottom: var(--ogv-hold-bar-plan);
+  left: 0;
+  border-top: 2px dashed var(--danger);
+}
+
+.ogv-hold-figures {
+  padding: var(--space-2) 10px 9px;
+}
+
+.ogv-hold-line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-top: 3px;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.ogv-hold-line.plan {
+  margin-top: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+}
+
+.ogv-hold-caption {
+  color: var(--ink-muted);
+}
+
+.ogv-hold-line .strong {
+  font-weight: 600;
+}
+
+.ogv-hold-line .negative {
+  color: var(--danger);
+}
+
+.ogv-hold-line .positive {
+  color: var(--positive);
+}
+
+/* ===== Receipts + sidebar ============================================ */
+
+.ogv-columns {
+  display: flex;
+  align-items: stretch;
+  gap: 13px;
+}
+
+.ogv-receipts {
+  display: flex;
+  flex-grow: 1;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ogv-receipts-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ogv-receipts-scroll {
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ogv-receipts-table {
+  width: 100%;
+}
+
+.ogv-receipts-table .col-cargo {
+  width: var(--ogv-col-cargo);
+}
+
+.ogv-receipts-table .col-ogv-hold {
+  width: var(--ogv-col-hold);
+}
+
+.ogv-receipts-table .col-tons {
+  width: var(--ogv-col-tons);
+}
+
+.ogv-receipts-table .col-started {
+  width: var(--ogv-col-started);
+}
+
+.ogv-receipts-table td {
+  height: auto;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  font-size: var(--text-small);
+}
+
+.ogv-receipt-source {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+}
+
+.ogv-receipt-note {
+  display: block;
+  margin-top: 2px;
+  padding-left: calc(var(--ogv-dot) + var(--space-2));
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+}
+
+.ogv-receipt-tons {
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.ogv-receipt-main {
+  background: var(--ogv-row-main);
+}
+
+.ogv-receipt-main .ogv-receipt-source,
+.ogv-receipt-main .ogv-receipt-tons {
+  font-weight: 600;
+}
+
+.ogv-receipts-empty {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+}
+
+.ogv-receipts-note {
+  padding: 10px var(--space-4);
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-raised);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.ogv-sidebar {
+  display: flex;
+  width: var(--ogv-sidebar-width);
+  flex-shrink: 0;
+  flex-direction: column;
+  padding: 14px var(--space-4);
+}
+
+.ogv-sidebar-sub {
+  margin: 3px 0 var(--space-3);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.ogv-sidebar-empty {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.ogv-avail {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--track);
+  border-radius: var(--radius-item);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+button.ogv-avail {
+  cursor: pointer;
+}
+
+button.ogv-avail:hover {
+  border-color: var(--accent-soft-line);
+  background: var(--accent-soft);
+}
+
+button.ogv-avail:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.ogv-avail .ogv-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.ogv-avail-text {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.ogv-avail-hold {
+  display: block;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.ogv-avail-sub {
+  display: block;
+  overflow: hidden;
+  margin-top: 1px;
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ogv-avail-tons {
+  flex-shrink: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.ogv-onboard {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.ogv-onboard .mono {
+  color: var(--ink);
+  font-size: var(--text-card);
+}
+
+.ogv-sidebar > .ogv-spacer {
+  min-height: var(--space-5);
+}
+
+.ogv-steps-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.ogv-steps-title {
+  color: var(--ink-col);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ogv-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ogv-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface-readonly);
+}
+
+.ogv-step-no {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--line-soft);
+  color: var(--ink-muted);
+  font-size: var(--text-micro);
+  font-weight: 600;
+}
+
+.ogv-step-label {
+  overflow: hidden;
+  flex-grow: 1;
+  min-width: 0;
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ogv-step-state {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+}
+
+.ogv-step.done .ogv-step-no {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.ogv-step.done .ogv-step-label {
+  color: var(--ink-faint);
+}
+
+.ogv-step.done .ogv-step-state {
+  color: var(--positive);
+}
+
+.ogv-step.current .ogv-step-no {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.ogv-seq-state.current {
+  color: var(--warning-ink);
+  font-weight: 600;
+}
+
+.ogv-step.current .ogv-step-state {
+  color: var(--warning-ink);
+}
+
+.ogv-seq-state.done {
+  color: var(--positive);
+}
+
+.ogv-seq-state.pending {
+  color: var(--ink-faint);
+}
+
+/* ===== No OGV yet ==================================================== */
+
+.ogv-legacy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ===== Dialogs ======================================================= */
+
+.ogv-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ogv-form-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.ogv-field-grow {
+  flex-grow: 1;
+}
+
+.ogv-field-count,
+.ogv-field-time {
+  width: var(--discharge-time-width, 104px);
+  flex-shrink: 0;
+}
+
+.ogv-field-hold {
+  width: var(--ogv-field-hold);
+  flex-shrink: 0;
+}
+
+.ogv-field-tons,
+.ogv-field-cargo,
+.ogv-field-date {
+  width: var(--ogv-field-narrow);
+  flex-shrink: 0;
+}
+
+.ogv-plan-label {
+  margin-bottom: 0;
+}
+
+.ogv-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ogv-plan-grid-col), 1fr));
+  gap: var(--space-2) 10px;
+}
+
+.ogv-plan-hold {
+  margin-bottom: 3px;
+  color: var(--ink-muted);
+  font-size: var(--text-caption);
+}
+
+.ogv-plan-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.ogv-plan-total .mono {
+  color: var(--ink);
+  font-size: var(--text-card);
+}
+
+.ogv-barge-after {
+  margin: 0;
+  padding: 9px var(--space-3);
+  border: 1px solid var(--track);
+  border-radius: var(--radius-item);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: var(--text-caption);
+}
+
+.ogv-barge-after.over {
+  border-color: var(--danger-soft-line);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ogv-seq-table .col-step {
+  width: 44px;
+}
+
+.ogv-seq-table .col-hold {
+  width: 80px;
+}
+
+.ogv-seq-table .col-tons {
+  width: 130px;
+}
+
+.ogv-seq-table .col-state {
+  width: 150px;
+}
+
+.ogv-seq-table .col-action {
+  width: 44px;
+}
+
+.ogv-seq-add {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+}

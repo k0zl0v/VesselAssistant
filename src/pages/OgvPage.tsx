@@ -1,33 +1,58 @@
-import { useEffect, useState } from 'react';
-import { formatTons, roundTo3 } from '../calc/round';
+import { useEffect, useMemo, useState } from 'react';
 import { DischargeDialog } from '../components/DischargeDialog';
+import { BargeReceiptDialog } from '../components/ogv/BargeReceiptDialog';
+import { DischargeLog } from '../components/ogv/DischargeLog';
+import { OgvHolds } from '../components/ogv/OgvHolds';
+import { OgvReceipts } from '../components/ogv/OgvReceipts';
+import { OgvSidebar, type AvailableHold } from '../components/ogv/OgvSidebar';
+import { OgvTiles } from '../components/ogv/OgvTiles';
+import { RegisterOgvDialog } from '../components/ogv/RegisterOgvDialog';
+import { SequencePlanDialog } from '../components/ogv/SequencePlanDialog';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui/states';
 import { getDb } from '../db';
 import { useT } from '../i18n';
 import { describeError } from '../i18n/errors';
-import { listDischargeHistory, type DischargeOperationView } from '../services/DischargeHistory';
-import { formatDate } from '../shell/format';
+import type { Db } from '../services/db';
+import { listDischargeHistory, listLayers, type DischargeOperationView, type LayerView } from '../services/DischargeHistory';
+import { OgvVesselService, type OgvStatus, type OgvSummary } from '../services/OgvVesselService';
 import { PageHeader, voyageEyebrow } from '../shell/PageHeader';
 import { StatusChip } from '../shell/StatusChip';
 import { useVoyage } from '../shell/VoyageContext';
 import '../styles/discharge.css';
+import '../styles/ogv.css';
 
-type History =
+interface Loaded {
+  voyage_id: string;
+  db: Db;
+  summary: OgvSummary | null;
+  ops: DischargeOperationView[];
+  layers: LayerView[];
+}
+
+type Load =
   | { kind: 'loading' }
   | { kind: 'error'; voyage_id: string; message: string; details: string }
-  | { kind: 'ready'; voyage_id: string; ops: DischargeOperationView[] };
+  | { kind: 'ready'; data: Loaded };
 
-/** «OGV · Operations»: every discharge of the voyage with the layers LIFO wrote off. */
+type Modal = { kind: 'discharge'; holdId?: string } | { kind: 'register' } | { kind: 'barge' } | { kind: 'sequence' } | null;
+
+const STATUS_CHIP: Record<OgvStatus, string> = {
+  planned: 'chip',
+  loading: 'chip chip-warning',
+  completed: 'chip chip-positive',
+};
+
+/** OGV — the ocean-going vessel under loading at the roads (docs/ui/artboards/Ogv.dc.html). */
 export function OgvPage() {
   const t = useT();
-  const { data, isOpen } = useVoyage();
-  const [history, setHistory] = useState<History>({ kind: 'loading' });
+  const { data, cargoes, isOpen, refresh } = useVoyage();
+  const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [retry, setRetry] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [modal, setModal] = useState<Modal>(null);
 
   const voyageId = data?.voyage.id;
-  // A new calculatedAt means the voyage changed (a discharge among others) — re-read the log.
+  // A new calculatedAt means the voyage changed (a discharge, a receipt) — re-read.
   const stamp = data?.calculatedAt.getTime();
 
   useEffect(() => {
@@ -35,11 +60,16 @@ export function OgvPage() {
     let live = true;
     (async () => {
       try {
-        const ops = await listDischargeHistory(await getDb(), voyageId);
-        if (live) setHistory({ kind: 'ready', voyage_id: voyageId, ops });
+        const db = await getDb();
+        const [summary, ops, layers] = await Promise.all([
+          new OgvVesselService(db).summary(voyageId),
+          listDischargeHistory(db, voyageId),
+          listLayers(db, voyageId),
+        ]);
+        if (live) setLoad({ kind: 'ready', data: { voyage_id: voyageId, db, summary, ops, layers } });
       } catch (e) {
         if (live) {
-          setHistory({
+          setLoad({
             kind: 'error',
             voyage_id: voyageId,
             message: describeError(e),
@@ -53,6 +83,27 @@ export function OgvPage() {
     };
   }, [voyageId, stamp, retry]);
 
+  const cargoNames = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    for (const [id, s] of Object.entries(data?.overview.holds ?? {})) out[id] = s.cargo_names;
+    return out;
+  }, [data]);
+
+  const ready = load.kind === 'ready' && load.data.voyage_id === voyageId ? load.data : null;
+  const failed = load.kind === 'error' && load.voyage_id === voyageId ? load : null;
+
+  const available = useMemo<AvailableHold[]>(() => {
+    if (!data || !ready) return [];
+    return data.calc.holds
+      .filter((h) => h.remain_tons > 0)
+      .map((h) => ({
+        hold: h,
+        cargo_names: cargoNames[h.hold_id] ?? [],
+        // listLayers orders each hold top of stack first.
+        top_vessel: ready.layers.find((l) => l.hold_id === h.hold_id && l.remaining_tons > 0)?.source_vessel ?? null,
+      }));
+  }, [data, ready, cargoNames]);
+
   if (!data) {
     return (
       <div className="page-body">
@@ -61,43 +112,86 @@ export function OgvPage() {
     );
   }
 
-  const { voyage, vessel, overview } = data;
-  const current = history.kind !== 'loading' && history.voyage_id === voyage.id ? history : null;
-  const ops = current?.kind === 'ready' ? current.ops : [];
-  const totalTons = ops.reduce((s, o) => s + o.tons, 0);
+  const { voyage, vessel } = data;
+  const mainVessel = vessel?.name ?? '';
+  const summary = ready?.summary ?? null;
   const canDischarge = isOpen && data.calc.totals.on_board > 0;
+  const closedChip = voyage.status === 'closed' ? <StatusChip status={voyage.status} /> : null;
+
+  const sources = summary
+    ? [
+        ...new Set(summary.receipts.filter((r) => r.source_kind === 'barge').map((r) => r.source_name)),
+        ...(summary.totals.main_hold_operations > 0 ? [t('ogv.sources.main', { vessel: mainVessel })] : []),
+      ]
+    : [];
+  const lastBarge = summary ? ([...summary.receipts].reverse().find((r) => r.source_kind === 'barge')?.source_name ?? '') : '';
+
+  const dischargeButton = isOpen && (
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={() => setModal({ kind: 'discharge' })}
+      disabled={!canDischarge}
+      data-testid="ogv-action-discharge"
+    >
+      <Icon name="discharge" size={14} strokeWidth={2.2} />
+      {t('ogv.action.discharge')}
+    </button>
+  );
 
   return (
     <>
       <PageHeader
-        eyebrow={voyageEyebrow(t('shell.voyage'), voyage.voyage_no, vessel?.name)}
-        title={t('nav.ogv')}
+        eyebrow={
+          summary
+            ? t('ogv.eyebrow', { voyage_no: voyage.voyage_no })
+            : voyageEyebrow(t('shell.voyage'), voyage.voyage_no, vessel?.name)
+        }
+        title={summary ? t('ogv.title', { name: summary.vessel.name }) : t('nav.ogv')}
         titleTestId="ogv-heading"
-        chip={voyage.status === 'closed' ? <StatusChip status={voyage.status} /> : undefined}
+        chip={
+          (summary || closedChip) && (
+            <>
+              {summary && (
+                <span className={STATUS_CHIP[summary.vessel.status]} data-testid="ogv-status">
+                  {t(`ogv.status.${summary.vessel.status}`)}
+                </span>
+              )}
+              {closedChip}
+            </>
+          )
+        }
         meta={
-          current?.kind === 'ready' && (
+          summary && (
             <span data-testid="ogv-meta">
-              {t('ogv.meta', { count: ops.length, tons: formatTons(totalTons) })}
+              {t('ogv.subtitle', {
+                holds: summary.holds.length,
+                sources: sources.length > 0 ? sources.join(', ') : t('ogv.sources.none'),
+              })}
             </span>
           )
         }
         actions={
           isOpen && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => setDialogOpen(true)}
-              disabled={!canDischarge}
-              data-testid="ogv-action-discharge"
-            >
-              <Icon name="discharge" size={14} strokeWidth={2.2} />
-              {t('ogv.action.discharge')}
-            </button>
+            <>
+              {summary && (
+                <>
+                  <button type="button" className="btn" onClick={() => setModal({ kind: 'barge' })} data-testid="ogv-action-barge">
+                    <Icon name="plus" size={14} strokeWidth={2.2} />
+                    {t('ogv.action.barge')}
+                  </button>
+                  <button type="button" className="btn" onClick={() => setModal({ kind: 'sequence' })} data-testid="ogv-action-sequence">
+                    {t('ogv.action.sequence')}
+                  </button>
+                </>
+              )}
+              {dischargeButton}
+            </>
           )
         }
       />
 
-      <div className="page-body">
+      <div className="page-body ogv-body">
         {!isOpen && (
           <div className="closed-note banner banner-info" data-testid="voyage-closed-note">
             <Icon name="info" size={14} />
@@ -105,114 +199,100 @@ export function OgvPage() {
           </div>
         )}
 
-        {!current ? (
-          <Skeleton />
-        ) : current.kind === 'error' ? (
-          <div className="ogv-alert">
-            <ErrorState
-              title={t('ogv.error.title')}
-              message={current.message}
-              hint={t('shell.db_error.hint')}
-              details={current.details}
-              actions={
-                <button type="button" className="btn btn-sm" onClick={() => setRetry((n) => n + 1)}>
-                  {t('shell.retry')}
-                </button>
-              }
-              testId="ogv-error"
-            />
-          </div>
-        ) : ops.length === 0 ? (
-          <EmptyState
-            icon="discharge"
-            title={t('ogv.empty.title')}
-            text={t('ogv.empty.text')}
+        {failed ? (
+          <ErrorState
+            title={t('ogv.load_error')}
+            message={failed.message}
+            hint={t('shell.db_error.hint')}
+            details={failed.details}
             actions={
-              canDischarge && (
-                <button type="button" className="btn btn-sm btn-primary" onClick={() => setDialogOpen(true)}>
-                  {t('ogv.action.discharge')}
-                </button>
-              )
+              <button type="button" className="btn btn-sm" onClick={() => setRetry((n) => n + 1)}>
+                {t('shell.retry')}
+              </button>
             }
-            testId="ogv-empty"
+            testId="ogv-error"
           />
+        ) : !ready ? (
+          <Skeleton />
+        ) : summary ? (
+          <>
+            <OgvTiles summary={summary} mainVessel={mainVessel} />
+            <OgvHolds summary={summary} />
+            <div className="ogv-columns">
+              <OgvReceipts summary={summary} mainVessel={mainVessel} />
+              <OgvSidebar
+                mainVessel={mainVessel}
+                available={available}
+                onBoard={data.calc.totals.on_board}
+                steps={summary.steps}
+                onPickHold={canDischarge ? (holdId) => setModal({ kind: 'discharge', holdId }) : null}
+                onEditSequence={isOpen ? () => setModal({ kind: 'sequence' }) : null}
+              />
+            </div>
+          </>
         ) : (
           <>
-            <div className="table-card">
-              <table className="data-table ogv-table" data-testid="ogv-table">
-                <thead>
-                  <tr>
-                    <th className="col-date">{t('ogv.col.date')}</th>
-                    <th className="col-hold">{t('ogv.col.hold')}</th>
-                    <th className="num col-tons key-col">{t('ogv.col.tons')}</th>
-                    <th>{t('ogv.col.description')}</th>
-                    <th className="col-layers">{t('ogv.col.layers')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ops.map((op) => (
-                    <OperationRow key={op.operation_id} op={op} cargo={overview.holds[op.hold_id]?.cargo_names ?? []} />
-                  ))}
-                  <tr className="total-row" data-testid="ogv-totals">
-                    <td colSpan={2} className="total-label">
-                      {t('ogv.totals')}
-                    </td>
-                    <td className="num key-col" data-testid="ogv-total-tons">
-                      {formatTons(totalTons)}
-                    </td>
-                    <td className="muted">{t('ogv.totals_count', { count: ops.length })}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="page-note">
-              <Icon name="info" size={13} />
-              {t('ogv.note')}
-            </div>
+            <EmptyState
+              icon="ship"
+              title={t('ogv.none.title')}
+              text={t('ogv.none.text')}
+              actions={
+                isOpen && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={() => setModal({ kind: 'register' })}
+                    data-testid="ogv-register"
+                  >
+                    <Icon name="plus" size={14} strokeWidth={2.2} />
+                    {t('ogv.none.action')}
+                  </button>
+                )
+              }
+              testId="ogv-empty"
+            />
+            {ready.ops.length > 0 && (
+              <section className="ogv-legacy">
+                <h2 className="ogv-section-title">{t('ogv.legacy.title', { vessel: mainVessel })}</h2>
+                <DischargeLog ops={ready.ops} cargoNames={cargoNames} />
+                <div className="page-note">
+                  <Icon name="info" size={13} />
+                  {t('ogv.note')}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>
 
-      {dialogOpen && <DischargeDialog onClose={() => setDialogOpen(false)} />}
+      {modal?.kind === 'discharge' && (
+        <DischargeDialog initialHoldId={modal.holdId} onClose={() => setModal(null)} />
+      )}
+      {modal?.kind === 'register' && ready && (
+        <RegisterOgvDialog db={ready.db} voyage_id={voyage.id} onDone={refresh} onClose={() => setModal(null)} />
+      )}
+      {modal?.kind === 'barge' && ready && summary && (
+        <BargeReceiptDialog
+          db={ready.db}
+          voyage_id={voyage.id}
+          mainVessel={mainVessel}
+          holds={summary.holds}
+          cargoes={cargoes}
+          lastBarge={lastBarge}
+          onDone={refresh}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal?.kind === 'sequence' && ready && summary && (
+        <SequencePlanDialog
+          db={ready.db}
+          voyage_id={voyage.id}
+          holds={summary.holds}
+          steps={summary.steps}
+          onChanged={refresh}
+          onClose={() => setModal(null)}
+        />
+      )}
     </>
-  );
-}
-
-function OperationRow({ op, cargo }: { op: DischargeOperationView; cargo: string[] }) {
-  const t = useT();
-  const time = op.time_from ? `${op.time_from}${op.time_to ? `–${op.time_to}` : ''}` : null;
-  return (
-    <tr data-testid={`ogv-row-${op.operation_id}`}>
-      <td>
-        <span className="mono">{formatDate(op.event_date)}</span>
-        {time && <span className="cell-sub mono">{time}</span>}
-      </td>
-      <td>
-        <span className="mono hold-no">№{op.hold_no}</span>
-        {cargo.length > 0 && <span className="cell-sub">{cargo.join(' · ')}</span>}
-      </td>
-      <td className="num key-col ogv-tons" data-testid="ogv-row-tons">
-        {formatTons(op.tons)}
-      </td>
-      <td className={op.description ? undefined : 'zero'}>{op.description ?? '—'}</td>
-      <td>
-        <div className="ogv-allocs">
-          {op.allocations.map((a) => {
-            const closed = roundTo3(a.layer_remaining_tons) === 0;
-            return (
-              <div className="ogv-alloc" key={a.cargo_layer_id}>
-                <span className="ogv-alloc-seq mono">{t('discharge.layer.seq', { seq: a.load_sequence })}</span>
-                <span className="ogv-alloc-vessel">{a.source_vessel}</span>
-                <span className="ogv-alloc-tons mono">−{formatTons(a.discharged_tons)}</span>
-                <span className={`ogv-alloc-state${closed ? ' closed' : ''}`}>
-                  {closed ? t('ogv.state.closed') : t('ogv.state.remain', { tons: formatTons(a.layer_remaining_tons) })}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </td>
-    </tr>
   );
 }
