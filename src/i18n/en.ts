@@ -37,6 +37,7 @@ export const en = {
   'error.crane.no_coefficient': 'No working crane coefficient for this mode on {date}. Add one in Crane correction.',
   'error.ogv.not_found': 'This voyage has no ocean-going vessel yet.',
   'error.ogv.hold_not_found': 'Hold of the ocean-going vessel not found.',
+  'error.ogv.already_exists': 'This voyage already has an ocean-going vessel.',
   'error.unexpected': 'Unexpected error. Details have been written to the log.',
 
   // Voyage page

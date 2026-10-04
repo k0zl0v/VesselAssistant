@@ -81,6 +81,8 @@ function batchBind(values: unknown[]): SqlValue[] {
 export class TauriBridgeHost {
   readonly fs = new MemoryFs();
   readonly dialogs = new DialogScript();
+  /** Paths passed to the opener's reveal-in-folder, in call order. */
+  readonly revealed: string[] = [];
   readonly logs: LogEntry[] = [];
   readonly calls: string[] = [];
   readonly unhandled: string[] = [];
@@ -132,6 +134,9 @@ export class TauriBridgeHost {
         return this.dialogs.take('open', args);
       case 'plugin:dialog|message':
         return this.dialogs.take('message', args);
+      case 'plugin:opener|reveal_item_in_dir':
+        this.revealed.push(String((args as { paths?: string[]; path?: string }).paths?.[0] ?? (args as { path?: string }).path));
+        return null;
 
       case 'plugin:fs|write_text_file':
       case 'plugin:fs|write_file':

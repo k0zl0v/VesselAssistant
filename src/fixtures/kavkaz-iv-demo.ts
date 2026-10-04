@@ -297,5 +297,8 @@ export const DEMO_OGV_BARGE_RECEIPTS: readonly { hold_no: number; tons: number }
   { hold_no: 1, tons: 9567.27 },
 ];
 export const DEMO_OGV_BARGE = 'KAVKAZ III';
+/** Loading sequence by OGV hold (one step per hold, the hold's full plan). */
+export const DEMO_OGV_SEQUENCE: readonly number[] = [7, 6, 3, 1, 4, 5, 2];
+
 /** OGV hold receiving each of DEMO_DISCHARGES (hold 3 → OGV №2, hold 5 → OGV №5). */
 export const DEMO_DISCHARGE_OGV_HOLD: readonly number[] = [2, 5];

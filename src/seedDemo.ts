@@ -13,6 +13,7 @@ import {
   DEMO_OGV,
   DEMO_OGV_BARGE,
   DEMO_OGV_BARGE_RECEIPTS,
+  DEMO_OGV_SEQUENCE,
   DEMO_SHIFT_DATE,
   DEMO_LOADING_PORT,
   DEMO_LOTS,
@@ -130,6 +131,13 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
       h.hold_no,
       h.planned_tons,
     ]);
+  }
+  for (const [i, holdNo] of DEMO_OGV_SEQUENCE.entries()) {
+    const plan = DEMO_OGV.holds.find((h) => h.hold_no === holdNo)!.planned_tons;
+    await db.execute(
+      `INSERT INTO ogv_sequence_steps (id, ogv_id, step_no, ogv_hold_id, planned_tons) VALUES (?, ?, ?, ?, ?)`,
+      [crypto.randomUUID(), ogvId, i + 1, ogvHoldIds[holdNo]!, plan],
+    );
   }
   for (const r of DEMO_OGV_BARGE_RECEIPTS) {
     await db.execute(

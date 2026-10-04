@@ -1,22 +1,5 @@
 /* OGV — the ocean-going vessel under loading (docs/ui/artboards/Ogv.dc.html). */
 
-:root {
-  --ogv-sidebar-width: 340px;
-  --ogv-hold-bar-height: 84px;
-  /* The plan line sits 78 px up the 84 px bar; a 100 % hold fills exactly to it. */
-  --ogv-hold-bar-plan: 78px;
-  --ogv-row-main: #f5fafa;
-  --ogv-over-surface: #fff8f7;
-  --ogv-dot: 8px;
-  --ogv-col-cargo: 104px;
-  --ogv-col-hold: 122px;
-  --ogv-col-tons: 128px;
-  --ogv-col-started: 150px;
-  --ogv-plan-grid-col: 112px;
-  --ogv-field-hold: 200px;
-  --ogv-field-narrow: 132px;
-}
-
 .ogv-body {
   display: flex;
   flex-direction: column;

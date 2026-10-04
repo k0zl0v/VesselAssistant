@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации (Load/Stowage Plan, OGV, Crane Correction, SOF). Работает автономно на судовом ПК без backend и постоянного интернета.
 
-**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 424 Vitest, 5 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
+**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 480 Vitest, 6 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Source of truth
 
@@ -26,12 +26,12 @@ Offline-first desktop-приложение для расчётов погруз�
 - **Hold** — трюм: номер, объём в м³, текущий груз и тоннаж.
 - **Cargo lot** — партия груза от конкретного судна-источника, загруженная в трюм.
 - **Cargo layer** — расчётный слой груза в трюме = партия или её часть; стек слоёв используется для LIFO-выгрузки.
-- **OGV** (operational goods-vessel log) — операционный журнал погрузки/выгрузки по судам-источникам и трюмам.
+- **OGV** (Ocean Going Vessel) — океанское судно под погрузкой на рейде (например, AAI PRELUDE): свои трюмы с cargo plan, sequence plan, поступления из барж и из трюмов основного судна. Один OGV на рейс (`ogv_vessels`, `OgvVesselService`). Разбор — `docs/ui/excel-reference.md` §1.
 - **SOF** (Statement of Facts) — хронологический журнал событий рейса.
 - **SF** (Stowage Factor) — удельный погрузочный объём; **разный** для разных трюмов/судов/партий.
 - **Protein** — % протеина в пшенице. Допустимые значения: 10.5, 11.5, 12.5, 13.5.
 - **FillPercent** — допустимый процент заполнения трюма. Для MVP **только 0.98**.
-- **Crane correction** — коэффициент поправки веса по крану/борту/типу операции.
+- **Crane correction** — поправка веса по крану. Четыре режима: `from_own` (ИЗ СЕБЯ), `direct` (ПРЯМОЙ ВАРИАНТ, баржа → OGV), `into_own_port` / `into_own_starboard` (В СЕБЯ, по бортам). История замеров `(судно, дата, k)` с флагом исключения, рабочий коэффициент задаётся вручную (`crane_working_coefficients`), лист смены `crane_shift_records`: скорректированный = вес по весам ÷ k. **В остатки трюмов и Load Plan идёт вес по весам**, скорректированный — только в лист CRANE CORR. (`CraneShiftService`, excel-reference §2). Старая таблица `crane_coefficients` больше ничем не читается.
 
 ## Hard business rules (нарушать запрещено)
 
@@ -56,7 +56,7 @@ Shell (src/shell/: Rail, VoyageProvider, PageHeader) → Pages (LoadPlan, CargoL
 Services (src/services/) — TS, бизнес-логика
    - VoyageService, CargoLotService, OgvService
    - CalculationService (агрегаты по рейсу)
-   - SofService, CraneCorrectionService
+   - SofService, SofTimeSheetService, CraneShiftService, OgvVesselService, DocumentRevisionService
    - ReferenceService (vessels/holds/cargoes/cranes)
    - BackupService (JSON envelope), ImportService (XLSX → DB)
    - DocumentEngine (DB → XLSX), AuditLogService
@@ -93,7 +93,8 @@ src/
   services/                # бизнес-логика, зависит от Db
     db.ts db-tauri.ts db-node.ts
     VoyageService.ts CargoLotService.ts OgvService.ts
-    CalculationService.ts SofService.ts CraneCorrectionService.ts
+    CalculationService.ts SofService.ts SofTimeSheetService.ts CraneShiftService.ts
+    OgvVesselService.ts DocumentRevisionService.ts ShipProfileView.ts
     ReferenceService.ts AuditLogService.ts
     BackupService.ts ImportService.ts DocumentEngine.ts
     HoldLotsView.ts
@@ -136,6 +137,10 @@ src-tauri/
     0003_operator_context.sql
     0004_immutability_guards.sql
     0005_protein_percent_guard.sql
+    0006_crane_model.sql          # режимы, замеры, рабочий k, лист смены
+    0007_ogv_vessel.sql           # OGV: судно, трюмы, поступления, sequence plan
+    0008_document_revisions.sql   # ревизии экспорта в documents
+    0009_sof_time_sheet.sql       # нерасчётные поля шапки Time Sheet
   tests/                   # common/mod.rs (fresh_db), batch.rs, migrations.rs — 11 тестов
   capabilities/default.json
   Cargo.toml tauri.conf.json
@@ -154,7 +159,7 @@ scripts/
 ## Commands
 
 - `npm install` — зависимости.
-- `npm test` / `npm run test:watch` — Vitest (424 теста). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
+- `npm test` / `npm run test:watch` — Vitest (480 тестов). Отдельные уровни и остальные раннеры — «Пирамида тестов» ниже.
 - `npm run typecheck` — три прогона `tsc --noEmit`: корень, `e2e/`, `e2e-smoke/`.
 - `npm run build` — production UI (`tsc && vite build`). Initial bundle ~450 KB / 126 KB gzip (после редизайна UI; рост — код экранов и строки) + шрифты IBM Plex (локально, `@fontsource`) + ленивые ExcelJS/DocumentEngine/ImportService чанки.
 - `npm run dev` — только Vite (без Tauri runtime; `TauriDb` упадёт).

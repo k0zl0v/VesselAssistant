@@ -49,9 +49,14 @@ The data model is fixed by TZ §9. Migrations live in `src-tauri/migrations/` an
 | `cargo_layers` | `id, cargo_lot_id, voyage_id, hold_id, source_vessel, loaded_tons, remaining_tons, load_sequence, layer_status` |
 | `operations` | `id, voyage_id, type, event_date, time_from, time_to, source_hold, target_hold, crane_id, tons, description, created_at` |
 | `discharge_allocations` | `id, operation_id, cargo_layer_id, cargo_lot_id, hold_id, source_vessel, discharged_tons, created_at` |
-| `crane_coefficients` | `id, crane_id, operation_type, side, vessel_name, valid_from, valid_to, coefficient` |
+| `crane_coefficients` | `id, crane_id, operation_type, side, vessel_name, valid_from, valid_to, coefficient` — legacy since 0006, read by nothing; rows carried over into the two tables below |
+| `crane_measurements` (0006) | `id, crane_id, mode, vessel_name, measured_on, coefficient, excluded, note, created_at` — mode ∈ from_own / direct / into_own_port / into_own_starboard |
+| `crane_working_coefficients` (0006) | `id, crane_id, mode, coefficient, valid_from, note, created_at` — UNIQUE (crane_id, mode, valid_from) |
+| `crane_shift_records` (0006) | `id, voyage_id, shift_date, crane_id, mode, scale_tons, coefficient, corrected_tons, operation_id, note, created_at` |
+| `ogv_vessels` / `ogv_holds` / `ogv_receipts` / `ogv_sequence_steps` (0007) | one OGV per voyage (`voyage_id UNIQUE`); holds with `planned_tons`; receipts `source_kind` barge / main_hold, `operation_id UNIQUE` links a KAVKAZ IV discharge; steps `step_no` per OGV |
+| `sof_time_sheets` (0009) | `id, voyage_id UNIQUE, shipping_company, cargo_description, cargo_documents_on_board, charter_party, bill_weight_tons, nor_accepted_note, updated_at` |
 | `sof_events` | `id, voyage_id, event_date, time_from, time_to, category, description, daily_qty, total_qty` |
-| `documents` | `id, voyage_id, document_type, revision, generated_at, local_file_path, status` |
+| `documents` | `id, voyage_id, document_type, revision, generated_at, local_file_path, status` + (0008) `file_name, byte_size, created_by, note`, UNIQUE (voyage_id, document_type, revision) — one row per recorded export |
 | `audit_log` | `id INTEGER AUTOINCREMENT, entity_type, entity_id, action, old_value, new_value, user_id, created_at` |
 
 ## Constraints in 0001
@@ -80,7 +85,7 @@ The data model is fixed by TZ §9. Migrations live in `src-tauri/migrations/` an
 
 ## Audit triggers (0002/0003) — the actor source
 
-- For each of: `voyages`, `cargo_lots`, `cargo_layers`, `discharge_allocations`, `operations`, `sof_events`, `crane_coefficients`, `hold_cargo_parameters` — three triggers (insert/update/delete) named `audit_<table>_<action>`.
+- For each of: `voyages`, `cargo_lots`, `cargo_layers`, `discharge_allocations`, `operations`, `sof_events`, `crane_coefficients`, `hold_cargo_parameters` — and, since 0006–0009, the crane, OGV, `documents` and `sof_time_sheets` tables (17 in all, asserted by `src-tauri/tests/migrations.rs`) — three triggers (insert/update/delete) named `audit_<table>_<action>`.
 - Each writes to `audit_log` with `entity_type` = table name, `entity_id` = `NEW.id` or `OLD.id`, `action` = literal, `old_value` / `new_value` = `json_object(...)` of business columns.
 - `created_at` / `updated_at` are excluded from the JSON snapshot.
 - **Actor columns (`user_id`/`user_role`/`reason`, added `0003_operator_context.sql`)** are subselects against `app_session` — `(SELECT operator_name FROM app_session WHERE id = 1)` and its role/reason siblings — not a bind parameter passed by the caller. `app_session` is a single persistent row that `SessionService.start()` writes at every app launch and that `withVoyageGuard` stamps with `override_reason` around a guarded mutation on a closed voyage. This works from any pooled connection and from a `DELETE` trigger (where `NEW` isn't available) precisely because the actor lives in a table row, not in per-connection or per-process state — rejected alternatives (a TEMP table/`PRAGMA`, a bind parameter per call, full password/server auth) are in `docs/adr/0001-operator-identity-app-session.md`.

@@ -1,15 +1,5 @@
 /* Discharge dialog with the LIFO preview and crane (docs/ui/artboards/Discharge.dc.html). */
 
-:root {
-  --discharge-dialog-width: 820px;
-  --discharge-ogv-width: 200px;
-  --discharge-time-width: 96px;
-  --discharge-crane-width: 150px;
-  --discharge-mode-width: 200px;
-  --discharge-coef-width: 116px;
-  --discharge-date-width-compact: 140px;
-}
-
 .dialog.wide:has(> .discharge-form) {
   width: var(--discharge-dialog-width);
 }

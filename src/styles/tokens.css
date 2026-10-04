@@ -223,6 +223,31 @@
   /* ---- Экран: documents ---- */
   --revisions-width: 288px;   /* «История ревизий» column */
   --rev-dot: 8px;             /* timeline dot of a revision */
+
+  /* ---- Экран: discharge ---- */
+  --discharge-dialog-width: 820px;
+  --discharge-ogv-width: 200px;
+  --discharge-time-width: 96px;
+  --discharge-crane-width: 150px;
+  --discharge-mode-width: 200px;
+  --discharge-coef-width: 116px;
+  --discharge-date-width-compact: 140px;
+
+  /* ---- Экран: ogv ---- */
+  --ogv-sidebar-width: 340px;
+  --ogv-hold-bar-height: 84px;
+  /* The plan line sits 78 px up the 84 px bar; a 100 % hold fills exactly to it. */
+  --ogv-hold-bar-plan: 78px;
+  --ogv-row-main: #f5fafa;
+  --ogv-over-surface: #fff8f7;
+  --ogv-dot: 8px;
+  --ogv-col-cargo: 104px;
+  --ogv-col-hold: 122px;
+  --ogv-col-tons: 128px;
+  --ogv-col-started: 150px;
+  --ogv-plan-grid-col: 112px;
+  --ogv-field-hold: 200px;
+  --ogv-field-narrow: 132px;
 }
 
 /* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,

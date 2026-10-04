@@ -28,7 +28,8 @@ src/services/
   OgvService.ts          # availableBySource, discharge (LIFO, executeBatch)
   CalculationService.ts  # one big SQL → per-hold view-model + totals
   SofService.ts          # SOF events CRUD with HH:MM normalization
-  CraneCorrectionService.ts  # findCoefficient + correctWeight
+  CraneShiftService.ts   # 4 crane modes, measurements (excluded), working k, shift sheet, correct()
+  OgvVesselService.ts    # the voyage's OGV: holds + cargo plan, barge receipts, sequence plan
   AuditLogService.ts     # read-only viewer over audit_log (+ user_role/reason)
   BackupService.ts       # exportToJson / importFromJson (15-table envelope)
   ImportService.ts       # parse KAVKAZ-style xlsx → applyImport

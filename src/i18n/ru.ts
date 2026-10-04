@@ -40,6 +40,7 @@ export const ru: Dict = {
   'error.crane.no_coefficient': 'На {date} для этого режима нет рабочего коэффициента крана. Задайте его на экране «Крановая поправка».',
   'error.ogv.not_found': 'У рейса ещё нет океанского судна.',
   'error.ogv.hold_not_found': 'Трюм океанского судна не найден.',
+  'error.ogv.already_exists': 'У рейса уже есть океанское судно.',
   'error.unexpected': 'Непредвиденная ошибка. Подробности записаны в журнал.',
 
   // Voyage page

@@ -150,7 +150,7 @@ export class OgvVesselService {
     }
 
     return withVoyageGuard(this.db, input.voyage_id, opts, async () => {
-      if (await this.get(input.voyage_id)) throw new Error('the voyage already has an OGV');
+      if (await this.get(input.voyage_id)) throw new AppError('ogv.already_exists');
       const id = crypto.randomUUID();
       const status = input.status ?? 'loading';
       await this.db.executeBatch([

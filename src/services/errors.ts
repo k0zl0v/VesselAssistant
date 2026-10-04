@@ -9,7 +9,8 @@ export type AppErrorCode =
   | 'batch.stale'
   | 'crane.no_coefficient'
   | 'ogv.not_found'
-  | 'ogv.hold_not_found';
+  | 'ogv.hold_not_found'
+  | 'ogv.already_exists';
 
 /** Service-layer error with a stable code; the UI renders it via i18n, never via `message`. */
 export class AppError extends Error {

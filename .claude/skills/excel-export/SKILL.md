@@ -14,7 +14,7 @@ The application must reproduce the structure of the original Excel template `Kav
 | 1 | **(vessel name)** — Load Plan | `CalculationService` + `cargoes` |
 | 2 | `SOF` | `SofService.list` |
 | 3 | `OGV` | `discharge_allocations` JOIN `operations` |
-| 4 | `CRANE CORR.` | `crane_coefficients` JOIN `cranes` |
+| 4 | `CRANE CORR.` | `crane_shift_records` (scale ÷ k = corrected, TOTAL per shift) + `crane_working_coefficients` with the average of included `crane_measurements` |
 
 ⚠ **Load Plan goes first**, NOT SOF (which the original Excel had as sheet 1). Excel and Numbers open the first sheet by default; an empty SOF (no events recorded yet) makes the file *look* broken to a fresh user. Load Plan always has data, so it's the safe default view. This was a real bug fix — see commit `ebc7f65`.
 
