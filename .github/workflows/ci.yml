@@ -137,6 +137,8 @@ jobs:
           Pop-Location
           if (-not (Test-Path (Join-Path $dir 'msedgedriver.exe'))) { throw 'msedgedriver.exe was not downloaded' }
           $dir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-      - run: npm run tauri build -- --debug --no-bundle
+      # cargo test must run before tauri build: it rebuilds target/debug/vessel-assistant.exe
+      # without tauri/custom-protocol, and that binary loads devUrl instead of the bundled UI.
       - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - run: npm run tauri build -- --debug --no-bundle
       - run: npm run test:smoke
