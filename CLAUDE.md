@@ -2,7 +2,7 @@
 
 Offline-first desktop-приложение для расчётов погрузки/разгрузки судов и оформления судовой документации (Load/Stowage Plan, OGV, Crane Correction, SOF). Работает автономно на судовом ПК без backend и постоянного интернета.
 
-**Статус:** MVP закрыт по 22 FR + 13 AT, плюс 14 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-14, трассировка — `docs/testing/scenario-traceability.md`). 480 Vitest, 6 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
+**Статус:** MVP закрыт по 23 FR + 13 AT, плюс 19 пользовательских сценариев `Requirements/scenarios.md` (S-1..S-19, трассировка — `docs/testing/scenario-traceability.md`). 480 Vitest, 6 e2e (Playwright, ×3 повтора стабильно), 11 Rust — всё зелёное, 0 skipped. Регрессия против реального `Kavkaz IV.xlsx` сходится в пределах 0.001.
 
 ## Source of truth
 
@@ -124,7 +124,7 @@ e2e-smoke/                 # Windows-only: WebdriverIO + tauri-driver, реал�
 docs/
   adr/                     # README.md (MADR short, нумерация 0001+) + записи
   analysis/                # пост-MVP разбор (У1)
-  testing/                 # scenario-traceability.md (S-1..S-14 → уровень/тесты/статус)
+  testing/                 # scenario-traceability.md (S-1..S-19 → уровень/тесты/статус)
 
 src-tauri/
   src/lib.rs               # Tauri Builder + plugins + migrations()

@@ -112,7 +112,7 @@ The `appendix-c-voyage.json` fixture should be reconstructed from the original E
 
 ## Adding a scenario and its autotest
 
-`AT-01..AT-13` are the customer-facing acceptance criteria (TZ §12, table above). `S-1..S-14` are a separate, product-facing numbering — user scenarios in `Requirements/scenarios.md` (vault, not this repo) — each with its own automation-level field. Adding one:
+`AT-01..AT-13` are the customer-facing acceptance criteria (TZ §12, table above). `S-1..S-19` are a separate, product-facing numbering — user scenarios in `Requirements/scenarios.md` (vault, not this repo) — each with its own automation-level field. Adding one:
 
 1. **Read the scenario's own `Уровень автоматизации` field** in `Requirements/scenarios.md` — it names the level (`calc`, `service+SQLite`, `UI-компонент`, `e2e`) and the reason. Don't guess a level from the scenario's prose; the field is authoritative.
 2. **File it per that level's convention:**
