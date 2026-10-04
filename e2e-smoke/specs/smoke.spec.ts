@@ -22,13 +22,13 @@ describe('Windows smoke: real Tauri host behind a wdio + tauri-driver session', 
     }
   });
 
-  it('step 2: _sqlx_migrations records exactly versions 1..5', async () => {
+  it('step 2: _sqlx_migrations records exactly versions 1..9', async () => {
     const rows = await invokeIpc<{ version: number }[]>('plugin:sql|select', {
       db: DB,
       query: 'SELECT version FROM _sqlx_migrations ORDER BY version',
       values: [],
     });
-    expect(rows.map((r) => r.version)).toEqual([1, 2, 3, 4, 5]);
+    expect(rows.map((r) => r.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
   it('step 3 (hypothesis 10): write_text_file / read_text_file round-trip under $APPDATA/backups', async () => {
