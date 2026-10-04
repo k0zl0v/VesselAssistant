@@ -1,5 +1,15 @@
 /* Load / Stowage Plan (docs/ui/artboards/Main.dc.html). */
 
+/* New tokens for the ship profile strip; the lead moves them into tokens.css. */
+:root {
+  --profile-crane-lane: 54px;  /* crane markers above the holds */
+  --profile-hold-height: 62px; /* hold silhouette; fill height = V % of it */
+  --profile-hold-gap: 6px;
+  --profile-bow-width: 54px;
+  --profile-bow-svg-width: 46px;
+  --profile-rope-height: 8px;
+}
+
 .hold-table .col-hold {
   width: 58px;
 }
@@ -49,4 +59,211 @@
   font-weight: 600;
   color: var(--danger);
   white-space: nowrap;
+}
+
+/* ---- Ship profile strip: holds stern → bow, cranes above ---- */
+.ship-profile {
+  padding: 13px var(--space-4) 14px;
+  margin-bottom: 14px;
+}
+
+.ship-profile-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: 10px;
+}
+
+.ship-profile-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.ship-profile-subtitle {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.ship-profile-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.ship-profile-link:hover {
+  color: var(--accent-press);
+}
+
+.ship-profile-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-tag);
+}
+
+.ship-profile-error {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-small);
+  color: var(--danger);
+}
+
+.ship-profile-cranes {
+  position: relative;
+  height: var(--profile-crane-lane);
+  /* positions are % of the hold row, which ends before the bow */
+  margin-right: calc(var(--profile-bow-width) + var(--profile-hold-gap));
+}
+
+.ship-profile-crane {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.ship-profile-crane-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: var(--space-1) 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.ship-profile-crane.active .ship-profile-crane-chip {
+  border-color: var(--accent-soft-line);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+}
+
+.ship-profile-crane-name {
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.ship-profile-crane-k {
+  font-size: var(--text-caption);
+  opacity: 0.8;
+}
+
+.ship-profile-crane-last {
+  margin-top: 3px;
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.ship-profile-crane-rope {
+  width: 1px;
+  height: var(--profile-rope-height);
+  margin-top: 2px;
+  background: var(--line-strong);
+}
+
+.ship-profile-holds {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--profile-hold-gap);
+}
+
+.ship-profile-hold {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-width: 0;
+}
+
+.ship-profile-hold-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: var(--profile-hold-height);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--space-1) var(--space-1) 0 0;
+  background: var(--surface-readonly);
+}
+
+.ship-profile-hold-fill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ship-profile-cargo {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--layer-ink);
+  white-space: nowrap;
+}
+
+.ship-profile-hold-foot {
+  display: flex;
+  flex-wrap: wrap; /* at 1440 px the free volume drops under V rather than overflowing the hold */
+  align-items: baseline;
+  column-gap: 6px;
+  padding: 6px var(--space-2) 7px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--space-1) var(--space-1);
+}
+
+.ship-profile-hold-no {
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.ship-profile-filled {
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.ship-profile-free {
+  margin-left: auto;
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.ship-profile-free.negative,
+.ship-profile-free.negative .mono {
+  color: var(--danger);
+}
+
+.ship-profile-bow {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: flex-start; /* level with the hold boxes, whatever the height of their captions */
+  width: var(--profile-bow-width);
+}
+
+.ship-profile-bow svg {
+  width: var(--profile-bow-svg-width);
+  height: var(--profile-hold-height);
+}
+
+.ship-profile-bow path,
+.ship-profile-bow circle {
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+
+.ship-profile-bow .bow-deck {
+  fill: var(--line-soft);
+}
+
+.ship-profile-bow .bow-hull {
+  fill: var(--surface-readonly);
 }

@@ -4,6 +4,7 @@ import { AddLotDialog } from '../components/AddLotDialog';
 import { DischargeDialog } from '../components/DischargeDialog';
 import { ExportButton } from '../components/ExportButton';
 import { HoldTable } from '../components/HoldTable';
+import { ShipProfile } from '../components/ShipProfile';
 import { ConfirmPanel } from '../components/ui/ConfirmPanel';
 import { Dialog } from '../components/ui/Dialog';
 import { Icon } from '../components/ui/Icon';
@@ -241,6 +242,7 @@ export function LoadPlanPage() {
           />
         ) : (
           <>
+            <ShipProfile />
             <div className="toolbar">
               <label className="search-box">
                 <Icon name="search" size={14} />

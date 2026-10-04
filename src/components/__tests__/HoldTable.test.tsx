@@ -30,6 +30,8 @@ const makeHoldCalc = (overrides: Partial<VoyageHoldCalc>): VoyageHoldCalc => ({
   empty_space_100: 3900,
   empty_space_98: 3820,
   empty_volume_percent: 95,
+  filled_volume_percent: 5,
+  free_volume_m3: 5000,
   ...overrides,
 });
 

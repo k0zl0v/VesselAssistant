@@ -21,6 +21,10 @@ export interface VoyageHoldCalc {
   empty_space_100: number | null;
   empty_space_98: number | null;
   empty_volume_percent: number | null;
+  /** Fill by volume, `100 − empty_volume_percent` — the `V = %` the operator reads. */
+  filled_volume_percent: number | null;
+  /** `volume_m3 − used_volume_m3`: room left, whatever the cargo's SF. */
+  free_volume_m3: number | null;
 }
 
 export interface VoyageCalcTotals {
@@ -155,6 +159,8 @@ export class CalculationService {
         empty_space_100: empty100,
         empty_space_98: empty98,
         empty_volume_percent: evp,
+        filled_volume_percent: evp === null ? null : 100 - evp,
+        free_volume_m3: r.volume_m3 > 0 ? r.volume_m3 - r.used_volume_m3 : null,
       };
     });
 

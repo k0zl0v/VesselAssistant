@@ -133,6 +133,8 @@ describe('CalculationService — basic per-hold view', () => {
     const result = await calc.calculate(voyageId);
     expect(result.holds[0]).toMatchObject({
       sf: null,
+      filled_volume_percent: 0,
+      free_volume_m3: 1000,
       capacity_tons_100: null,
       capacity_tons_98: null,
       empty_space_100: null,
@@ -256,6 +258,20 @@ describe('CalculationService — Appendix C regression baseline (KAVKAZ IV)', as
 
   it('Total Empty Space 98% = 15881.924 (rounded)', () => {
     expect(result.totals.total_empty_98).toBeCloseTo(KAVKAZ_IV_TOTALS.total_empty_98, 3);
+  });
+
+  it('free volume per hold matches the ship profile (Approx Volume) of the original Excel', () => {
+    const expected: Record<number, number> = { 1: 4462.42, 2: 2515.802, 3: 6681.8, 4: 3383.81, 5: 5959.105 };
+    for (const h of result.holds) {
+      expect(h.free_volume_m3!, `hold ${h.hold_no}`).toBeCloseTo(expected[h.hold_no]!, 3);
+      expect(h.free_volume_m3!).toBeCloseTo(h.volume_m3 - h.used_volume_m3, 9);
+    }
+  });
+
+  it('hold №5: filled by volume 44.7 % = 100 − empty volume %', () => {
+    const h5 = result.holds.find((h) => h.hold_no === 5)!;
+    expect(Math.round(h5.filled_volume_percent! * 10) / 10).toBe(44.7);
+    expect(h5.filled_volume_percent! + h5.empty_volume_percent!).toBeCloseTo(100, 9);
   });
 
   it('matches per-hold remain / capacity / empty-space from the original Excel', () => {
