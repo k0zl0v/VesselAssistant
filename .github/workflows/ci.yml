@@ -90,7 +90,9 @@ jobs:
   windows-smoke:
     needs: changes
     if: needs.changes.outputs.rust == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
+    # windows-2025 ships WebView2 152+, which never opens the DevTools port when msedgedriver
+    # launches the app, so tauri-driver cannot create a session (actions/runner-images#14738).
+    runs-on: windows-2022
     steps:
       # Full history + tags: `git fetch --depth=1 origin <sha>` rejects an abbreviated
       # SHA ("couldn't find remote ref"), so capabilities_ref is resolved locally instead.
