@@ -19,6 +19,15 @@ const ENTITY_LABELS: Record<string, StringKey> = {
   hold_cargo_parameters: 'audit.entity.hold_cargo_parameters',
   crane_coefficients: 'audit.entity.crane_coefficients',
   sof_events: 'audit.entity.sof_events',
+  crane_measurements: 'audit.entity.crane_measurements',
+  crane_working_coefficients: 'audit.entity.crane_working_coefficients',
+  crane_shift_records: 'audit.entity.crane_shift_records',
+  ogv_vessels: 'audit.entity.ogv_vessels',
+  ogv_holds: 'audit.entity.ogv_holds',
+  ogv_receipts: 'audit.entity.ogv_receipts',
+  ogv_sequence_steps: 'audit.entity.ogv_sequence_steps',
+  documents: 'audit.entity.documents',
+  sof_time_sheets: 'audit.entity.sof_time_sheets',
 };
 
 const ACTION_CHIP: Record<AuditEntry['action'], string> = {
