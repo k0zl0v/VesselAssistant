@@ -46,9 +46,13 @@ button{font:inherit}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"></rect><rect x="4" y="11" width="16" height="4" rx="1"></rect><rect x="4" y="17" width="16" height="3" rx="1"></rect></svg>
         Слои груза
       </span>
-      <a href="Discharge.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
-        OGV · Операции
+      <a href="Ogv.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h16"></path><path d="M6 16V9h12v7"></path><path d="M9 9V5h6v4"></path></svg>
+        OGV · AAI PRELUDE
+      </a>
+      <a href="CraneCorrection.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h7"></path><path d="M7 20V7h12"></path><path d="M7 7l9 6"></path><path d="M16 13v3"></path></svg>
+        Крановая поправка
       </a>
       <a href="Sof.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
@@ -176,7 +180,8 @@ button{font:inherit}
                 <span style="font-size: 12px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">{{ op.id }}</span>
                 <span style="font-size: 11px; color: #7A8A99; font-family: 'IBM Plex Mono', monospace">{{ op.date }}</span>
               </div>
-              <div style="font-size: 11px; color: #47596B; margin: 4px 0 9px">Трюм №{{ op.hold }} · <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0D1620">{{ op.tons }} т</span></div>
+              <div style="font-size: 11px; color: #47596B; margin: 4px 0 5px">Трюм №{{ op.hold }} · <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #0D1620">{{ op.tons }} т</span> по весам</div>
+              <div style="font-size: 10px; color: #07535F; background: #EBF3F4; border: 1px solid #BEDDE1; border-radius: 3px; padding: 3px 7px; margin-bottom: 9px; font-family: 'IBM Plex Mono', monospace">{{ op.crane }}</div>
               <sc-for list="{{ op.alloc }}" as="a" hint-placeholder-count="2">
                 <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid #F1F4F6">
                   <span style="font-size: 9px; font-family: 'IBM Plex Mono', monospace; color: #7A8A99; background: #F1F4F6; border-radius: 3px; padding: 1px 5px; flex-shrink: 0">{{ a.seq }}</span>
@@ -215,15 +220,15 @@ class Component extends DCLogic {
 
     const data = [
       { no: 1, cargo: SFM, sf: '1.440', cap: 7037.284722222223, remain: 4082, empty: 2955.2847222222226,
-        layers: [ { seq: 1, v: 'ALISA V', loaded: 2500, rem: 2500 }, { seq: 2, v: 'VLADIMIR', loaded: 1582, rem: 1582 } ] },
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 2160, rem: 2160 }, { seq: 2, v: 'VLADIMIR', loaded: 1922, rem: 1922 } ] },
       { no: 2, cargo: WHEAT, sf: '1.226', cap: 8942.539967373572, remain: 7073, empty: 1869.539967373572,
-        layers: [ { seq: 1, v: 'YEKATERINA', loaded: 4000, rem: 4000 }, { seq: 2, v: 'ALISA V', loaded: 3073, rem: 3073 } ] },
+        layers: [ { seq: 1, v: 'VLADIMIR', loaded: 3269, rem: 3269 }, { seq: 2, v: 'YEKATERINA', loaded: 3804, rem: 3804 } ] },
       { no: 3, cargo: SFM, sf: '1.440', cap: 7315.83611111111, remain: 2825, empty: 4490.83611111111,
-        layers: [ { seq: 1, v: 'ALISA V', loaded: 1500, rem: 1500 }, { seq: 2, v: 'VLADIMIR', loaded: 1302, rem: 1302 }, { seq: 3, v: 'YEKATERINA', loaded: 1200, rem: 23 } ] },
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 2290, rem: 2290 }, { seq: 2, v: 'VLADIMIR', loaded: 1712, rem: 535 } ] },
       { no: 4, cargo: WHEAT, sf: '1.226', cap: 8942.539967373572, remain: 6365, empty: 2577.539967373572,
-        layers: [ { seq: 1, v: 'VLADIMIR', loaded: 3365, rem: 3365 }, { seq: 2, v: 'YEKATERINA', loaded: 3000, rem: 3000 } ] },
+        layers: [ { seq: 1, v: 'VLADIMIR', loaded: 3531, rem: 3531 }, { seq: 2, v: 'YEKATERINA', loaded: 2834, rem: 2834 } ] },
       { no: 5, cargo: SFM, sf: '1.440', cap: 7327.677777777778, remain: 3338.955, empty: 3988.722777777778,
-        layers: [ { seq: 1, v: 'ALISA V', loaded: 1862.955, rem: 1862.955 }, { seq: 2, v: 'VLADIMIR', loaded: 1500, rem: 1476 }, { seq: 3, v: 'YEKATERINA', loaded: 800, rem: 0 } ] }
+        layers: [ { seq: 1, v: 'ALISA V', loaded: 1735.540, rem: 1735.540 }, { seq: 2, v: 'VLADIMIR', loaded: 2427.415, rem: 1603.415 } ] }
     ];
 
     const holds = data.map((h) => {
@@ -258,11 +263,11 @@ class Component extends DCLogic {
     });
 
     const srcTotals = [
-      { name: 'ALISA V', tons: 8935.955, detail: 'трюмы №1, №2, №3, №5' },
-      { name: 'VLADIMIR', tons: 7725, detail: 'трюмы №1, №3, №4, №5' },
-      { name: 'YEKATERINA', tons: 7023, detail: 'трюмы №2, №3, №4 · в №5 списан' }
+      { name: 'VLADIMIR', tons: 10860.415, detail: 'во всех пяти трюмах · верхний слой в №1, №3, №5' },
+      { name: 'ALISA V', tons: 6185.540, detail: 'трюмы №1, №3, №5 — нижний слой' },
+      { name: 'YEKATERINA', tons: 6638, detail: 'трюмы №2, №4 — верхний слой' }
     ];
-    const maxSrc = 8935.955;
+    const maxSrc = 10860.415;
 
     return {
       holds: holds,
@@ -274,12 +279,11 @@ class Component extends DCLogic {
         barW: ((s.tons / maxSrc) * 100).toFixed(1) + '%'
       })),
       history: [
-        { id: 'OGV-0042', date: '24.09.2026', hold: 3, tons: n(1177), alloc: [
-          { seq: 'СЛОЙ 3', vessel: 'YEKATERINA', tons: n(1177), state: 'остаток 23.000', stateFg: '#47596B' }
+        { id: 'OGV-0042', date: '24.09.2026 12:40', hold: 3, tons: n(1177), crane: 'Кран 1 · ИЗ СЕБЯ · k 1.060 → 1 110.377 т', alloc: [
+          { seq: 'СЛОЙ 2', vessel: 'VLADIMIR', tons: n(1177), state: 'остаток 535.000', stateFg: '#47596B' }
         ] },
-        { id: 'OGV-0043', date: '25.09.2026', hold: 5, tons: n(824), alloc: [
-          { seq: 'СЛОЙ 3', vessel: 'YEKATERINA', tons: n(800), state: 'слой закрыт', stateFg: '#A5231B' },
-          { seq: 'СЛОЙ 2', vessel: 'VLADIMIR', tons: n(24), state: 'остаток 1 476.000', stateFg: '#47596B' }
+        { id: 'OGV-0043', date: '25.09.2026 09:15', hold: 5, tons: n(824), crane: 'Кран 2 · ИЗ СЕБЯ · k 0.960 → 858.333 т', alloc: [
+          { seq: 'СЛОЙ 2', vessel: 'VLADIMIR', tons: n(824), state: 'остаток 1 603.415', stateFg: '#47596B' }
         ] }
       ]
     };

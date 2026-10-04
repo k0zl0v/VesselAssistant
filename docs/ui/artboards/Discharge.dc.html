@@ -14,19 +14,20 @@ body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:#F2F4F
 *{box-sizing:border-box}
 a{color:#0B6E7F}
 a:hover{color:#07535F}
-button,input,select,textarea{font:inherit}
+button,input,select{font:inherit}
 </style>
 </helmet>
 
-<div style="width: 760px; height: 860px; background: #FFFFFF; border: 1px solid #C3CDD6; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden">
+<div style="width: 820px; height: 900px; background: #FFFFFF; border: 1px solid #C3CDD6; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden">
 
   <div style="padding: 17px 22px 15px; border-bottom: 1px solid #DDE3E8">
-    <h1 style="margin: 0; font-size: 17px; font-weight: 600">Выгрузка из трюма №3</h1>
-    <p style="margin: 4px 0 0; font-size: 12px; color: #47596B">Операция OGV · остатки основного Load Plan обновятся автоматически</p>
+    <h1 style="margin: 0; font-size: 17px; font-weight: 600">Выгрузка из трюма №3 в OGV</h1>
+    <p style="margin: 4px 0 0; font-size: 12px; color: #47596B">Операция «ИЗ СЕБЯ» · остатки Load Plan и слои обновятся автоматически</p>
   </div>
 
-  <div style="padding: 18px 22px; border-bottom: 1px solid #EDF1F3; display: flex; gap: 12px; align-items: flex-end">
-    <div style="width: 132px; flex-shrink: 0">
+  <!-- Параметры -->
+  <div style="padding: 16px 22px 14px; border-bottom: 1px solid #EDF1F3; display: flex; gap: 11px; align-items: flex-end">
+    <div style="width: 126px; flex-shrink: 0">
       <label for="hold" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ТРЮМ</label>
       <select id="hold" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620">
         <option>№3 · SFM</option>
@@ -35,38 +36,72 @@ button,input,select,textarea{font:inherit}
       </select>
     </div>
     <div style="width: 150px; flex-shrink: 0">
-      <label for="qty" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ТОННАЖ, т</label>
+      <label for="qty" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ВЕС ПО ВЕСАМ, т</label>
       <input id="qty" type="number" step="0.001" value="1500.000" style="width: 100%; height: 36px; border: 1px solid #0B6E7F; border-radius: 5px; padding: 0 11px; font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
     </div>
-    <div style="width: 148px; flex-shrink: 0">
-      <label for="d" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ДАТА</label>
-      <input id="d" type="date" value="2026-09-27" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
+    <div style="width: 126px; flex-shrink: 0">
+      <label for="ogvhold" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">В ТРЮМ OGV</label>
+      <select id="ogvhold" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620">
+        <option>№2 · осталось 9 692</option>
+        <option>№5 · осталось 561</option>
+      </select>
+    </div>
+    <div style="width: 146px; flex-shrink: 0">
+      <label for="d" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">НАЧАТО</label>
+      <input id="d" type="datetime-local" value="2026-09-27T10:20" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 12px; font-family: 'IBM Plex Mono', monospace; background: #FFFFFF; color: #0D1620">
     </div>
     <div style="flex-grow: 1; min-width: 0">
       <label for="desc" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 5px">ОПИСАНИЕ</label>
-      <input id="desc" type="text" value="Перевалка на баржу BARGE-7" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; background: #FFFFFF; color: #0D1620">
+      <input id="desc" type="text" value="Перевалка на AAI PRELUDE" style="width: 100%; height: 36px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 11px; font-size: 13px; background: #FFFFFF; color: #0D1620">
     </div>
   </div>
 
-  <div style="padding: 8px 22px 0; display: flex; align-items: center; justify-content: space-between">
-    <span style="font-size: 11px; color: #47596B">Доступно в трюме: <strong style="font-family: 'IBM Plex Mono', monospace">2 825.000</strong> т в 3 слоях</span>
-    <div style="display: flex; gap: 6px">
-      <button type="button" style="border: 1px solid #DDE3E8; background: #F7F9FA; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #47596B; cursor: pointer">Весь остаток</button>
-      <button type="button" style="border: 1px solid #DDE3E8; background: #F7F9FA; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #47596B; cursor: pointer">Верхний слой</button>
+  <!-- Кран и поправка -->
+  <div style="padding: 14px 22px; border-bottom: 1px solid #EDF1F3; background: #FAFBFC">
+    <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 11px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#47596B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h7"></path><path d="M7 20V7h12"></path><path d="M7 7l9 6"></path><path d="M16 13v3"></path></svg>
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600">Кран и поправка</h2>
+      <span style="font-size: 11px; color: #7A8A99">коэффициент подобран по режиму, крану и дате</span>
     </div>
+    <div style="display: flex; gap: 11px; align-items: flex-end">
+      <div style="width: 126px; flex-shrink: 0">
+        <label for="cr" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">КРАН</label>
+        <select id="cr" style="width: 100%; height: 34px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620"><option>Кран 1</option><option>Кран 2</option></select>
+      </div>
+      <div style="width: 178px; flex-shrink: 0">
+        <label for="md" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">РЕЖИМ ОПЕРАЦИИ</label>
+        <select id="md" style="width: 100%; height: 34px; border: 1px solid #C3CDD6; border-radius: 5px; padding: 0 9px; font-size: 13px; background: #FFFFFF; color: #0D1620">
+          <option>ИЗ СЕБЯ</option>
+          <option>ПРЯМОЙ ВАРИАНТ</option>
+          <option>В СЕБЯ · левый борт</option>
+          <option>В СЕБЯ · правый борт</option>
+        </select>
+      </div>
+      <div style="width: 116px; flex-shrink: 0">
+        <label for="kf" style="display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 4px">КОЭФФИЦИЕНТ</label>
+        <input id="kf" type="number" step="0.001" value="1.060" style="width: 100%; height: 34px; border: 1px solid #EBD6AC; background: #FDF3E2; border-radius: 5px; padding: 0 10px; font-size: 13px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; color: #7A4A0B">
+      </div>
+      <div style="flex-grow: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding-bottom: 2px">
+        <span style="font-size: 11px; color: #7A8A99; text-align: right; line-height: 1.4">Скорректированный вес<br>идёт в лист CRANE CORR.</span>
+        <span style="font-size: 20px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums">1 415.094<span style="font-size: 12px; font-weight: 400; color: #7A8A99; margin-left: 4px">т</span></span>
+      </div>
+    </div>
+    <p style="margin: 10px 0 0; font-size: 11px; color: #47596B; line-height: 1.5">В остатки трюма и в Load Plan списывается <strong>вес по судовым весам</strong> — <span style="font-family: 'IBM Plex Mono', monospace">1 500.000</span> т. Поправка живёт отдельной строкой и на остатки не влияет, как и в исходном файле.</p>
   </div>
 
   <!-- Превью списания -->
-  <div style="flex-grow: 1; min-height: 0; padding: 16px 22px 0; display: flex; flex-direction: column">
+  <div style="flex-grow: 1; min-height: 0; padding: 15px 22px 0; display: flex; flex-direction: column">
 
-    <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 11px">
+    <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 10px">
       <h2 style="margin: 0; font-size: 14px; font-weight: 600">Будет списано по LIFO</h2>
-      <span style="font-size: 11px; color: #07535F; background: #EBF3F4; border: 1px solid #BEDDE1; border-radius: 3px; padding: 2px 7px">сверху вниз · 3 слоя затронуто</span>
+      <span style="font-size: 11px; color: #07535F; background: #EBF3F4; border: 1px solid #BEDDE1; border-radius: 3px; padding: 2px 7px">сверху вниз · 2 слоя затронуто</span>
+      <span style="flex-grow: 1"></span>
+      <span style="font-size: 11px; color: #47596B">доступно <strong style="font-family: 'IBM Plex Mono', monospace">2 825.000</strong> т</span>
     </div>
 
     <div style="border: 1px solid #DDE3E8; border-radius: 8px; overflow: hidden">
-      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
-        <div style="display: flex; align-items: stretch; border-bottom: 1px solid #EDF1F3; background: {{ r.rowBg }}">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="2">
+        <div style="display: flex; align-items: stretch; border-bottom: 1px solid #EDF1F3">
           <div style="width: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: {{ r.stepBg }}; color: {{ r.stepFg }}; font-size: 12px; font-weight: 600; font-family: 'IBM Plex Mono', monospace">{{ r.step }}</div>
           <div style="flex-grow: 1; min-width: 0; padding: 11px 14px">
             <div style="display: flex; align-items: baseline; gap: 9px">
@@ -75,18 +110,18 @@ button,input,select,textarea{font:inherit}
               <span style="font-size: 11px; color: #7A8A99">{{ r.cargo }}</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 7px">
-              <div style="width: 210px; height: 7px; background: #E7ECEF; border-radius: 4px; overflow: hidden; display: flex; flex-shrink: 0">
+              <div style="width: 220px; height: 7px; background: #E7ECEF; border-radius: 4px; overflow: hidden; display: flex; flex-shrink: 0">
                 <div style="height: 7px; background: #A5231B; width: {{ r.offW }}"></div>
                 <div style="height: 7px; background: #5C4327; width: {{ r.keepW }}"></div>
               </div>
               <span style="font-size: 11px; color: #7A8A99">из <span style="font-family: 'IBM Plex Mono', monospace">{{ r.before }}</span> т</span>
             </div>
           </div>
-          <div style="width: 130px; flex-shrink: 0; padding: 11px 14px; text-align: right; border-left: 1px solid #EDF1F3">
+          <div style="width: 136px; flex-shrink: 0; padding: 11px 14px; text-align: right; border-left: 1px solid #EDF1F3">
             <div style="font-size: 10px; color: #7A8A99; letter-spacing: 0.05em">СПИСАТЬ</div>
             <div style="font-size: 14px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; color: #A5231B; margin-top: 2px">−{{ r.off }}</div>
           </div>
-          <div style="width: 148px; flex-shrink: 0; padding: 11px 16px 11px 14px; text-align: right; border-left: 1px solid #EDF1F3">
+          <div style="width: 152px; flex-shrink: 0; padding: 11px 16px 11px 14px; text-align: right; border-left: 1px solid #EDF1F3">
             <div style="font-size: 10px; color: #7A8A99; letter-spacing: 0.05em">ОСТАНЕТСЯ</div>
             <div style="font-size: 14px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; color: {{ r.afterFg }}; margin-top: 2px">{{ r.after }}</div>
           </div>
@@ -94,12 +129,11 @@ button,input,select,textarea{font:inherit}
       </sc-for>
     </div>
 
-    <!-- Итог операции -->
-    <div style="margin-top: 16px; background: #F7F9FA; border: 1px solid #E7ECEF; border-radius: 8px; padding: 14px 16px">
-      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 11px">ТРЮМ №3 ПОСЛЕ ОПЕРАЦИИ</div>
-      <div style="display: flex; gap: 10px">
+    <div style="margin-top: 14px; background: #F7F9FA; border: 1px solid #E7ECEF; border-radius: 8px; padding: 13px 16px">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #5E7182; margin-bottom: 10px">ПОСЛЕ ОПЕРАЦИИ</div>
+      <div style="display: flex; gap: 9px">
         <sc-for list="{{ after }}" as="a" hint-placeholder-count="4">
-          <div style="flex-grow: 1; background: #FFFFFF; border: 1px solid #E7ECEF; border-radius: 6px; padding: 10px 12px">
+          <div style="flex-grow: 1; min-width: 0; background: #FFFFFF; border: 1px solid #E7ECEF; border-radius: 6px; padding: 10px 11px">
             <div style="font-size: 10px; color: #7A8A99; letter-spacing: 0.05em">{{ a.label }}</div>
             <div style="font-size: 15px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; margin-top: 4px; color: {{ a.fg }}">{{ a.value }}</div>
             <div style="font-size: 10px; color: #7A8A99; margin-top: 3px">{{ a.delta }}</div>
@@ -108,21 +142,21 @@ button,input,select,textarea{font:inherit}
       </div>
     </div>
 
-    <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 13px; font-size: 11px; color: #47596B; line-height: 1.5">
+    <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 11px; color: #47596B; line-height: 1.5">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A8A99" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
-      <span>Порядок списания задан правилом LIFO и вручную не меняется. Операция транзакционна: слои, остатки и журнал аудита обновятся вместе.</span>
+      <span>Порядок списания задан правилом LIFO и вручную не меняется. Операция транзакционна: слои, остатки трюма, трюм OGV и журнал аудита обновятся вместе.</span>
     </div>
   </div>
 
-  <div style="padding: 16px 22px; border-top: 1px solid #DDE3E8; display: flex; gap: 10px; align-items: center">
-    <span style="flex-grow: 1; font-size: 12px; color: #47596B">Событие SOF «Discharging» будет создано автоматически</span>
+  <div style="padding: 15px 22px; border-top: 1px solid #DDE3E8; display: flex; gap: 10px; align-items: center">
+    <span style="flex-grow: 1; font-size: 12px; color: #47596B">Событие SOF «Discharging» и строка CRANE CORR. создадутся автоматически</span>
     <button type="button" style="height: 38px; border: 1px solid #C3CDD6; background: #FFFFFF; color: #47596B; border-radius: 5px; padding: 0 18px; font-size: 13px; font-weight: 500; cursor: pointer">Отмена</button>
     <button type="button" style="height: 38px; border: 1px solid #0B6E7F; background: #0B6E7F; color: #FFFFFF; border-radius: 5px; padding: 0 20px; font-size: 13px; font-weight: 600; cursor: pointer">Провести выгрузку</button>
   </div>
 </div>
 </x-dc>
 
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":760,"height":860}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
     const n = (x) => {
@@ -131,25 +165,19 @@ class Component extends DCLogic {
       return p.join('.');
     };
     const raw = [
-      { step: 1, seq: 'СЛОЙ 3 · ВЕРХ', vessel: 'YEKATERINA', cargo: 'SFM', before: 23, off: 23 },
-      { step: 2, seq: 'СЛОЙ 2', vessel: 'VLADIMIR', cargo: 'SFM', before: 1302, off: 1302 },
-      { step: 3, seq: 'СЛОЙ 1 · НИЗ', vessel: 'ALISA V', cargo: 'SFM', before: 1500, off: 175 }
+      { step: 1, seq: 'СЛОЙ 2 · ВЕРХ', vessel: 'VLADIMIR', cargo: 'SFM', before: 535, off: 535 },
+      { step: 2, seq: 'СЛОЙ 1 · НИЗ', vessel: 'ALISA V', cargo: 'SFM', before: 2290, off: 965 }
     ];
     const rows = raw.map((r) => {
       const after = r.before - r.off;
       const offPct = (r.off / r.before) * 100;
       return {
-        step: r.step,
-        seq: r.seq,
-        vessel: r.vessel,
-        cargo: r.cargo,
-        before: n(r.before),
-        off: n(r.off),
+        step: r.step, seq: r.seq, vessel: r.vessel, cargo: r.cargo,
+        before: n(r.before), off: n(r.off),
         after: after === 0 ? 'слой закрыт' : n(after),
         afterFg: after === 0 ? '#A5231B' : '#0D1620',
         offW: offPct.toFixed(1) + '%',
         keepW: (100 - offPct).toFixed(1) + '%',
-        rowBg: '#FFFFFF',
         stepBg: after === 0 ? '#FCECEA' : '#EBF3F4',
         stepFg: after === 0 ? '#A5231B' : '#07535F'
       };
@@ -157,10 +185,10 @@ class Component extends DCLogic {
     return {
       rows: rows,
       after: [
-        { label: 'ОСТАТОК, т', value: n(1325), fg: '#0D1620', delta: 'было 2 825.000' },
+        { label: 'ОСТАТОК ТРЮМА, т', value: n(1325), fg: '#0D1620', delta: 'было 2 825.000' },
         { label: 'ВЫГРУЖЕНО ВСЕГО, т', value: n(2677), fg: '#0D1620', delta: 'было 1 177.000' },
         { label: 'EMPTY 98 %, т', value: n(5990.83611111111), fg: '#0D1620', delta: 'было 4 490.836' },
-        { label: 'АКТИВНЫХ СЛОЁВ', value: '1', fg: '#0D1620', delta: 'было 3' }
+        { label: 'В ТРЮМЕ OGV №2, т', value: n(2677), fg: '#0D1620', delta: 'осталось 8 192.000' }
       ]
     };
   }

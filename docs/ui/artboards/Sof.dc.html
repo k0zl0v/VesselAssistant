@@ -18,7 +18,7 @@ button,input,select{font:inherit}
 </style>
 </helmet>
 
-<div style="width: 1440px; height: 980px; display: flex; overflow: hidden; background: #F2F4F6">
+<div style="width: 1440px; height: 1080px; display: flex; overflow: hidden; background: #F2F4F6">
 
   <aside style="width: 232px; flex-shrink: 0; background: #0E1B26; display: flex; flex-direction: column; color: #C7D4DE">
     <div style="padding: 18px 18px 14px; border-bottom: 1px solid #1E3143">
@@ -46,9 +46,13 @@ button,input,select{font:inherit}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"></rect><rect x="4" y="11" width="16" height="4" rx="1"></rect><rect x="4" y="17" width="16" height="3" rx="1"></rect></svg>
         Слои груза
       </a>
-      <a href="Discharge.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
-        OGV · Операции
+      <a href="Ogv.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h16"></path><path d="M6 16V9h12v7"></path><path d="M9 9V5h6v4"></path></svg>
+        OGV · AAI PRELUDE
+      </a>
+      <a href="CraneCorrection.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; color: #C7D4DE; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h7"></path><path d="M7 20V7h12"></path><path d="M7 7l9 6"></path><path d="M16 13v3"></path></svg>
+        Крановая поправка
       </a>
       <span style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: #0B6E7F; color: #FFFFFF; font-size: 13px; font-weight: 600">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
@@ -97,6 +101,38 @@ button,input,select{font:inherit}
           </div>
         </sc-for>
       </div>
+
+      <!-- Шапка Standard Time Sheet -->
+      <section style="background: #FFFFFF; border: 1px solid #DDE3E8; border-radius: 8px; padding: 13px 16px 14px">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px">
+          <h2 style="margin: 0; font-size: 13px; font-weight: 600">Шапка Standard Time Sheet</h2>
+          <span style="font-size: 11px; color: #7A8A99">нумерация полей печатной формы · время подставляется из журнала</span>
+          <span style="flex-grow: 1"></span>
+          <span style="font-size: 11px; color: #7A4A0B; background: #FDF3E2; border: 1px solid #EBD6AC; border-radius: 3px; padding: 2px 8px">2 поля не заполнены</span>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: #47596B; padding-bottom: 11px; margin-bottom: 11px; border-bottom: 1px solid #EDF1F3">
+          <span><span style="color: #9AA8B3">1.</span> AL MADHIK Shipping Co.</span>
+          <span><span style="color: #9AA8B3">2.</span> <strong style="color: #0D1620">KAVKAZ IV</strong></span>
+          <span><span style="color: #9AA8B3">3.</span> PORT OF KAVKAZ</span>
+          <span><span style="color: #9AA8B3">4.</span> KAVKAZ IV LIMITED</span>
+          <span><span style="color: #9AA8B3">8.</span> SFM · WHEAT IN BULK</span>
+          <span><span style="color: #9AA8B3">13.</span> Charter Party: N/A</span>
+          <span><span style="color: #9AA8B3">14.</span> Bill of discharge weight: <span style="font-family: 'IBM Plex Mono', monospace">2 001.000</span></span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px">
+          <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="10">
+            <div style="border: 1px {{ m.borderStyle }} {{ m.border }}; background: {{ m.bg }}; border-radius: 6px; padding: 8px 10px 9px">
+              <div style="display: flex; align-items: baseline; gap: 6px">
+                <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: #9AA8B3">{{ m.no }}</span>
+                <span style="font-size: 11px; font-weight: 600; color: {{ m.titleFg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ m.title }}</span>
+              </div>
+              <div style="font-size: 13px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: {{ m.fg }}; margin-top: 4px">{{ m.value }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
 
       <!-- Предупреждение -->
       <div style="background: #FDF3E2; border: 1px solid #EBD6AC; border-left: 3px solid #9A5B00; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; gap: 10px">
@@ -148,6 +184,8 @@ button,input,select{font:inherit}
               <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 9px 10px; border-bottom: 1px solid #DDE3E8; width: 84px">ДЛИТ.</th>
               <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 9px 10px; border-bottom: 1px solid #DDE3E8; width: 210px">КАТЕГОРИЯ</th>
               <th style="text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 9px 10px; border-bottom: 1px solid #DDE3E8">ОПИСАНИЕ</th>
+              <th style="text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 9px 10px; border-bottom: 1px solid #DDE3E8; width: 118px">DISCH 24HRS</th>
+              <th style="text-align: right; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; color: #5E7182; padding: 9px 10px; border-bottom: 1px solid #DDE3E8; width: 118px; background: #EEF2F4">TOTAL DISCH</th>
               <th style="width: 54px; border-bottom: 1px solid #DDE3E8"></th>
             </tr>
           </thead>
@@ -165,6 +203,8 @@ button,input,select{font:inherit}
                   </span>
                 </td>
                 <td style="padding: 9px 10px; font-size: 12px; color: #47596B">{{ e.desc }}</td>
+                <td style="padding: 9px 10px; text-align: right; font-size: 12px; font-family: 'IBM Plex Mono', monospace; color: {{ e.dischFg }}">{{ e.disch }}</td>
+                <td style="padding: 9px 10px; text-align: right; font-size: 12px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: {{ e.totalFg }}; background: #F7F9FA">{{ e.total }}</td>
                 <td style="padding: 9px 16px 9px 10px; text-align: right">
                   <span style="font-size: 12px; color: #9AA8B3">···</span>
                 </td>
@@ -172,14 +212,14 @@ button,input,select{font:inherit}
             </sc-for>
           </tbody>
         </table>
-        <div style="padding: 9px 16px; font-size: 11px; color: #7A8A99; background: #FAFBFC; border-top: 1px solid #EDF1F3">Показано 7 из 10 событий · прокрутка ниже · <span style="font-family: 'IBM Plex Mono', monospace">24:00</span> трактуется как конец суток</div>
+        <div style="padding: 9px 16px; font-size: 11px; color: #7A8A99; background: #FAFBFC; border-top: 1px solid #EDF1F3">Показано 8 из 10 событий · прокрутка ниже · <span style="font-family: 'IBM Plex Mono', monospace">24:00</span> трактуется как конец суток</div>
       </section>
     </div>
   </div>
 </div>
 </x-dc>
 
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
 class Component extends DCLogic {
   renderVals() {
     const LOAD = '#0B6E7F';
@@ -218,15 +258,47 @@ class Component extends DCLogic {
         { label: '25.09 Пт', blocks: [ blk(9.25, 13.667, DISCH, 'OGV-0043 — трюм 5, 824.000 т') ] },
         { label: '27.09 Вс', blocks: [ blk(7.0, 7.5, PORT, '') ] }
       ],
+      milestones: [
+        { no: '16', title: 'Прибытие на рейд', value: '22.09 06:30' },
+        { no: '15', title: 'NOR вручён', value: '22.09 07:00' },
+        { no: '18', title: 'NOR принят', value: '22.09 14:00' },
+        { no: '5', title: 'Ошвартован', value: '23.09 08:45' },
+        { no: '6', title: 'Погрузка начата', value: '23.09 09:00' },
+        { no: '7', title: 'Погрузка окончена', value: '24.09 11:20' },
+        { no: '9', title: 'Выгрузка начата', value: '24.09 12:40' },
+        { no: '10', title: 'Выгрузка окончена', value: '25.09 13:40' },
+        { no: '11', title: 'Документы на борту', value: '' },
+        { no: '12', title: 'Судно отошло', value: '' }
+      ].map((m) => {
+        const filled = m.value !== '';
+        return {
+          no: m.no,
+          title: m.title,
+          value: filled ? m.value : 'не заполнено',
+          fg: filled ? '#0D1620' : '#9AA8B3',
+          titleFg: filled ? '#0D1620' : '#7A8A99',
+          bg: filled ? '#FFFFFF' : '#FAFBFC',
+          border: filled ? '#DDE3E8' : '#C3CDD6',
+          borderStyle: filled ? 'solid' : 'dashed'
+        };
+      }),
       events: [
-        { date: '22.09.2026', from: '06:30', to: '07:00', dur: '00:30', cat: 'Arrival', color: PORT, desc: 'Прибытие на рейд Новороссийска', rowBg: '#FFFFFF', toFg: '#0D1620' },
-        { date: '22.09.2026', from: '07:00', to: '07:30', dur: '00:30', cat: 'NOR tendered', color: PORT, desc: 'Notice of Readiness вручён', rowBg: '#FFFFFF', toFg: '#0D1620' },
-        { date: '22.09.2026', from: '14:00', to: '—', dur: '—', cat: 'NOR accepted', color: PORT, desc: 'Notice of Readiness принят', rowBg: '#FFFFFF', toFg: '#AAB6BF' },
-        { date: '23.09.2026', from: '08:00', to: '08:45', dur: '00:45', cat: 'Berthed', color: PORT, desc: 'Ошвартован у причала №3', rowBg: '#FFFFFF', toFg: '#0D1620' },
-        { date: '23.09.2026', from: '09:00', to: '24:00', dur: '15:00', cat: 'Loading commenced', color: LOAD, desc: 'Начата погрузка SFM в трюмы 1, 3, 5', rowBg: '#FFFFFF', toFg: '#0D1620' },
-        { date: '24.09.2026', from: '11:20', to: '13:05', dur: '01:45', cat: 'Weather', color: WX, desc: 'Дождь — люки закрыты', rowBg: '#FFF9EE', toFg: '#7A4A0B' },
-        { date: '24.09.2026', from: '12:40', to: '15:00', dur: '02:20', cat: 'Discharging commenced', color: DISCH, desc: 'OGV-0042 · трюм 3 · 1 177.000 т', rowBg: '#FFF9EE', toFg: '#7A4A0B' }
-      ]
+        { date: '22.09.2026', from: '06:30', to: '07:00', dur: '00:30', cat: 'Arrival', color: PORT, desc: 'Прибытие на рейд Новороссийска', rowBg: '#FFFFFF', toFg: '#0D1620', disch: '', total: '' },
+        { date: '22.09.2026', from: '07:00', to: '07:30', dur: '00:30', cat: 'NOR tendered', color: PORT, desc: 'Notice of Readiness вручён', rowBg: '#FFFFFF', toFg: '#0D1620', disch: '', total: '' },
+        { date: '22.09.2026', from: '14:00', to: '—', dur: '—', cat: 'NOR accepted', color: PORT, desc: 'Notice of Readiness принят', rowBg: '#FFFFFF', toFg: '#AAB6BF', disch: '', total: '' },
+        { date: '23.09.2026', from: '08:00', to: '08:45', dur: '00:45', cat: 'Berthed', color: PORT, desc: 'Ошвартован у причала №3', rowBg: '#FFFFFF', toFg: '#0D1620', disch: '', total: '' },
+        { date: '23.09.2026', from: '09:00', to: '24:00', dur: '15:00', cat: 'Loading commenced', color: LOAD, desc: 'Начата погрузка SFM в трюмы 1, 3, 5', rowBg: '#FFFFFF', toFg: '#0D1620', disch: '', total: '' },
+        { date: '24.09.2026', from: '11:20', to: '13:05', dur: '01:45', cat: 'Weather', color: WX, desc: 'Дождь — люки закрыты', rowBg: '#FFF9EE', toFg: '#7A4A0B', disch: '', total: '' },
+        { date: '24.09.2026', from: '12:40', to: '15:00', dur: '02:20', cat: 'Discharging commenced', color: DISCH, desc: 'OGV-0042 · трюм 3 · кран 1', rowBg: '#FFF9EE', toFg: '#7A4A0B', disch: '1 177.000', total: '1 177.000' },
+        { date: '25.09.2026', from: '09:15', to: '13:40', dur: '04:25', cat: 'Discharging completed', color: DISCH, desc: 'OGV-0043 · трюм 5 · кран 2', rowBg: '#FFFFFF', toFg: '#0D1620', disch: '824.000', total: '2 001.000' }
+      ].map((e) => ({
+        date: e.date, from: e.from, to: e.to, dur: e.dur, cat: e.cat, color: e.color,
+        desc: e.desc, rowBg: e.rowBg, toFg: e.toFg,
+        disch: e.disch === '' ? '—' : e.disch,
+        total: e.total === '' ? '—' : e.total,
+        dischFg: e.disch === '' ? '#C3CDD6' : '#0D1620',
+        totalFg: e.total === '' ? '#C3CDD6' : '#0D1620'
+      }))
     };
   }
 }

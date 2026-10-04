@@ -1,51 +1,58 @@
 {
   "v": 3,
+  "attachments": {},
   "createdOnFiles": { "v": 1, "at": "2026-09-27T10:00:00Z" },
   "title": "VesselAssistant — десктоп-интерфейс",
   "launch": { "view": "canvas" },
   "pages": [],
+  "designSystems": [],
   "boards": {
-    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 980, "title": "1 · Load / Stowage Plan", "is_interactive": true, "radius": 10 },
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1080, "title": "1 · Load / Stowage Plan", "is_interactive": true, "radius": 10 },
     "CargoLayers.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 980, "title": "2 · Слои груза (LIFO)", "is_interactive": true, "radius": 10 },
-    "Sof.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 980, "title": "3 · Statement of Facts", "radius": 10 },
-    "AddLot.dc.html": { "x": 0, "y": 1440, "w": 720, "h": 860, "title": "4 · Добавление партии + AT-05", "is_interactive": true, "radius": 10 },
-    "Discharge.dc.html": { "x": 800, "y": 1440, "w": 760, "h": 860, "title": "5 · Выгрузка: превью LIFO", "radius": 10 },
-    "Documents.dc.html": { "x": 1640, "y": 1440, "w": 1440, "h": 860, "title": "6 · Документы и ревизии", "radius": 10 },
-    "Reference.dc.html": { "x": 0, "y": 2720, "w": 1440, "h": 1000, "title": "7 · Справочники + Crane Correction", "radius": 10 },
-    "DesignSystem.dc.html": { "x": 1520, "y": 2720, "w": 1240, "h": 1560, "title": "8 · Дизайн-система", "radius": 10 }
+    "Sof.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 1080, "title": "3 · Statement of Facts / Time Sheet", "is_interactive": true, "radius": 10 },
+
+    "CraneCorrection.dc.html": { "x": 0, "y": 1540, "w": 1440, "h": 1040, "title": "4 · Крановая поправка", "is_interactive": true, "radius": 10 },
+    "Ogv.dc.html": { "x": 1520, "y": 1540, "w": 1440, "h": 1000, "title": "5 · OGV — загрузка AAI PRELUDE", "is_interactive": true, "radius": 10 },
+    "Discharge.dc.html": { "x": 3040, "y": 1540, "w": 820, "h": 900, "title": "6 · Выгрузка: превью LIFO + кран", "radius": 10 },
+    "AddLot.dc.html": { "x": 3940, "y": 1540, "w": 720, "h": 860, "title": "7 · Добавление партии + AT-05", "is_interactive": true, "radius": 10 },
+
+    "Documents.dc.html": { "x": 0, "y": 3040, "w": 1440, "h": 860, "title": "8 · Документы и ревизии", "is_interactive": true, "radius": 10 },
+    "Reference.dc.html": { "x": 1520, "y": 3040, "w": 1440, "h": 1000, "title": "9 · Справочники", "is_interactive": true, "radius": 10 },
+    "DesignSystem.dc.html": { "x": 3040, "y": 3040, "w": 1240, "h": 1560, "title": "10 · Дизайн-система", "radius": 10 }
   },
   "order": [
     "Main.dc.html",
     "CargoLayers.dc.html",
     "Sof.dc.html",
-    "AddLot.dc.html",
+    "CraneCorrection.dc.html",
+    "Ogv.dc.html",
     "Discharge.dc.html",
+    "AddLot.dc.html",
     "Documents.dc.html",
     "Reference.dc.html",
     "DesignSystem.dc.html"
   ],
   "notes": {
-    "t1": { "x": 0, "y": -300, "text": "Рабочие экраны рейса", "kind": "title1", "maxW": 4480 },
-    "t2": { "x": 0, "y": 1140, "text": "Ввод, операции, документы", "kind": "title1", "maxW": 3080 },
-    "t3": { "x": 0, "y": 2420, "text": "Справочники и дизайн-система", "kind": "title1", "maxW": 2760 },
+    "t1": { "x": 0, "y": -300, "w": 240, "text": "Рабочие экраны рейса", "kind": "title1", "maxW": 4480 },
+    "t2": { "x": 0, "y": 1240, "w": 240, "text": "Краны, OGV и операции", "kind": "title1", "maxW": 4660 },
+    "t3": { "x": 0, "y": 2740, "w": 240, "text": "Документы, справочники, дизайн-система", "kind": "title1", "maxW": 4280 },
     "n1": {
-      "x": 4600,
+      "x": 4820,
       "y": 0,
-      "w": 420,
-      "maxH": 620,
+      "w": 430,
+      "maxH": 640,
       "fill": "red",
-      "text": "UX-аудит текущего MVP\n\n1. Три плоские вкладки на 7 экранов из ТЗ §10. Рейс выбирается <select> в топбаре — не видно судна, портов, дат.\n\n2. Ввод спрятан в раскрывающейся строке таблицы: трюм → «Add lot» → form-row из 5 инпутов. Таблица прыгает, контекст теряется.\n\n3. Открыт может быть только один трюм (expandedHoldId — строка), любое действие делает полный refresh() всего рейса.\n\n4. LIFO — главная бизнес-логика — показан текстовым <ul>. Оператор не видит, что именно спишется.\n\n5. AT-05 overload = window.confirm() без цифр вместимости и перегруза.\n\n6. Ошибки — сырой String(err): «Error: OVERLOAD:{...}» моноширинным шрифтом.\n\n7. max-width 1200px по центру: 10 числовых колонок жмутся, по краям пусто.",
+      "text": "UX-аудит текущего MVP\n\n1. Три плоские вкладки на 7 экранов из ТЗ §10. Рейс выбирается <select> в топбаре — не видно судна, портов, дат.\n\n2. Ввод спрятан в раскрывающейся строке таблицы: трюм → «Add lot» → form-row из 5 инпутов.\n\n3. LIFO показан текстовым <ul>: оператор не видит, что именно спишется.\n\n4. AT-05 overload = window.confirm() без цифр вместимости и перегруза.\n\n5. Ошибки — сырой String(err): «Error: OVERLOAD:{...}».\n\n6. Краны не видны нигде: ни на плане, ни в выгрузке. CraneCorrectionPanel спрятан внизу справочников, хотя в Excel это отдельный рабочий лист смены.\n\n7. max-width 1200px по центру: 10 числовых колонок жмутся, по краям пусто.",
       "size": "s"
     },
     "n2": {
-      "x": 4600,
-      "y": 700,
-      "w": 420,
-      "maxH": 560,
+      "x": 4820,
+      "y": 720,
+      "w": 430,
+      "maxH": 700,
       "fill": "teal",
-      "text": "Решения в этом макете\n\n• Навигационный рельс на 7 разделов ТЗ §10 вместо трёх вкладок. Рейс — постоянный контекст в шапке.\n\n• Отдельный экран «Слои груза»: стек сверху вниз, цвет по грузу, остатки по судам-источникам (ТЗ §10, сейчас отсутствует).\n\n• Выгрузка показывает превью LIFO-списания ДО подтверждения: какой слой, сколько, что останется.\n\n• Overload — inline-панель с capacity, проекцией и перегрузом, а не алерт.\n\n• Плотная таблица на всю ширину + шкала заполнения к 98%.\n\n• IBM Plex Sans / Mono, tabular-nums, группировка разрядов: 23 683.955.\n\n• Все числа в макете — из fixtures/kavkaz-iv.ts, суммы сходятся.",
+      "text": "Что добавилось после разбора Excel\n\n• Крановая поправка — отдельный экран: 4 режима (ИЗ СЕБЯ, ПРЯМОЙ ВАРИАНТ, В СЕБЯ л/б, В СЕБЯ п/б) × 2 крана, история коэффициентов по судам с исключением выбросов.\n\n• Профиль судна на Load Plan: трюмы 5→1, два крана с рабочим коэффициентом, V % и свободный объём м³ — как в исходном листе.\n\n• OGV оказался океанским судном под погрузкой (AAI PRELUDE, 7 трюмов, cargo plan 69 000 т), а не журналом операций. Новый экран показывает поступления из барж и из трюмов KAVKAZ IV.\n\n• SOF дорос до Standard Time Sheet: 18 нумерованных полей шапки и суточные колонки Disch 24hrs / Total disch.\n\n• Слои груза переписаны на реальный сплит ALISA V / VLADIMIR / YEKATERINA из файла.\n\n• Выгрузка принимает вес по судовым весам и показывает скорректированный отдельной строкой — остатки считаются по весам, как в Excel.",
       "size": "s"
     }
-  },
-  "designSystems": []
+  }
 }
