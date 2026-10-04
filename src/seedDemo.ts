@@ -1,12 +1,19 @@
 import { CargoLotService } from './services/CargoLotService';
-import { CraneCorrectionService } from './services/CraneCorrectionService';
+import { correctedWeight } from './calc/capacity';
 import { OgvService } from './services/OgvService';
 import { SofService } from './services/SofService';
 import { KAVKAZ_IV_HOLDS } from './fixtures/kavkaz-iv';
 import {
   DEMO_CRANES,
-  DEMO_CRANE_COEFFICIENTS,
+  DEMO_CRANE_MEASUREMENTS,
+  DEMO_CRANE_SHIFT,
+  DEMO_CRANE_WORKING,
   DEMO_DISCHARGES,
+  DEMO_DISCHARGE_OGV_HOLD,
+  DEMO_OGV,
+  DEMO_OGV_BARGE,
+  DEMO_OGV_BARGE_RECEIPTS,
+  DEMO_SHIFT_DATE,
   DEMO_LOADING_PORT,
   DEMO_LOTS,
   DEMO_SOF,
@@ -38,7 +45,8 @@ async function findOrInsert(db: Db, table: 'vessels' | 'cargoes' | 'ports' | 'cr
 /**
  * Idempotently seeds the demo voyage from `fixtures/kavkaz-iv-demo.ts` (the real working
  * file): 5 holds with Appendix C volumes and SF, 17 lots from three source vessels,
- * two LIFO discharges on 01.05, the SOF of 19.04–01.05 and the crane coefficients.
+ * two LIFO discharges on 01.05 into the ocean-going vessel AAI PRELUDE (with its barge
+ * receipts), the SOF of 19.04–01.05, and the crane measurements, working coefficients and shift.
  * Reference rows that already exist (same name) are reused.
  *
  * If the demo voyage already exists, returns its id without re-seeding.
@@ -106,9 +114,34 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
     });
   }
 
+  const ogvId = crypto.randomUUID();
+  await db.execute(`INSERT INTO ogv_vessels (id, voyage_id, name, status) VALUES (?, ?, ?, 'loading')`, [
+    ogvId,
+    voyageId,
+    DEMO_OGV.name,
+  ]);
+  const ogvHoldIds: Record<number, string> = {};
+  for (const h of DEMO_OGV.holds) {
+    ogvHoldIds[h.hold_no] = crypto.randomUUID();
+    await db.execute(`INSERT INTO ogv_holds (id, ogv_id, hold_no, planned_tons) VALUES (?, ?, ?, ?)`, [
+      ogvHoldIds[h.hold_no]!,
+      ogvId,
+      h.hold_no,
+      h.planned_tons,
+    ]);
+  }
+  for (const r of DEMO_OGV_BARGE_RECEIPTS) {
+    await db.execute(
+      `INSERT INTO ogv_receipts (id, ogv_id, ogv_hold_id, source_kind, source_name, tons)
+       VALUES (?, ?, ?, 'barge', ?, ?)`,
+      [crypto.randomUUID(), ogvId, ogvHoldIds[r.hold_no]!, DEMO_OGV_BARGE, r.tons],
+    );
+  }
+
   const ogv = new OgvService(db);
-  for (const d of DEMO_DISCHARGES) {
-    await ogv.discharge({
+  const operationIds: string[] = [];
+  for (const [i, d] of DEMO_DISCHARGES.entries()) {
+    const { operation_id } = await ogv.discharge({
       voyage_id: voyageId,
       hold_id: holdIdsByNo[d.hold_no]!,
       tons: d.tons,
@@ -116,6 +149,20 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
       time_from: d.time_from,
       description: d.description,
     });
+    operationIds.push(operation_id);
+    await db.execute(
+      `INSERT INTO ogv_receipts (id, ogv_id, ogv_hold_id, source_kind, source_name, tons, started_at, operation_id)
+       VALUES (?, ?, ?, 'main_hold', ?, ?, ?, ?)`,
+      [
+        crypto.randomUUID(),
+        ogvId,
+        ogvHoldIds[DEMO_DISCHARGE_OGV_HOLD[i]!]!,
+        `Hold №${d.hold_no}`,
+        d.tons,
+        `${d.event_date}T${d.time_from}:00`,
+        operation_id,
+      ],
+    );
   }
 
   const sof = new SofService(db);
@@ -132,23 +179,50 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
 
   const craneIds: Record<string, string> = {};
   for (const name of DEMO_CRANES) craneIds[name] = await findOrInsert(db, 'cranes', name);
-  const [hasCoefficients] = await db.select<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM crane_coefficients WHERE crane_id IN (?, ?)`,
+  const [hasHistory] = await db.select<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM crane_working_coefficients WHERE crane_id IN (?, ?)`,
     [craneIds[DEMO_CRANES[0]]!, craneIds[DEMO_CRANES[1]]!],
   );
-  if (!hasCoefficients || hasCoefficients.n === 0) {
-    const cranes = new CraneCorrectionService(db);
-    for (const c of DEMO_CRANE_COEFFICIENTS) {
-      await cranes.create({
-        crane_id: craneIds[c.crane]!,
-        operation_type: c.operation_type,
-        side: c.side,
-        vessel_name: c.vessel_name,
-        valid_from: c.valid_from,
-        valid_to: c.valid_to,
-        coefficient: c.coefficient,
-      });
+  if (!hasHistory || hasHistory.n === 0) {
+    for (const m of DEMO_CRANE_MEASUREMENTS) {
+      await db.execute(
+        `INSERT INTO crane_measurements (id, crane_id, mode, vessel_name, measured_on, coefficient, excluded)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), craneIds[m.crane]!, m.mode, m.vessel_name, m.measured_on, m.coefficient, m.excluded ? 1 : 0],
+      );
     }
+    for (const w of DEMO_CRANE_WORKING) {
+      await db.execute(
+        `INSERT INTO crane_working_coefficients (id, crane_id, mode, coefficient, valid_from) VALUES (?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), craneIds[w.crane]!, w.mode, w.coefficient, w.valid_from],
+      );
+    }
+  }
+  for (const r of DEMO_CRANE_SHIFT) {
+    const k = DEMO_CRANE_WORKING.find((w) => w.crane === r.crane && w.mode === r.mode)!.coefficient;
+    await db.execute(
+      `INSERT INTO crane_shift_records
+         (id, voyage_id, shift_date, crane_id, mode, scale_tons, coefficient, corrected_tons, operation_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        crypto.randomUUID(),
+        voyageId,
+        DEMO_SHIFT_DATE,
+        craneIds[r.crane]!,
+        r.mode,
+        r.scale_tons,
+        k,
+        correctedWeight(r.scale_tons, k),
+        r.discharge === undefined ? null : operationIds[r.discharge]!,
+      ],
+    );
+  }
+  if (operationIds.length > 0) {
+    await db.execute(
+      `UPDATE operations SET crane_id = ? WHERE id = ?`,
+      [craneIds['CRANE # 1']!, operationIds[0]!],
+    );
+    await db.execute(`UPDATE operations SET crane_id = ? WHERE id = ?`, [craneIds['CRANE # 2']!, operationIds[1]!]);
   }
 
   return { voyage_id: voyageId, vessel_id: vesselId, created: true };

@@ -160,55 +160,134 @@ export const DEMO_SOF: readonly DemoSofEvent[] = [
 
 export const DEMO_CRANES = ['CRANE # 1', 'CRANE # 2'] as const;
 
-export interface DemoCraneCoefficient {
-  crane: (typeof DEMO_CRANES)[number];
-  operation_type: 'loading' | 'discharging';
-  side: 'PORT' | 'STARBOARD' | null;
+export type DemoCraneMode = 'from_own' | 'direct' | 'into_own_port' | 'into_own_starboard';
+type DemoCrane = (typeof DEMO_CRANES)[number];
+
+export interface DemoCraneMeasurement {
+  crane: DemoCrane;
+  mode: DemoCraneMode;
   vessel_name: string | null;
-  valid_from: string;
-  valid_to: string | null;
+  measured_on: string;
   coefficient: number;
+  excluded: boolean;
 }
 
 /**
- * Sheet «CRANE CORR.»: «ИЗ СЕБЯ» → discharging, «В СЕБЯ port side / st. side» → loading
- * PORT / STARBOARD. Dated vessel columns become vessel-specific rows; the «current» column F
- * becomes the vessel-agnostic default. «ПРЯМАЯ» (barge → export ship) has no operation type
- * in the app and is not seeded. Vessel names are normalised to the SOF spelling
- * (I.Vikulov / C.I.Vikulov → IVAN VIKULOV).
+ * Sheet «CRANE CORR.», history to the right of each block: «ИЗ СЕБЯ» → from_own, «ПРЯМАЯ» →
+ * direct, «В СЕБЯ port / st. side» → into_own_port / into_own_starboard. The only value the
+ * operators struck out (red in the file) is I. VIKULOV 1.39 in «ПРЯМАЯ» (excel-reference §2).
+ * Vessel names follow the SOF spelling (I.Vikulov / C.I.Vikulov → IVAN VIKULOV).
  */
-export const DEMO_CRANE_COEFFICIENTS: readonly DemoCraneCoefficient[] = [
-  // ИЗ СЕБЯ — vessel-agnostic periods; the open one equals column F (1.06 / 0.96).
-  { crane: 'CRANE # 1', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2024-10-24', valid_to: '2025-01-14', coefficient: 1.02 },
-  { crane: 'CRANE # 1', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2025-01-15', valid_to: '2025-11-08', coefficient: 1.129 },
-  { crane: 'CRANE # 1', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2025-11-09', valid_to: null, coefficient: 1.06 },
-  { crane: 'CRANE # 1', operation_type: 'discharging', side: null, vessel_name: 'BETA', valid_from: '2025-08-06', valid_to: null, coefficient: 1.06 },
-  { crane: 'CRANE # 2', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2024-10-24', valid_to: '2025-01-14', coefficient: 0.999 },
-  { crane: 'CRANE # 2', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2025-01-15', valid_to: '2025-11-16', coefficient: 1.068 },
-  { crane: 'CRANE # 2', operation_type: 'discharging', side: null, vessel_name: null, valid_from: '2025-11-17', valid_to: null, coefficient: 0.96 },
-  { crane: 'CRANE # 2', operation_type: 'discharging', side: null, vessel_name: 'BETA', valid_from: '2025-08-06', valid_to: null, coefficient: 1.17 },
-  // В СЕБЯ, port side
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: null, valid_from: '2025-09-03', valid_to: null, coefficient: 1.06 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'LYDIA V', valid_from: '2025-09-03', valid_to: null, coefficient: 1.1 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'BRAVO', valid_from: '2025-09-04', valid_to: null, coefficient: 1.11 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'DELTA', valid_from: '2025-09-05', valid_to: null, coefficient: 1.07 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'VLADIMIR', valid_from: '2025-09-06', valid_to: null, coefficient: 1.06 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'IVAN VIKULOV', valid_from: '2025-10-03', valid_to: null, coefficient: 1.06 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'PORT', vessel_name: 'BETA', valid_from: '2025-11-08', valid_to: null, coefficient: 1.09 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: null, valid_from: '2025-09-03', valid_to: null, coefficient: 1.01 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'LYDIA V', valid_from: '2025-09-03', valid_to: null, coefficient: 0.99 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'BRAVO', valid_from: '2025-09-04', valid_to: null, coefficient: 0.89 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'DELTA', valid_from: '2025-09-05', valid_to: null, coefficient: 0.88 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'VLADIMIR', valid_from: '2025-09-06', valid_to: null, coefficient: 0.94 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'IVAN VIKULOV', valid_from: '2025-10-03', valid_to: null, coefficient: 0.9 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'PORT', vessel_name: 'DIANA MARIA', valid_from: '2025-11-04', valid_to: null, coefficient: 1.01 },
-  // В СЕБЯ, starboard side
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'STARBOARD', vessel_name: null, valid_from: '2025-08-05', valid_to: null, coefficient: 0.98 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'BETA', valid_from: '2025-08-05', valid_to: null, coefficient: 0.967 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'IVAN VIKULOV', valid_from: '2025-09-09', valid_to: null, coefficient: 0.98 },
-  { crane: 'CRANE # 1', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'ALISA V', valid_from: '2025-10-14', valid_to: null, coefficient: 1.1 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'STARBOARD', vessel_name: null, valid_from: '2025-08-05', valid_to: null, coefficient: 1.09 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'BETA', valid_from: '2025-08-05', valid_to: null, coefficient: 1.25 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'IVAN VIKULOV', valid_from: '2025-09-09', valid_to: null, coefficient: 1.09 },
-  { crane: 'CRANE # 2', operation_type: 'loading', side: 'STARBOARD', vessel_name: 'ALISA V', valid_from: '2025-10-14', valid_to: null, coefficient: 1.11 },
+export const DEMO_CRANE_MEASUREMENTS: readonly DemoCraneMeasurement[] = [
+  { crane: 'CRANE # 1', mode: 'from_own', vessel_name: null, measured_on: '2024-10-24', coefficient: 1.02, excluded: false },
+  { crane: 'CRANE # 2', mode: 'from_own', vessel_name: null, measured_on: '2024-10-24', coefficient: 0.999, excluded: false },
+  { crane: 'CRANE # 1', mode: 'from_own', vessel_name: null, measured_on: '2025-01-15', coefficient: 1.129, excluded: false },
+  { crane: 'CRANE # 2', mode: 'from_own', vessel_name: null, measured_on: '2025-01-15', coefficient: 1.068, excluded: false },
+  { crane: 'CRANE # 1', mode: 'from_own', vessel_name: 'BETA', measured_on: '2025-08-06', coefficient: 1.06, excluded: false },
+  { crane: 'CRANE # 2', mode: 'from_own', vessel_name: 'BETA', measured_on: '2025-08-06', coefficient: 1.17, excluded: false },
+  { crane: 'CRANE # 1', mode: 'from_own', vessel_name: null, measured_on: '2025-11-09', coefficient: 1.06, excluded: false },
+  { crane: 'CRANE # 2', mode: 'from_own', vessel_name: null, measured_on: '2025-11-17', coefficient: 0.96, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'GAMMA', measured_on: '2025-02-14', coefficient: 1.07, excluded: false },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'GAMMA', measured_on: '2025-02-14', coefficient: 1.04, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'LUBOV', measured_on: '2025-08-09', coefficient: 1.1, excluded: false },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'LUBOV', measured_on: '2025-08-09', coefficient: 1.245, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'ШИЛАЙНЯЙ', measured_on: '2025-08-17', coefficient: 1.1, excluded: false },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'ШИЛАЙНЯЙ', measured_on: '2025-08-17', coefficient: 0.82, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'ANASTASIA V', measured_on: '2025-08-27', coefficient: 1.178, excluded: false },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'ANASTASIA V', measured_on: '2025-08-27', coefficient: 0.875, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'LYDIA V', measured_on: '2025-08-28', coefficient: 1.13, excluded: false },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'LYDIA V', measured_on: '2025-08-28', coefficient: 0.9, excluded: false },
+  { crane: 'CRANE # 1', mode: 'direct', vessel_name: 'IVAN VIKULOV', measured_on: '2025-10-19', coefficient: 1.39, excluded: true },
+  { crane: 'CRANE # 2', mode: 'direct', vessel_name: 'IVAN VIKULOV', measured_on: '2025-10-19', coefficient: 1.04, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'LYDIA V', measured_on: '2025-09-03', coefficient: 1.1, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'LYDIA V', measured_on: '2025-09-03', coefficient: 0.99, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'BRAVO', measured_on: '2025-09-04', coefficient: 1.11, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'BRAVO', measured_on: '2025-09-04', coefficient: 0.89, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'DELTA', measured_on: '2025-09-05', coefficient: 1.07, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'DELTA', measured_on: '2025-09-05', coefficient: 0.88, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'VLADIMIR', measured_on: '2025-09-06', coefficient: 1.06, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'VLADIMIR', measured_on: '2025-09-06', coefficient: 0.94, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'IVAN VIKULOV', measured_on: '2025-10-03', coefficient: 1.06, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'IVAN VIKULOV', measured_on: '2025-10-03', coefficient: 0.9, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_port', vessel_name: 'DIANA MARIA', measured_on: '2025-11-04', coefficient: 1.01, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_port', vessel_name: 'BETA', measured_on: '2025-11-08', coefficient: 1.09, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_starboard', vessel_name: 'BETA', measured_on: '2025-08-05', coefficient: 0.967, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_starboard', vessel_name: 'BETA', measured_on: '2025-08-05', coefficient: 1.25, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_starboard', vessel_name: 'IVAN VIKULOV', measured_on: '2025-09-09', coefficient: 0.98, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_starboard', vessel_name: 'IVAN VIKULOV', measured_on: '2025-09-09', coefficient: 1.09, excluded: false },
+  { crane: 'CRANE # 1', mode: 'into_own_starboard', vessel_name: 'ALISA V', measured_on: '2025-10-14', coefficient: 1.1, excluded: false },
+  { crane: 'CRANE # 2', mode: 'into_own_starboard', vessel_name: 'ALISA V', measured_on: '2025-10-14', coefficient: 1.11, excluded: false },
 ];
+
+export interface DemoCraneWorking {
+  crane: DemoCrane;
+  mode: DemoCraneMode;
+  coefficient: number;
+  valid_from: string;
+}
+
+/**
+ * Column F of each block — the coefficient the operators accepted for work; it is a decision,
+ * not the mean of the history (excel-reference §2). In force from the block's last measurement.
+ */
+export const DEMO_CRANE_WORKING: readonly DemoCraneWorking[] = [
+  { crane: 'CRANE # 1', mode: 'from_own', coefficient: 1.06, valid_from: '2025-11-09' },
+  { crane: 'CRANE # 2', mode: 'from_own', coefficient: 0.96, valid_from: '2025-11-17' },
+  { crane: 'CRANE # 1', mode: 'direct', coefficient: 1.13, valid_from: '2025-10-19' },
+  { crane: 'CRANE # 2', mode: 'direct', coefficient: 1.04, valid_from: '2025-10-19' },
+  { crane: 'CRANE # 1', mode: 'into_own_port', coefficient: 1.06, valid_from: '2025-11-08' },
+  { crane: 'CRANE # 2', mode: 'into_own_port', coefficient: 1.01, valid_from: '2025-11-04' },
+  { crane: 'CRANE # 1', mode: 'into_own_starboard', coefficient: 0.98, valid_from: '2025-10-14' },
+  { crane: 'CRANE # 2', mode: 'into_own_starboard', coefficient: 1.09, valid_from: '2025-10-14' },
+];
+
+export interface DemoCraneShift {
+  crane: DemoCrane;
+  mode: DemoCraneMode;
+  scale_tons: number;
+  /** Index into DEMO_DISCHARGES when the weighing is that discharge («ИЗ СЕБЯ»). */
+  discharge?: number;
+}
+
+/**
+ * Column C («ВЕСЫ») of the sheet — one undated shift; dated 01.05.2026 here, the day of the
+ * two discharges whose scale weights are the «ИЗ СЕБЯ» pair. Total 8 835.000 → 8 405.971.
+ */
+export const DEMO_SHIFT_DATE = '2026-05-01';
+export const DEMO_CRANE_SHIFT: readonly DemoCraneShift[] = [
+  { crane: 'CRANE # 1', mode: 'from_own', scale_tons: 1177, discharge: 0 },
+  { crane: 'CRANE # 2', mode: 'from_own', scale_tons: 824, discharge: 1 },
+  { crane: 'CRANE # 1', mode: 'direct', scale_tons: 2154 },
+  { crane: 'CRANE # 2', mode: 'direct', scale_tons: 610 },
+  { crane: 'CRANE # 1', mode: 'into_own_port', scale_tons: 1387 },
+  { crane: 'CRANE # 2', mode: 'into_own_port', scale_tons: 604 },
+  { crane: 'CRANE # 1', mode: 'into_own_starboard', scale_tons: 1269 },
+  { crane: 'CRANE # 2', mode: 'into_own_starboard', scale_tons: 810 },
+];
+
+/** Sheet «OGV»: the ocean-going vessel under loading; cargo plan per hold (row 54). */
+export const DEMO_OGV = {
+  name: 'AAI PRELUDE',
+  holds: [
+    { hold_no: 7, planned_tons: 11079 },
+    { hold_no: 6, planned_tons: 10869 },
+    { hold_no: 5, planned_tons: 8324 },
+    { hold_no: 4, planned_tons: 7900 },
+    { hold_no: 3, planned_tons: 10456 },
+    { hold_no: 2, planned_tons: 10869 },
+    { hold_no: 1, planned_tons: 9503 },
+  ],
+} as const;
+
+/** Row 4: «KAVKAZ IV Transshipment from barges» — barge KAVKAZ III per OGV hold. */
+export const DEMO_OGV_BARGE_RECEIPTS: readonly { hold_no: number; tons: number }[] = [
+  { hold_no: 7, tons: 11017.974 },
+  { hold_no: 6, tons: 10869 },
+  { hold_no: 5, tons: 6938.661 },
+  { hold_no: 4, tons: 7904.14 },
+  { hold_no: 3, tons: 10456 },
+  { hold_no: 1, tons: 9567.27 },
+];
+export const DEMO_OGV_BARGE = 'KAVKAZ III';
+/** OGV hold receiving each of DEMO_DISCHARGES (hold 3 → OGV №2, hold 5 → OGV №5). */
+export const DEMO_DISCHARGE_OGV_HOLD: readonly number[] = [2, 5];
