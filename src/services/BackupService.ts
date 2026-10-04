@@ -153,6 +153,109 @@ const TABLES: readonly TableSpec[] = [
     ],
   },
   {
+    name: 'crane_measurements',
+    columns: [
+      'id',
+      'crane_id',
+      'mode',
+      'vessel_name',
+      'measured_on',
+      'coefficient',
+      'excluded',
+      'note',
+      'created_at',
+    ],
+  },
+  {
+    name: 'crane_working_coefficients',
+    columns: [
+      'id',
+      'crane_id',
+      'mode',
+      'coefficient',
+      'valid_from',
+      'note',
+      'created_at',
+    ],
+  },
+  {
+    name: 'crane_shift_records',
+    columns: [
+      'id',
+      'voyage_id',
+      'shift_date',
+      'crane_id',
+      'mode',
+      'scale_tons',
+      'coefficient',
+      'corrected_tons',
+      'operation_id',
+      'note',
+      'created_at',
+    ],
+  },
+  {
+    name: 'ogv_vessels',
+    columns: [
+      'id',
+      'voyage_id',
+      'name',
+      'status',
+      'created_at',
+    ],
+  },
+  {
+    name: 'ogv_holds',
+    columns: [
+      'id',
+      'ogv_id',
+      'hold_no',
+      'planned_tons',
+    ],
+  },
+  {
+    name: 'ogv_receipts',
+    columns: [
+      'id',
+      'ogv_id',
+      'ogv_hold_id',
+      'source_kind',
+      'source_name',
+      'cargo_id',
+      'tons',
+      'started_at',
+      'completed_at',
+      'operation_id',
+      'note',
+      'created_at',
+    ],
+  },
+  {
+    name: 'ogv_sequence_steps',
+    columns: [
+      'id',
+      'ogv_id',
+      'step_no',
+      'ogv_hold_id',
+      'planned_tons',
+      'label',
+    ],
+  },
+  {
+    name: 'sof_time_sheets',
+    columns: [
+      'id',
+      'voyage_id',
+      'shipping_company',
+      'cargo_description',
+      'cargo_documents_on_board',
+      'charter_party',
+      'bill_weight_tons',
+      'nor_accepted_note',
+      'updated_at',
+    ],
+  },
+  {
     name: 'sof_events',
     columns: [
       'id',
@@ -176,6 +279,10 @@ const TABLES: readonly TableSpec[] = [
       'generated_at',
       'local_file_path',
       'status',
+      'file_name',
+      'byte_size',
+      'created_by',
+      'note',
     ],
   },
   {
@@ -195,10 +302,13 @@ const TABLES: readonly TableSpec[] = [
   },
 ];
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
-/** v1 snapshots predate `audit_log.user_role`/`reason`; missing columns import as NULL. */
-const ACCEPTED_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, SCHEMA_VERSION]);
+/**
+ * v1 predates `audit_log.user_role`/`reason`, v2 the crane/OGV/time-sheet tables and the
+ * extra `documents` columns (0006–0009); missing tables and columns import as empty/NULL.
+ */
+const ACCEPTED_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, 2, SCHEMA_VERSION]);
 
 export interface BackupEnvelope {
   schema_version: number;

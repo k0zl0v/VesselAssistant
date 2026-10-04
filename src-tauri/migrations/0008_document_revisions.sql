@@ -1,37 +1,32 @@
--- Every successful export is recorded, so the Documents screen can list revisions
--- (the file itself stays where the operator saved it).
+-- Every successful export is recorded in the existing `documents` table (0001),
+-- so the Documents screen can list revisions. The file stays where the operator
+-- saved it; `revision` counts per (voyage, document_type).
 
-CREATE TABLE document_revisions (
-    id           TEXT PRIMARY KEY,
-    voyage_id    TEXT NOT NULL REFERENCES voyages(id) ON DELETE RESTRICT,
-    kind         TEXT NOT NULL CHECK (kind IN ('load_plan', 'audit_log')),
-    revision_no  INTEGER NOT NULL CHECK (revision_no > 0),
-    file_name    TEXT NOT NULL,
-    file_path    TEXT NOT NULL,
-    byte_size    INTEGER NOT NULL CHECK (byte_size >= 0),
-    note         TEXT,
-    created_by   TEXT,
-    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE (voyage_id, kind, revision_no)
-);
+ALTER TABLE documents ADD COLUMN file_name TEXT;
+ALTER TABLE documents ADD COLUMN byte_size INTEGER CHECK (byte_size IS NULL OR byte_size >= 0);
+ALTER TABLE documents ADD COLUMN created_by TEXT;
+ALTER TABLE documents ADD COLUMN note TEXT;
+CREATE UNIQUE INDEX idx_documents_revision ON documents(voyage_id, document_type, revision);
 
-CREATE TRIGGER audit_document_revisions_insert
-AFTER INSERT ON document_revisions
+CREATE TRIGGER audit_documents_insert
+AFTER INSERT ON documents
 BEGIN
     INSERT INTO audit_log (entity_type, entity_id, action, old_value, new_value, user_id, user_role, reason)
     VALUES (
-        'document_revisions', NEW.id, 'insert',
+        'documents', NEW.id, 'insert',
         NULL,
         json_object(
             'id', NEW.id,
             'voyage_id', NEW.voyage_id,
-            'kind', NEW.kind,
-            'revision_no', NEW.revision_no,
+            'document_type', NEW.document_type,
+            'revision', NEW.revision,
+            'generated_at', NEW.generated_at,
+            'local_file_path', NEW.local_file_path,
+            'status', NEW.status,
             'file_name', NEW.file_name,
-            'file_path', NEW.file_path,
             'byte_size', NEW.byte_size,
-            'note', NEW.note,
-            'created_by', NEW.created_by
+            'created_by', NEW.created_by,
+            'note', NEW.note
         ),
         (SELECT operator_name   FROM app_session WHERE id = 1),
         (SELECT operator_role   FROM app_session WHERE id = 1),
@@ -39,33 +34,37 @@ BEGIN
     );
 END;
 
-CREATE TRIGGER audit_document_revisions_update
-AFTER UPDATE ON document_revisions
+CREATE TRIGGER audit_documents_update
+AFTER UPDATE ON documents
 BEGIN
     INSERT INTO audit_log (entity_type, entity_id, action, old_value, new_value, user_id, user_role, reason)
     VALUES (
-        'document_revisions', NEW.id, 'update',
+        'documents', NEW.id, 'update',
         json_object(
             'id', OLD.id,
             'voyage_id', OLD.voyage_id,
-            'kind', OLD.kind,
-            'revision_no', OLD.revision_no,
+            'document_type', OLD.document_type,
+            'revision', OLD.revision,
+            'generated_at', OLD.generated_at,
+            'local_file_path', OLD.local_file_path,
+            'status', OLD.status,
             'file_name', OLD.file_name,
-            'file_path', OLD.file_path,
             'byte_size', OLD.byte_size,
-            'note', OLD.note,
-            'created_by', OLD.created_by
+            'created_by', OLD.created_by,
+            'note', OLD.note
         ),
         json_object(
             'id', NEW.id,
             'voyage_id', NEW.voyage_id,
-            'kind', NEW.kind,
-            'revision_no', NEW.revision_no,
+            'document_type', NEW.document_type,
+            'revision', NEW.revision,
+            'generated_at', NEW.generated_at,
+            'local_file_path', NEW.local_file_path,
+            'status', NEW.status,
             'file_name', NEW.file_name,
-            'file_path', NEW.file_path,
             'byte_size', NEW.byte_size,
-            'note', NEW.note,
-            'created_by', NEW.created_by
+            'created_by', NEW.created_by,
+            'note', NEW.note
         ),
         (SELECT operator_name   FROM app_session WHERE id = 1),
         (SELECT operator_role   FROM app_session WHERE id = 1),
@@ -73,22 +72,24 @@ BEGIN
     );
 END;
 
-CREATE TRIGGER audit_document_revisions_delete
-AFTER DELETE ON document_revisions
+CREATE TRIGGER audit_documents_delete
+AFTER DELETE ON documents
 BEGIN
     INSERT INTO audit_log (entity_type, entity_id, action, old_value, new_value, user_id, user_role, reason)
     VALUES (
-        'document_revisions', OLD.id, 'delete',
+        'documents', OLD.id, 'delete',
         json_object(
             'id', OLD.id,
             'voyage_id', OLD.voyage_id,
-            'kind', OLD.kind,
-            'revision_no', OLD.revision_no,
+            'document_type', OLD.document_type,
+            'revision', OLD.revision,
+            'generated_at', OLD.generated_at,
+            'local_file_path', OLD.local_file_path,
+            'status', OLD.status,
             'file_name', OLD.file_name,
-            'file_path', OLD.file_path,
             'byte_size', OLD.byte_size,
-            'note', OLD.note,
-            'created_by', OLD.created_by
+            'created_by', OLD.created_by,
+            'note', OLD.note
         ),
         NULL,
         (SELECT operator_name   FROM app_session WHERE id = 1),

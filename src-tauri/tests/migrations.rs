@@ -20,7 +20,7 @@ const AUDITED_TABLES: [&str; 17] = [
     "ogv_holds",
     "ogv_receipts",
     "ogv_sequence_steps",
-    "document_revisions",
+    "documents",
     "sof_time_sheets",
 ];
 

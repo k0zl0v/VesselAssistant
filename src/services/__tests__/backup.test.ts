@@ -98,6 +98,14 @@ const TABLES = [
   'operations',
   'discharge_allocations',
   'crane_coefficients',
+  'crane_measurements',
+  'crane_working_coefficients',
+  'crane_shift_records',
+  'ogv_vessels',
+  'ogv_holds',
+  'ogv_receipts',
+  'ogv_sequence_steps',
+  'sof_time_sheets',
   'sof_events',
   'documents',
   'audit_log',
@@ -178,7 +186,7 @@ describe('BackupService — round-trip and modes', () => {
     const json = await new BackupService(dbA, NOOP_AUTO_BACKUP).exportToJson();
     const parsed = JSON.parse(json);
 
-    expect(parsed.schema_version).toBe(2);
+    expect(parsed.schema_version).toBe(3);
     expect(typeof parsed.exported_at).toBe('string');
     expect(parsed.tables).toBeDefined();
     for (const t of TABLES) {
@@ -444,5 +452,26 @@ describe('BackupService.importFromJson — atomic write (ADR-0002)', () => {
     });
     spy.mockRestore();
     expect(await dbB.select('SELECT id, name FROM vessels ORDER BY id')).toEqual(before);
+  });
+});
+
+describe('BackupService — coverage of the schema', () => {
+  it('every business table of the migrations is in the backup envelope', async () => {
+    const db = await openTestDb();
+    try {
+      const json = await new BackupService(db, NOOP_AUTO_BACKUP).exportToJson();
+      const dumped = Object.keys((JSON.parse(json) as { tables: Record<string, unknown> }).tables).sort();
+      const inDb = (
+        await db.select<{ name: string }>(
+          `SELECT name FROM sqlite_master WHERE type = 'table'
+             AND name NOT LIKE 'sqlite_%' AND name NOT IN ('_sqlx_migrations', 'app_session')`,
+        )
+      )
+        .map((r) => r.name)
+        .sort();
+      expect(dumped).toEqual(inDb);
+    } finally {
+      db.close();
+    }
   });
 });
