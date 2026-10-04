@@ -18,7 +18,9 @@ export const en = {
 
   'shell.brand': 'VESSEL ASSISTANT',
   'shell.active_voyage': 'ACTIVE VOYAGE',
-  'shell.voyage_meta': '{vessel} · holds: {holds} · cranes: {cranes}',
+  'shell.voyage_meta': '{vessel} · {holds} · {cranes}',
+  'shell.holds_forms': 'hold|holds|holds',
+  'shell.cranes_forms': 'crane|cranes|cranes',
   'shell.no_voyages': 'No voyages yet',
   'shell.nav_label': 'Sections',
   'shell.section.voyage': 'VOYAGE',
@@ -69,7 +71,9 @@ export const ru: { [K in keyof typeof en]: string } = {
 
   'shell.brand': 'VESSEL ASSISTANT',
   'shell.active_voyage': 'АКТИВНЫЙ РЕЙС',
-  'shell.voyage_meta': '{vessel} · трюмов: {holds} · кранов: {cranes}',
+  'shell.voyage_meta': '{vessel} · {holds} · {cranes}',
+  'shell.holds_forms': 'трюм|трюма|трюмов',
+  'shell.cranes_forms': 'кран|крана|кранов',
   'shell.no_voyages': 'Рейсов пока нет',
   'shell.nav_label': 'Разделы',
   'shell.section.voyage': 'РЕЙС',

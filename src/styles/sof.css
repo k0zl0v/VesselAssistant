@@ -1,12 +1,6 @@
 /* Statement of Facts (docs/ui/artboards/Sof.dc.html). */
 
 /* New tokens — to be moved into tokens.css by the lead. */
-:root {
-  --sof-sheet-no: #9aa8b3;
-  --sof-disch-col: 118px;
-  --sof-day-row: var(--surface-key);
-}
-
 .sof-g-loading { --sof-color: var(--sof-loading); }
 .sof-g-discharging { --sof-color: var(--sof-discharging); }
 .sof-g-weather { --sof-color: var(--sof-weather); }

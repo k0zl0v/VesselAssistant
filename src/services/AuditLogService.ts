@@ -66,27 +66,39 @@ export class AuditLogService {
   }
 
   /**
-   * The audit trail of one voyage, oldest first (FR-10 export). `crane_coefficients` is shared
-   * reference data and is left out. Allocations are matched through the operation ids the log
-   * itself recorded for the voyage, so rows survive a deleted operation (a backup restore).
+   * The audit trail of one voyage, oldest first (FR-10 export). Crane coefficients, measurements
+   * and working values are shared reference data and are left out. Allocations and OGV children
+   * are matched through the operation / OGV ids the log itself recorded for the voyage, so rows
+   * survive a deleted parent (a backup restore).
    */
   async listForVoyage(voyage_id: string, opts: { limit?: number } = {}): Promise<AuditEntry[]> {
-    const params: SqlValue[] = Array<SqlValue>(4).fill(voyage_id);
+    const params: SqlValue[] = Array<SqlValue>(6).fill(voyage_id);
     let sql = `WITH voyage_ops(id) AS (
          SELECT id FROM operations WHERE voyage_id = ?
          UNION
          SELECT entity_id FROM audit_log
           WHERE entity_type = 'operations'
             AND ? IN (json_extract(old_value, '$.voyage_id'), json_extract(new_value, '$.voyage_id'))
+       ),
+       voyage_ogv(id) AS (
+         SELECT id FROM ogv_vessels WHERE voyage_id = ?
+         UNION
+         SELECT entity_id FROM audit_log
+          WHERE entity_type = 'ogv_vessels'
+            AND ? IN (json_extract(old_value, '$.voyage_id'), json_extract(new_value, '$.voyage_id'))
        )
        SELECT id, entity_type, entity_id, action, old_value, new_value, user_id, user_role, reason, created_at
          FROM audit_log
         WHERE (entity_type = 'voyages' AND entity_id = ?)
-           OR (entity_type IN ('cargo_lots', 'cargo_layers', 'operations', 'sof_events', 'hold_cargo_parameters')
+           OR (entity_type IN ('cargo_lots', 'cargo_layers', 'operations', 'sof_events', 'hold_cargo_parameters',
+                               'crane_shift_records', 'ogv_vessels', 'sof_time_sheets', 'documents')
                AND ? IN (json_extract(old_value, '$.voyage_id'), json_extract(new_value, '$.voyage_id')))
            OR (entity_type = 'discharge_allocations'
                AND (json_extract(old_value, '$.operation_id') IN (SELECT id FROM voyage_ops)
                     OR json_extract(new_value, '$.operation_id') IN (SELECT id FROM voyage_ops)))
+           OR (entity_type IN ('ogv_holds', 'ogv_receipts', 'ogv_sequence_steps')
+               AND (json_extract(old_value, '$.ogv_id') IN (SELECT id FROM voyage_ogv)
+                    OR json_extract(new_value, '$.ogv_id') IN (SELECT id FROM voyage_ogv)))
         ORDER BY created_at, id`;
     if (opts.limit !== undefined) {
       sql += ` LIMIT ?`;

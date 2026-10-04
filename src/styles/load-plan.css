@@ -1,15 +1,6 @@
 /* Load / Stowage Plan (docs/ui/artboards/Main.dc.html). */
 
 /* New tokens for the ship profile strip; the lead moves them into tokens.css. */
-:root {
-  --profile-crane-lane: 54px;  /* crane markers above the holds */
-  --profile-hold-height: 62px; /* hold silhouette; fill height = V % of it */
-  --profile-hold-gap: 6px;
-  --profile-bow-width: 54px;
-  --profile-bow-svg-width: 46px;
-  --profile-rope-height: 8px;
-}
-
 .hold-table .col-hold {
   width: 58px;
 }

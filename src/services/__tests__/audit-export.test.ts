@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AuditLogService, type AuditEntry } from '../AuditLogService';
 import { CargoLotService } from '../CargoLotService';
-import { CraneCorrectionService } from '../CraneCorrectionService';
+import { CraneShiftService } from '../CraneShiftService';
 import { DocumentEngine } from '../DocumentEngine';
 import { AppError } from '../errors';
 import { OgvService } from '../OgvService';
@@ -10,6 +10,7 @@ import { ReferenceService } from '../ReferenceService';
 import { SessionService } from '../SessionService';
 import { SofService } from '../SofService';
 import { VoyageService } from '../VoyageService';
+import { seedKavkazDemo } from '../../seedDemo';
 import { NOOP_AUTO_BACKUP, openTestDb, seedReferenceData, TEST_SESSION } from './helpers';
 import type { NodeDb } from '../db-node';
 
@@ -77,10 +78,11 @@ describe('FR-10 — voyage audit log export', () => {
 
     const crane = await new ReferenceService(db).createCrane({ name: 'CRANE 1' });
     craneCoefficientId = (
-      await new CraneCorrectionService(db).create({
+      await new CraneShiftService(db).addMeasurement({
         crane_id: crane.id,
-        operation_type: 'discharge',
-        valid_from: '2026-01-01',
+        mode: 'from_own',
+        vessel_name: 'BETA',
+        measured_on: '2026-01-01',
         coefficient: 1.01,
       })
     ).id;
@@ -121,7 +123,7 @@ describe('FR-10 — voyage audit log export', () => {
     const rows = await audit.listForVoyage(voyageA);
     const idsB = await voyageEntityIds(db, voyageB);
 
-    expect(rows.some((r) => r.entity_type === 'crane_coefficients')).toBe(false);
+    expect(rows.some((r) => r.entity_type === 'crane_measurements')).toBe(false);
     expect(rows.some((r) => r.entity_id === craneCoefficientId)).toBe(false);
     expect(rows.filter((r) => idsB.has(r.entity_id))).toEqual([]);
     expect((await audit.listForVoyage(voyageB)).some((r) => r.entity_id === voyageA)).toBe(false);
@@ -204,5 +206,30 @@ describe('FR-10 — voyage audit log export', () => {
 
   it('DocumentEngine.generateAuditLog rejects an unknown voyage', async () => {
     await expect(new DocumentEngine(db).generateAuditLog('nope')).rejects.toBeInstanceOf(AppError);
+  });
+});
+
+describe('AuditLogService.listForVoyage — voyage tables of 0006–0009', () => {
+  it('includes the voyage OGV with its holds and receipts, shift records and time sheet; not another voyage', async () => {
+    const db = await openTestDb();
+    try {
+      const { voyage_id } = await seedKavkazDemo(db);
+      const rows = await new AuditLogService(db).listForVoyage(voyage_id);
+      const types = new Set(rows.map((r) => r.entity_type));
+      for (const t of ['ogv_vessels', 'ogv_holds', 'ogv_receipts', 'crane_shift_records']) {
+        expect(types.has(t), t).toBe(true);
+      }
+      expect(types.has('crane_measurements')).toBe(false);
+      expect(types.has('crane_working_coefficients')).toBe(false);
+      const other = await new VoyageService(db, NOOP_AUTO_BACKUP).create({
+        vessel_id: (await db.select<{ id: string }>(`SELECT id FROM vessels LIMIT 1`))[0]!.id,
+        voyage_no: 'OTHER',
+      });
+      const otherTypes = new Set((await new AuditLogService(db).listForVoyage(other.id)).map((r) => r.entity_type));
+      expect(otherTypes.has('ogv_receipts')).toBe(false);
+      expect(otherTypes.has('crane_shift_records')).toBe(false);
+    } finally {
+      db.close();
+    }
   });
 });

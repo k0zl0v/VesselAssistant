@@ -1,12 +1,18 @@
 import { version } from '../../package.json';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Icon } from '../components/ui/Icon';
-import { useT } from '../i18n';
+import { plural, useT } from '../i18n';
 import { DATA_SCREENS, VOYAGE_SCREENS, useNavigation, type ScreenDef } from './navigation';
 import { useVoyage } from './VoyageContext';
 
 interface Props {
   onNewVoyage: () => void;
+}
+
+/** `5 трюмов` from the `one|few|many` forms string. */
+function countLabel(n: number, forms: string): string {
+  const [one = '', few = one, many = few] = forms.split('|');
+  return `${n} ${plural(n, [one, few, many])}`;
 }
 
 export function Rail({ onNewVoyage }: Props) {
@@ -61,7 +67,11 @@ export function Rail({ onNewVoyage }: Props) {
               <span className="rail-voyage-no">{selected?.voyage_no ?? '—'}</span>
               <span className="rail-voyage-meta">
                 {vessel
-                  ? t('shell.voyage_meta', { vessel: vessel.name, holds: data?.holds.length ?? 0, cranes: cranes.length })
+                  ? t('shell.voyage_meta', {
+                      vessel: vessel.name,
+                      holds: countLabel(data?.holds.length ?? 0, t('shell.holds_forms')),
+                      cranes: countLabel(cranes.length, t('shell.cranes_forms')),
+                    })
                   : ''}
                 {selected?.status === 'closed' ? ` · ${t('voyage.status.closed')}` : ''}
               </span>

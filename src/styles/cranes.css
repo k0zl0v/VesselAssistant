@@ -1,24 +1,5 @@
 /* Crane correction screen (docs/ui/artboards/CraneCorrection.dc.html). */
 
-:root {
-  /* ---- Экран: cranes ---- */
-  --cranes-modes-width: 744px;   /* left column with the four mode cards */
-  --cranes-name-width: 74px;     /* crane name in a mode row */
-  --cranes-scale-width: 104px;   /* scale weight field */
-  --cranes-k-width: 92px;        /* coefficient button */
-  --cranes-corr-width: 118px;    /* corrected weight */
-  --cranes-delta-width: 92px;    /* per-crane delta */
-  --cranes-badge: 22px;          /* mode icon badge */
-  --cranes-tag-width: 58px;      /* «выброс» tag in the history */
-  --cranes-op-ink: #9aa8b3;      /* ÷ and = between the numbers */
-  --cranes-row-line: #f4f6f8;    /* row divider inside a card */
-  --cranes-row-active: #f5fafa;  /* row of the crane whose history is open */
-  --cranes-shift-scale-width: 120px;
-  --cranes-shift-date-width: 180px;
-  --cranes-field: 32px;          /* scale field and coefficient button height */
-  --text-accepted: 17px;         /* accepted working coefficient */
-}
-
 .cranes-page {
   display: flex;
   flex-direction: column;

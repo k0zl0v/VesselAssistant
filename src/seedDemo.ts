@@ -17,6 +17,7 @@ import {
   DEMO_LOADING_PORT,
   DEMO_LOTS,
   DEMO_SOF,
+  DEMO_TIME_SHEET,
   DEMO_VESSEL,
   DEMO_VOYAGE_NO,
 } from './fixtures/kavkaz-iv-demo';
@@ -176,6 +177,19 @@ export async function seedKavkazDemo(db: Db): Promise<SeedResult> {
       description: e.description,
     });
   }
+
+  await db.execute(
+    `INSERT INTO sof_time_sheets (id, voyage_id, shipping_company, cargo_description, charter_party, nor_accepted_note)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      crypto.randomUUID(),
+      voyageId,
+      DEMO_TIME_SHEET.shipping_company,
+      DEMO_TIME_SHEET.cargo_description,
+      DEMO_TIME_SHEET.charter_party,
+      DEMO_TIME_SHEET.nor_accepted_note,
+    ],
+  );
 
   const craneIds: Record<string, string> = {};
   for (const name of DEMO_CRANES) craneIds[name] = await findOrInsert(db, 'cranes', name);

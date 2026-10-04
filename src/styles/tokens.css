@@ -183,14 +183,46 @@
 
   /* ---- Экран: reference ---- */
   --refs-list-width: 268px;   /* vessel list column */
-  --refs-calc-width: 306px;   /* «Пересчёт веса» side panel */
-  --refs-calc-narrow: 116px;  /* side / date selects in the calculator */
-  --text-result: 23px;        /* corrected weight on the chrome tile */
 
   /* ---- Экран: tools ---- */
   --tools-backup-col: 400px; /* backup card: narrow fixed column, import preview takes the rest */
   --audit-diff-gap: 14px;
   --audit-diff-width: 42%; /* the diff is the content; the other columns size to theirs */
+
+  /* ---- Экран: load-plan ---- */
+  --profile-crane-lane: 54px;  /* crane markers above the holds */
+  --profile-hold-height: 62px; /* hold silhouette; fill height = V % of it */
+  --profile-hold-gap: 6px;
+  --profile-bow-width: 54px;
+  --profile-bow-svg-width: 46px;
+  --profile-rope-height: 8px;
+
+  /* ---- Экран: sof ---- */
+  --sof-sheet-no: #9aa8b3;
+  --sof-disch-col: 118px;
+  --sof-day-row: var(--surface-key);
+
+  /* ---- Экран: cranes ---- */
+  /* ---- Экран: cranes ---- */
+  --cranes-modes-width: 744px;   /* left column with the four mode cards */
+  --cranes-name-width: 74px;     /* crane name in a mode row */
+  --cranes-scale-width: 104px;   /* scale weight field */
+  --cranes-k-width: 92px;        /* coefficient button */
+  --cranes-corr-width: 118px;    /* corrected weight */
+  --cranes-delta-width: 92px;    /* per-crane delta */
+  --cranes-badge: 22px;          /* mode icon badge */
+  --cranes-tag-width: 58px;      /* «выброс» tag in the history */
+  --cranes-op-ink: #9aa8b3;      /* ÷ and = between the numbers */
+  --cranes-row-line: #f4f6f8;    /* row divider inside a card */
+  --cranes-row-active: #f5fafa;  /* row of the crane whose history is open */
+  --cranes-shift-scale-width: 120px;
+  --cranes-shift-date-width: 180px;
+  --cranes-field: 32px;          /* scale field and coefficient button height */
+  --text-accepted: 17px;         /* accepted working coefficient */
+
+  /* ---- Экран: documents ---- */
+  --revisions-width: 288px;   /* «История ревизий» column */
+  --rev-dot: 8px;             /* timeline dot of a revision */
 }
 
 /* Числа во всём приложении: моноширинные, с одинаковой шириной цифр,

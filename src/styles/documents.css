@@ -1,11 +1,6 @@
 /* Documents (docs/ui/artboards/Documents.dc.html). */
 
 /* New tokens — to be moved into tokens.css by the lead. */
-:root {
-  --revisions-width: 288px;   /* «История ревизий» column */
-  --rev-dot: 8px;             /* timeline dot of a revision */
-}
-
 .documents-body {
   display: flex;
   flex-direction: column;

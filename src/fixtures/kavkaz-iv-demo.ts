@@ -158,6 +158,14 @@ export const DEMO_SOF: readonly DemoSofEvent[] = [
   { date: "2026-05-01", from: "12:05", to: null, category: "discharging_commenced", description: "COMMENCED C/OPS FM OUR CH'S TO M/V\"AAI PRELUDE\"" },
 ];
 
+/** Sheet «SOF», header block (fields 1, 8, 13, 18); field 14 is blank in the file. */
+export const DEMO_TIME_SHEET = {
+  shipping_company: 'AL MADHIK Shipping Co. — Shipping and Acc Dept.',
+  cargo_description: 'WHEAT IN BULK',
+  charter_party: 'N/A',
+  nor_accepted_note: 'AS PER C/P',
+} as const;
+
 export const DEMO_CRANES = ['CRANE # 1', 'CRANE # 2'] as const;
 
 export type DemoCraneMode = 'from_own' | 'direct' | 'into_own_port' | 'into_own_starboard';
