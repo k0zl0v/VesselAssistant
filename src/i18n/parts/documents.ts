@@ -1,4 +1,4 @@
-/** Documents screen: workbook contents, file name, Load Plan print preview, export result. */
+/** Documents screen: workbook contents, file name, Load Plan print preview, revision history. */
 export const en = {
   'documents.generate': 'Generate',
   'documents.generating': 'Generating…',
@@ -35,7 +35,19 @@ export const en = {
   'documents.print.discharged': 'Discharged',
   'documents.print.empty_100': 'Total Empty Space 100%',
   'documents.print.empty_98': 'Total Empty Space 98%',
-  'documents.saved.title': 'Workbook saved',
+  'documents.revisions.title': 'Revision history',
+  'documents.revisions.subtitle': 'Every saved export, newest first',
+  'documents.revisions.rev': 'rev {n}',
+  'documents.revisions.current': 'current',
+  'documents.revisions.format': 'XLSX',
+  'documents.revisions.kind.load_plan': 'Load / Stowage Plan',
+  'documents.revisions.kind.audit_log': 'Audit log',
+  'documents.revisions.size_b': '{n} B',
+  'documents.revisions.size_kb': '{n} KB',
+  'documents.revisions.by': 'by {name}',
+  'documents.revisions.empty.title': 'No revisions yet',
+  'documents.revisions.empty.text': 'Each saved workbook or audit log export appears here with its number, file and operator.',
+  'documents.revisions.reveal': 'Show latest file in folder',
 } as const;
 
 export const ru: { [K in keyof typeof en]: string } = {
@@ -73,5 +85,17 @@ export const ru: { [K in keyof typeof en]: string } = {
   'documents.print.discharged': 'Discharged',
   'documents.print.empty_100': 'Total Empty Space 100%',
   'documents.print.empty_98': 'Total Empty Space 98%',
-  'documents.saved.title': 'Книга сохранена',
+  'documents.revisions.title': 'История ревизий',
+  'documents.revisions.subtitle': 'Каждый сохранённый экспорт, новые сверху',
+  'documents.revisions.rev': 'rev {n}',
+  'documents.revisions.current': 'текущая',
+  'documents.revisions.format': 'XLSX',
+  'documents.revisions.kind.load_plan': 'Load / Stowage Plan',
+  'documents.revisions.kind.audit_log': 'Журнал аудита',
+  'documents.revisions.size_b': '{n} Б',
+  'documents.revisions.size_kb': '{n} КБ',
+  'documents.revisions.by': 'оператор {name}',
+  'documents.revisions.empty.title': 'Ревизий пока нет',
+  'documents.revisions.empty.text': 'Каждый сохранённый файл книги или журнала аудита появится здесь с номером, файлом и оператором.',
+  'documents.revisions.reveal': 'Показать последний файл в папке',
 };

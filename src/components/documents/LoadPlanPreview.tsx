@@ -1,4 +1,4 @@
-import { formatPercent, formatTons } from '../../calc/round';
+import { formatTons } from '../../calc/round';
 import { useT, type StringKey } from '../../i18n';
 import type { VoyageCalcResult } from '../../services/CalculationService';
 import type { WorkbookSheet } from './sheets';
@@ -26,12 +26,13 @@ const COLUMNS: { key: StringKey; num: boolean }[] = [
   { key: 'documents.print.col.loaded', num: true },
   { key: 'documents.print.col.discharged', num: true },
   { key: 'documents.print.col.remain', num: true },
-  { key: 'documents.print.col.capacity_98', num: true },
   { key: 'documents.print.col.empty_98', num: true },
-  { key: 'documents.print.col.empty_pct', num: true },
 ];
 
-/** Print-like view of sheet 1 with the same CalculationService numbers DocumentEngine writes. */
+/**
+ * Print-like view of sheet 1 with the same CalculationService numbers DocumentEngine writes.
+ * Eight columns as in the mockup: with the revision column, capacity 98 % and empty vol % do not fit at 1440 px.
+ */
 export function LoadPlanPreview({ vessel_name, voyage_no, route, asOf, calc, cargoByHold, sheets }: Props) {
   const t = useT();
   const { totals } = calc;
@@ -79,9 +80,7 @@ export function LoadPlanPreview({ vessel_name, voyage_no, route, asOf, calc, car
                   <td className="num">{formatTons(h.loaded_tons)}</td>
                   <td className="num">{formatTons(h.discharged_tons)}</td>
                   <td className={`num ${neg(h.remain_tons) ?? ''}`}>{formatTons(h.remain_tons)}</td>
-                  <td className="num">{tons(h.capacity_tons_98)}</td>
                   <td className="num">{tons(h.empty_space_98)}</td>
-                  <td className="num">{h.empty_volume_percent === null ? '—' : formatPercent(h.empty_volume_percent)}</td>
                 </tr>
               ))}
               <tr className="doc-print-total" data-testid="documents-preview-total">
@@ -89,9 +88,7 @@ export function LoadPlanPreview({ vessel_name, voyage_no, route, asOf, calc, car
                 <td className="num">{formatTons(totals.total_loaded)}</td>
                 <td className="num">{formatTons(totals.total_discharged)}</td>
                 <td className={`num ${neg(totals.on_board) ?? ''}`}>{formatTons(totals.on_board)}</td>
-                <td />
                 <td className="num">{formatTons(totals.total_empty_98)}</td>
-                <td />
               </tr>
             </tbody>
           </table>

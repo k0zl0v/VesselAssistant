@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { loadCargoByHold } from '../components/documents/cargoByHold';
 import { LoadPlanPreview } from '../components/documents/LoadPlanPreview';
+import { RevisionHistory } from '../components/documents/RevisionHistory';
 import { workbookSheets } from '../components/documents/sheets';
 import { defaultExportFileName, useWorkbookExport } from '../components/documents/useWorkbookExport';
 import { WorkbookContents } from '../components/documents/WorkbookContents';
@@ -9,6 +11,7 @@ import { ErrorState } from '../components/ui/states';
 import { getDb } from '../db';
 import { useT } from '../i18n';
 import { describeError } from '../i18n/errors';
+import { DocumentRevisionService, type DocumentRevision } from '../services/DocumentRevisionService';
 import { formatDate } from '../shell/format';
 import { AuditExportButton } from '../components/AuditExportButton';
 import { PageHeader, voyageEyebrow } from '../shell/PageHeader';
@@ -19,20 +22,59 @@ import '../styles/documents.css';
 const localIsoDate = (d: Date): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-/** «Документы»: what the XLSX workbook contains, its file name, a preview of sheet 1, and the export itself. */
+/** «Документы»: workbook contents and file name, a preview of sheet 1, the export, and the revision history. */
 export function DocumentsPage() {
   const t = useT();
   const { data, isOpen } = useVoyage();
   const [cargoByHold, setCargoByHold] = useState<Map<string, string> | null>(null);
   const [cargoError, setCargoError] = useState<string | null>(null);
+  const [revisions, setRevisions] = useState<DocumentRevision[] | null>(null);
+  const [revisionsError, setRevisionsError] = useState<string | null>(null);
+  const [revealError, setRevealError] = useState<string | null>(null);
+  const [freshId, setFreshId] = useState<string | null>(null);
 
   const voyageId = data?.voyage.id ?? '';
   const calculatedAt = data?.calculatedAt;
   const vesselName = data?.vessel?.name ?? null;
+
+  useEffect(() => {
+    if (!voyageId) return;
+    let alive = true;
+    setRevisions(null);
+    setRevisionsError(null);
+    void (async () => {
+      try {
+        const list = await new DocumentRevisionService(await getDb()).list(voyageId);
+        if (alive) setRevisions(list);
+      } catch (e) {
+        if (alive) setRevisionsError(describeError(e));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [voyageId]);
+
+  // The recorded row is already complete, so it is prepended instead of re-reading the list.
+  const onRecorded = useCallback((r: DocumentRevision) => {
+    setFreshId(r.id);
+    setRevisions((prev) => [r, ...(prev ?? []).filter((x) => x.id !== r.id)]);
+  }, []);
+
+  const onReveal = useCallback(async (path: string) => {
+    setRevealError(null);
+    try {
+      await revealItemInDir(path);
+    } catch (e) {
+      setRevealError(describeError(e));
+    }
+  }, []);
+
   const exporter = useWorkbookExport({
     voyage_id: voyageId,
     voyage_no: data?.voyage.voyage_no ?? '',
     vessel_name: vesselName ?? '',
+    onRecorded,
   });
 
   // Re-read after every recalculation: a new lot can change a hold's cargo label.
@@ -68,7 +110,12 @@ export function DocumentsPage() {
         actions={
           <>
             {data.vessel && (
-              <AuditExportButton voyage_id={voyage.id} voyage_no={voyage.voyage_no} vessel_name={data.vessel.name} />
+              <AuditExportButton
+                voyage_id={voyage.id}
+                voyage_no={voyage.voyage_no}
+                vessel_name={data.vessel.name}
+                onRecorded={onRecorded}
+              />
             )}
             <button
               type="button"
@@ -87,13 +134,6 @@ export function DocumentsPage() {
       <div className="page-body documents-body">
         {exporter.error && (
           <ErrorState title={t('shell.action_failed')} message={exporter.error} testId="documents-export-error" />
-        )}
-        {exporter.savedPath && !exporter.error && (
-          <div className="banner banner-positive doc-saved" role="status" data-testid="documents-export-saved">
-            <Icon name="check" size={14} />
-            <span className="doc-saved-title">{t('documents.saved.title')}</span>
-            <span className="doc-saved-path">{exporter.savedPath}</span>
-          </div>
         )}
 
         <div className="documents-grid">
@@ -117,6 +157,13 @@ export function DocumentsPage() {
               sheets={sheets}
             />
           )}
+          <RevisionHistory
+            revisions={revisions}
+            error={revisionsError}
+            freshId={freshId}
+            revealError={revealError}
+            onReveal={(path) => void onReveal(path)}
+          />
         </div>
       </div>
     </>

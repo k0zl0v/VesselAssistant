@@ -1,6 +1,11 @@
 /* Documents (docs/ui/artboards/Documents.dc.html). */
 
 /* New tokens — to be moved into tokens.css by the lead. */
+:root {
+  --revisions-width: 288px;   /* «История ревизий» column */
+  --rev-dot: 8px;             /* timeline dot of a revision */
+}
+
 .documents-body {
   display: flex;
   flex-direction: column;
@@ -13,27 +18,9 @@
   flex-grow: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--book-width) minmax(0, 1fr);
+  grid-template-columns: var(--book-width) minmax(0, 1fr) var(--revisions-width);
   gap: var(--space-3);
   align-items: stretch;
-}
-
-/* ---- Export result -------------------------------------------------- */
-
-.doc-saved {
-  flex-wrap: wrap;
-  padding-top: 7px;
-  padding-bottom: 7px;
-}
-
-.doc-saved-title {
-  font-weight: 600;
-}
-
-.doc-saved-path {
-  font-family: var(--font-mono);
-  font-weight: 400;
-  word-break: break-all;
 }
 
 /* ---- «Состав книги» ------------------------------------------------- */
@@ -207,7 +194,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-align: left;
-  white-space: nowrap;
+  vertical-align: bottom;
   color: var(--ink);
 }
 
@@ -277,4 +264,130 @@
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
+}
+
+/* ---- «История ревизий» ---------------------------------------------- */
+
+.doc-revisions {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 15px var(--space-4);
+}
+
+.doc-revisions .card-title {
+  margin-bottom: 3px;
+}
+
+.doc-rev-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 var(--space-1);
+}
+
+.doc-rev {
+  position: relative;
+  padding: 0 0 14px 13px;
+  border-left: 2px solid var(--line);
+}
+
+.doc-rev.is-newest {
+  border-left-color: var(--accent);
+}
+
+.doc-rev.is-last {
+  border-left-color: transparent;
+}
+
+.doc-rev.is-fresh {
+  background: linear-gradient(to right, var(--accent-soft), transparent);
+}
+
+.doc-rev-dot {
+  position: absolute;
+  left: -5px;
+  top: 3px;
+  width: var(--rev-dot);
+  height: var(--rev-dot);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--line-strong);
+}
+
+.doc-rev-dot.is-current {
+  background: var(--accent);
+}
+
+.doc-rev-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.doc-rev-no {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.doc-rev-tag {
+  font-size: var(--text-micro);
+  color: var(--ink-muted);
+  background: var(--line-soft);
+  border-radius: var(--radius-tag);
+  padding: 1px 6px;
+}
+
+.doc-rev-tag.is-current {
+  color: var(--positive);
+  background: var(--positive-soft);
+}
+
+.doc-rev-date,
+.doc-rev-note,
+.doc-rev-file,
+.doc-rev-meta {
+  margin-top: 3px;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.doc-rev-date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-rev-file {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.doc-rev-file-name {
+  color: var(--ink);
+}
+
+.doc-rev-file-dir {
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+}
+
+.doc-rev-meta {
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+}
+
+.doc-rev-spacer {
+  flex-grow: 1;
+  min-height: var(--space-3);
+}
+
+.doc-revisions .field-error {
+  margin: 0 0 var(--space-2);
+}
+
+.doc-rev-open {
+  width: 100%;
+  justify-content: center;
 }

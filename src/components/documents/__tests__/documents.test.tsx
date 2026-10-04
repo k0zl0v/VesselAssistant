@@ -90,9 +90,12 @@ describe('Documents screen pieces', () => {
       const cells = within(row).getAllByRole('cell').map((c) => c.textContent);
       expect(cells[0]).toBe(xlsx.getCell(1).value);
       expect(cells[1]).toBe(xlsx.getCell(2).value);
-      for (const col of [3, 4, 5, 6, 7, 8, 9]) {
+      // The preview shows the mockup's eight columns: XLSX 1–7, then EMPTY 98% (XLSX column 9).
+      for (const col of [3, 4, 5, 6, 7]) {
         expect(cells[col - 1]).toBe(formatTons(xlsx.getCell(col).value as number));
       }
+      expect(cells).toHaveLength(8);
+      expect(cells[7]).toBe(formatTons(xlsx.getCell(9).value as number));
     });
     expect(within(rows[1]!).getAllByRole('cell')[1]!.textContent).toBe('WHEAT 12.5%');
 
@@ -100,7 +103,7 @@ describe('Documents screen pieces', () => {
     const xlsxTotal = sheet.getRow(12);
     expect(xlsxTotal.getCell(1).value).toBe('TOTAL');
     expect(total.slice(1, 4)).toEqual([5, 6, 7].map((c) => formatTons(xlsxTotal.getCell(c).value as number)));
-    expect(total[5]).toBe(formatTons(xlsxTotal.getCell(9).value as number));
+    expect(total[4]).toBe(formatTons(xlsxTotal.getCell(9).value as number));
     expect(total[1]).toBe('25\u202F684.955');
     expect(screen.getByTestId('documents-preview-heading').textContent).toBe('NORD STAR — LOAD / STOWAGE PLAN');
   });
