@@ -13,7 +13,7 @@ import { getDb } from '../db';
 import { describeError } from '../i18n/errors';
 import { reportError } from '../errorReporting';
 import { CalculationService, type VoyageCalcResult } from '../services/CalculationService';
-import { ReferenceService, type Cargo, type Hold, type Vessel } from '../services/ReferenceService';
+import { ReferenceService, type Cargo, type Crane, type Hold, type Vessel } from '../services/ReferenceService';
 import { SofService, type SofEvent } from '../services/SofService';
 import {
   listPorts,
@@ -35,6 +35,8 @@ export interface VoyageData {
   sofOverlapCount: number;
   loadingPort: Port | null;
   dischargingPort: Port | null;
+  /** Ocean-going vessel loaded on this voyage (one per voyage), if registered. */
+  ogv: { id: string; name: string; status: string } | null;
   /** When the numbers on screen were last recalculated. */
   calculatedAt: Date;
 }
@@ -50,6 +52,7 @@ interface VoyageContextValue {
   vessels: Vessel[];
   cargoes: Cargo[];
   ports: Port[];
+  cranes: Crane[];
   selectedId: string | null;
   /** Null while nothing is selected or the selected voyage is still loading. */
   data: VoyageData | null;
@@ -65,11 +68,15 @@ const Ctx = createContext<VoyageContextValue | null>(null);
 
 async function loadVoyageData(voyage: Voyage, vessels: Vessel[], ports: Port[]): Promise<VoyageData> {
   const db = await getDb();
-  const [calc, overview, sofEvents, holds] = await Promise.all([
+  const [calc, overview, sofEvents, holds, ogvRows] = await Promise.all([
     new CalculationService(db).calculate(voyage.id),
     loadVoyageOverview(db, voyage.id),
     new SofService(db).list(voyage.id),
     new ReferenceService(db).listHolds(voyage.vessel_id),
+    db.select<{ id: string; name: string; status: string }>(
+      `SELECT id, name, status FROM ogv_vessels WHERE voyage_id = ?`,
+      [voyage.id],
+    ),
   ]);
   return {
     voyage,
@@ -81,6 +88,7 @@ async function loadVoyageData(voyage: Voyage, vessels: Vessel[], ports: Port[]):
     sofOverlapCount: findOverlapPairs(sofEvents).length,
     loadingPort: ports.find((p) => p.id === voyage.loading_port_id) ?? null,
     dischargingPort: ports.find((p) => p.id === voyage.discharging_port_id) ?? null,
+    ogv: ogvRows[0] ?? null,
     calculatedAt: new Date(),
   };
 }
@@ -91,6 +99,7 @@ export function VoyageProvider({ children }: { children: ReactNode }) {
   const [vessels, setVessels] = useState<Vessel[]>([]);
   const [cargoes, setCargoes] = useState<Cargo[]>([]);
   const [ports, setPorts] = useState<Port[]>([]);
+  const [cranes, setCranes] = useState<Crane[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [data, setData] = useState<VoyageData | null>(null);
   // Guards against a slow load of voyage A overwriting a later selection of B.
@@ -121,11 +130,12 @@ export function VoyageProvider({ children }: { children: ReactNode }) {
       try {
         const db = await getDb();
         const ref = new ReferenceService(db);
-        const [list, vesselList, cargoList, portList] = await Promise.all([
+        const [list, vesselList, cargoList, portList, craneList] = await Promise.all([
           db.select<Voyage>(`SELECT * FROM voyages ORDER BY created_at DESC`),
           ref.listVessels(),
           ref.listCargoes(),
           listPorts(db),
+          ref.listCranes(),
         ]);
         const wanted = voyage_id === undefined ? latest.current.selectedId : voyage_id;
         const target = list.find((v) => v.id === wanted) ?? list[0] ?? null;
@@ -133,6 +143,7 @@ export function VoyageProvider({ children }: { children: ReactNode }) {
         setVessels(vesselList);
         setCargoes(cargoList);
         setPorts(portList);
+        setCranes(craneList);
         setSelectedId(target?.id ?? null);
         await loadSelected(target, vesselList, portList);
         setState({ kind: 'ready' });
@@ -179,6 +190,7 @@ export function VoyageProvider({ children }: { children: ReactNode }) {
       vessels,
       cargoes,
       ports,
+      cranes,
       selectedId,
       data,
       isOpen: data?.voyage.status === 'open',
@@ -186,7 +198,7 @@ export function VoyageProvider({ children }: { children: ReactNode }) {
       refresh,
       reload,
     }),
-    [state, voyages, vessels, cargoes, ports, selectedId, data, select, refresh, reload],
+    [state, voyages, vessels, cargoes, ports, cranes, selectedId, data, select, refresh, reload],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

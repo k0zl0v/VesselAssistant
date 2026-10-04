@@ -36,6 +36,30 @@ pub fn migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/0005_protein_percent_guard.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "crane_model",
+            sql: include_str!("../migrations/0006_crane_model.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 7,
+            description: "ogv_vessel",
+            sql: include_str!("../migrations/0007_ogv_vessel.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 8,
+            description: "document_revisions",
+            sql: include_str!("../migrations/0008_document_revisions.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 9,
+            description: "sof_time_sheet",
+            sql: include_str!("../migrations/0009_sof_time_sheet.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

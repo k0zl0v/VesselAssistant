@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import { AuditPage } from './pages/AuditPage';
 import { CargoLayersPage } from './pages/CargoLayersPage';
+import { CraneCorrectionPage } from './pages/CraneCorrectionPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { LoadPlanPage } from './pages/LoadPlanPage';
 import { OgvPage } from './pages/OgvPage';
@@ -28,6 +29,7 @@ export default function App() {
             {screen === 'load-plan' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <LoadPlanPage />}</VoyageRequired>}
             {screen === 'layers' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <CargoLayersPage />}</VoyageRequired>}
             {screen === 'ogv' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <OgvPage />}</VoyageRequired>}
+            {screen === 'cranes' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <CraneCorrectionPage />}</VoyageRequired>}
             {screen === 'sof' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <SofPage />}</VoyageRequired>}
             {screen === 'documents' && <VoyageRequired onNewVoyage={openNewVoyage}>{() => <DocumentsPage />}</VoyageRequired>}
             {screen === 'reference' && <ReferencePage />}

@@ -6,7 +6,9 @@ export const en = {
 
   'nav.load_plan': 'Load Plan',
   'nav.layers': 'Cargo layers',
-  'nav.ogv': 'OGV · Operations',
+  'nav.ogv': 'OGV',
+  'nav.ogv_named': 'OGV · {name}',
+  'nav.cranes': 'Crane correction',
   'nav.sof': 'SOF',
   'nav.documents': 'Documents',
   'nav.reference': 'Reference data',
@@ -16,7 +18,7 @@ export const en = {
 
   'shell.brand': 'VESSEL ASSISTANT',
   'shell.active_voyage': 'ACTIVE VOYAGE',
-  'shell.voyage_meta': '{vessel} · holds: {holds}',
+  'shell.voyage_meta': '{vessel} · holds: {holds} · cranes: {cranes}',
   'shell.no_voyages': 'No voyages yet',
   'shell.nav_label': 'Sections',
   'shell.section.voyage': 'VOYAGE',
@@ -55,7 +57,9 @@ export const ru: { [K in keyof typeof en]: string } = {
 
   'nav.load_plan': 'Load Plan',
   'nav.layers': 'Слои груза',
-  'nav.ogv': 'OGV · Операции',
+  'nav.ogv': 'OGV',
+  'nav.ogv_named': 'OGV · {name}',
+  'nav.cranes': 'Крановая поправка',
   'nav.sof': 'SOF',
   'nav.documents': 'Документы',
   'nav.reference': 'Справочники',
@@ -65,7 +69,7 @@ export const ru: { [K in keyof typeof en]: string } = {
 
   'shell.brand': 'VESSEL ASSISTANT',
   'shell.active_voyage': 'АКТИВНЫЙ РЕЙС',
-  'shell.voyage_meta': '{vessel} · трюмов: {holds}',
+  'shell.voyage_meta': '{vessel} · трюмов: {holds} · кранов: {cranes}',
   'shell.no_voyages': 'Рейсов пока нет',
   'shell.nav_label': 'Разделы',
   'shell.section.voyage': 'РЕЙС',

@@ -3,7 +3,7 @@ mod common;
 use common::{exec, fresh_db, select_json};
 use serde_json::json;
 
-const AUDITED_TABLES: [&str; 8] = [
+const AUDITED_TABLES: [&str; 17] = [
     "voyages",
     "cargo_lots",
     "cargo_layers",
@@ -12,6 +12,16 @@ const AUDITED_TABLES: [&str; 8] = [
     "sof_events",
     "crane_coefficients",
     "hold_cargo_parameters",
+    // 0006–0009
+    "crane_measurements",
+    "crane_working_coefficients",
+    "crane_shift_records",
+    "ogv_vessels",
+    "ogv_holds",
+    "ogv_receipts",
+    "ogv_sequence_steps",
+    "document_revisions",
+    "sof_time_sheets",
 ];
 
 const GUARD_TRIGGERS: [&str; 8] = [
@@ -53,11 +63,11 @@ fn every_migration_file_is_registered_in_order() {
 }
 
 #[tokio::test]
-async fn migrator_records_versions_one_to_five() {
+async fn migrator_records_versions_one_to_nine() {
     let mut conn = fresh_db().await;
     let rows = select_json(&mut conn, "SELECT version FROM _sqlx_migrations ORDER BY version").await;
     let versions: Vec<i64> = rows.iter().map(|r| r["version"].as_i64().unwrap()).collect();
-    assert_eq!(versions, [1, 2, 3, 4, 5]);
+    assert_eq!(versions, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
 #[tokio::test]
@@ -71,7 +81,7 @@ async fn all_named_triggers_exist() {
         .iter()
         .flat_map(|t| ["insert", "update", "delete"].map(|a| format!("audit_{t}_{a}")))
         .collect();
-    assert_eq!(audit.len(), 24);
+    assert_eq!(audit.len(), 51);
     let expected: Vec<String> = audit
         .into_iter()
         .chain(GUARD_TRIGGERS.iter().map(|s| s.to_string()))

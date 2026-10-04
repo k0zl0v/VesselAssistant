@@ -99,6 +99,15 @@ const PATHS = {
       <path d="M7 10l5-5 5 5" />
     </>
   ),
+  crane: (
+    <>
+      <path d="M4 21V4h10l5 4" />
+      <path d="M4 8h15" />
+      <path d="M19 8v5" />
+      <path d="M17 13h4v3h-4z" />
+      <path d="M2 21h8" />
+    </>
+  ),
   calendar: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="2" />

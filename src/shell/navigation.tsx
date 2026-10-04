@@ -7,6 +7,7 @@ export type Screen =
   | 'load-plan'
   | 'layers'
   | 'ogv'
+  | 'cranes'
   | 'sof'
   | 'documents'
   | 'reference'
@@ -25,6 +26,7 @@ export const VOYAGE_SCREENS: readonly ScreenDef[] = [
   { key: 'load-plan', label: 'nav.load_plan', icon: 'table', voyageScoped: true },
   { key: 'layers', label: 'nav.layers', icon: 'layers', voyageScoped: true },
   { key: 'ogv', label: 'nav.ogv', icon: 'discharge', voyageScoped: true },
+  { key: 'cranes', label: 'nav.cranes', icon: 'crane', voyageScoped: true },
   { key: 'sof', label: 'nav.sof', icon: 'clock', voyageScoped: true },
   { key: 'documents', label: 'nav.documents', icon: 'document', voyageScoped: true },
 ];

@@ -3,6 +3,7 @@
  * so screens can be edited in parallel without touching the shared files.
  */
 import * as addLot from './addLot';
+import * as cranes from './cranes';
 import * as discharge from './discharge';
 import * as documents from './documents';
 import * as layers from './layers';
@@ -22,6 +23,7 @@ export const partsEn = {
   ...documents.en,
   ...reference.en,
   ...tools.en,
+  ...cranes.en,
 } as const;
 
 export const partsRu: { [K in keyof typeof partsEn]: string } = {
@@ -34,4 +36,5 @@ export const partsRu: { [K in keyof typeof partsEn]: string } = {
   ...documents.ru,
   ...reference.ru,
   ...tools.ru,
+  ...cranes.ru,
 };

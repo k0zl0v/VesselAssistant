@@ -12,7 +12,7 @@ interface Props {
 export function Rail({ onNewVoyage }: Props) {
   const t = useT();
   const { screen, navigate } = useNavigation();
-  const { voyages, vessels, selectedId, select, data } = useVoyage();
+  const { voyages, vessels, cranes, selectedId, select, data } = useVoyage();
   const selected = voyages.find((v) => v.id === selectedId) ?? null;
   const vessel = selected ? vessels.find((v) => v.id === selected.vessel_id) ?? null : null;
 
@@ -30,7 +30,9 @@ export function Rail({ onNewVoyage }: Props) {
         data-testid={`nav-${def.key}`}
       >
         <Icon name={def.icon} />
-        <span className="rail-item-label">{t(def.label)}</span>
+        <span className="rail-item-label">
+          {def.key === 'ogv' && data?.ogv ? t('nav.ogv_named', { name: data.ogv.name }) : t(def.label)}
+        </span>
         {badge !== null && (
           <span className="rail-badge" aria-label={t('nav.sof_warnings', { count: badge })}>
             {badge}
@@ -58,7 +60,9 @@ export function Rail({ onNewVoyage }: Props) {
             <span className="rail-voyage-text">
               <span className="rail-voyage-no">{selected?.voyage_no ?? '—'}</span>
               <span className="rail-voyage-meta">
-                {vessel ? t('shell.voyage_meta', { vessel: vessel.name, holds: data?.holds.length ?? 0 }) : ''}
+                {vessel
+                  ? t('shell.voyage_meta', { vessel: vessel.name, holds: data?.holds.length ?? 0, cranes: cranes.length })
+                  : ''}
                 {selected?.status === 'closed' ? ` · ${t('voyage.status.closed')}` : ''}
               </span>
             </span>

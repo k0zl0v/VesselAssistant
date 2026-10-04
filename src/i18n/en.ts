@@ -34,6 +34,9 @@ export const en = {
   'error.protein.invalid': 'Protein {value}% is not allowed. Allowed: 10.5, 11.5, 12.5, 13.5.',
   'error.backup.failed': 'Automatic backup failed: {message}',
   'error.batch.stale': 'The data changed while saving. Reload and try again.',
+  'error.crane.no_coefficient': 'No working crane coefficient for this mode on {date}. Add one in Crane correction.',
+  'error.ogv.not_found': 'This voyage has no ocean-going vessel yet.',
+  'error.ogv.hold_not_found': 'Hold of the ocean-going vessel not found.',
   'error.unexpected': 'Unexpected error. Details have been written to the log.',
 
   // Voyage page
