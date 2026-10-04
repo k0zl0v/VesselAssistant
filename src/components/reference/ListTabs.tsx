@@ -2,10 +2,12 @@ import { useState, type ReactNode } from 'react';
 import { formatPercent } from '../../calc/round';
 import { getDb } from '../../db';
 import { useT } from '../../i18n';
-import type { CraneCoefficient } from '../../services/CraneCorrectionService';
+import { CRANE_MODES, workingOn, type CraneWorkingCoefficient } from '../../services/CraneShiftService';
 import { PortService, type Port } from '../../services/PortService';
 import { ReferenceService, type Cargo, type Crane } from '../../services/ReferenceService';
 import { PROTEIN_ALLOWED } from '../../services/types';
+import { useNavigation } from '../../shell/navigation';
+import { formatK, MODE_META, today } from '../cranes/modes';
 import { cargoColor } from '../ui/cargo';
 import type { IconName } from '../ui/Icon';
 import { EmptyState } from '../ui/states';
@@ -144,15 +146,17 @@ function NewCargoDialog({ onClose, onCreated }: { onClose: () => void; onCreated
 
 export function CranesTab({
   cranes,
-  coefficients,
+  working,
   onChanged,
 }: {
   cranes: Crane[];
-  coefficients: CraneCoefficient[];
+  working: CraneWorkingCoefficient[];
   onChanged: () => Promise<void>;
 }) {
   const t = useT();
+  const { navigate } = useNavigation();
   const [open, setOpen] = useState(false);
+  const date = today();
   return (
     <>
       <ListCard
@@ -160,7 +164,7 @@ export function CranesTab({
         addLabel={t('refs.cranes.add')}
         onAdd={() => setOpen(true)}
         isEmpty={cranes.length === 0}
-        empty={{ icon: 'import', title: t('refs.cranes.empty.title'), text: t('refs.cranes.empty.text') }}
+        empty={{ icon: 'crane', title: t('refs.cranes.empty.title'), text: t('refs.cranes.empty.text') }}
         testId="refs-cranes"
       >
         <table className="data-table">
@@ -168,7 +172,11 @@ export function CranesTab({
             <tr>
               <th>{t('refs.cranes.col.name')}</th>
               <th>{t('refs.cranes.col.notes')}</th>
-              <th className="num refs-col-wide">{t('refs.cranes.col.coefs')}</th>
+              {CRANE_MODES.map((m) => (
+                <th key={m} className="num refs-col-mode">
+                  {t(MODE_META[m].label)}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -176,11 +184,24 @@ export function CranesTab({
               <tr key={c.id}>
                 <td>{c.name}</td>
                 <td className="muted">{c.notes ?? '—'}</td>
-                <td className="num">{coefficients.filter((k) => k.crane_id === c.id).length}</td>
+                {CRANE_MODES.map((m) => {
+                  const w = workingOn(working, c.id, m, date);
+                  return (
+                    <td key={m} className="num" data-testid={`refs-crane-k-${m}`}>
+                      {w ? formatK(w.coefficient) : <span className="zero">—</span>}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
         </table>
+        <div className="refs-cranes-foot">
+          <span className="muted">{t('refs.cranes.working_hint')}</span>
+          <button type="button" className="btn btn-sm" onClick={() => navigate('cranes')} data-testid="refs-cranes-open">
+            {t('refs.cranes.open_correction')}
+          </button>
+        </div>
       </ListCard>
       {open && <NewCraneDialog onClose={() => setOpen(false)} onCreated={onChanged} />}
     </>

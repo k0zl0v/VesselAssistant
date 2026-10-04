@@ -1,6 +1,14 @@
 import ExcelJS from 'exceljs';
 import { AuditLogService } from './AuditLogService';
 import { CalculationService } from './CalculationService';
+import {
+  averageOfIncluded,
+  CRANE_MODES,
+  CraneShiftService,
+  summarizeShift,
+  type CraneMode,
+  type CraneShiftRecord,
+} from './CraneShiftService';
 import { AppError } from './errors';
 import { SofService } from './SofService';
 import type { Db } from './db';
@@ -74,7 +82,7 @@ export class DocumentEngine {
     await this.buildOgvSheet(wb, voyage_id);
 
     // ── Sheet 4: CRANE CORR. ─────────────────────────────────────────
-    await this.buildCraneCorrSheet(wb);
+    await this.buildCraneCorrSheet(wb, voyage_id);
 
     assertNoFormulas(wb);
     const buffer = await wb.xlsx.writeBuffer();
@@ -426,73 +434,122 @@ export class DocumentEngine {
     }
   }
 
-  private async buildCraneCorrSheet(wb: ExcelJS.Workbook): Promise<void> {
+  /**
+   * The crane sheet as the operators keep it: shift lines per date / mode / crane (scale,
+   * coefficient, corrected, delta) with a total per shift, then the working coefficients
+   * with the average over included measurements beside them. Values only.
+   */
+  private async buildCraneCorrSheet(wb: ExcelJS.Workbook, voyage_id: string): Promise<void> {
     const sheet = wb.addWorksheet(safeSheetName('CRANE CORR.'));
     sheet.columns = [
-      { width: 16 }, // Crane
-      { width: 14 }, // Operation Type
-      { width: 12 }, // Side
-      { width: 18 }, // Vessel
-      { width: 12 }, // Valid From
-      { width: 12 }, // Valid To
-      { width: 14 }, // Coefficient
+      { width: 12 }, // Date / Crane
+      { width: 26 }, // Mode
+      { width: 14 }, // Crane / Coefficient
+      { width: 14 }, // Scale Tons / Valid From
+      { width: 13 }, // Coefficient / Average
+      { width: 16 }, // Corrected Tons / Measurements
+      { width: 14 }, // Delta Tons
+      { width: 26 }, // Operation
+      { width: 22 }, // Note
     ];
 
-    const headers = [
-      'Crane',
-      'Operation Type',
-      'Side',
-      'Vessel',
-      'Valid From',
-      'Valid To',
-      'Coefficient',
-    ];
-    headers.forEach((label, i) => {
-      const cell = sheet.getCell(1, i + 1);
-      cell.value = label;
-      cell.font = { bold: true };
-      cell.fill = HEADER_FILL;
-      cell.alignment = { horizontal: i === 6 ? 'right' : 'left' };
-      cell.border = { bottom: { style: 'thin' } };
-    });
+    const header = (rowNum: number, labels: readonly string[], right: readonly number[]): void => {
+      labels.forEach((label, i) => {
+        const cell = sheet.getCell(rowNum, i + 1);
+        cell.value = label;
+        cell.font = { bold: true };
+        cell.fill = HEADER_FILL;
+        cell.alignment = { horizontal: right.includes(i) ? 'right' : 'left' };
+        cell.border = { bottom: { style: 'thin' } };
+      });
+    };
+    const num = (row: ExcelJS.Row, col: number, value: number): void => {
+      const cell = row.getCell(col);
+      cell.value = value;
+      cell.numFmt = NUM_FMT;
+      cell.alignment = { horizontal: 'right' };
+    };
 
-    const rows = await this.db.select<{
-      crane_name: string;
-      operation_type: string;
-      side: string | null;
-      vessel_name: string | null;
-      valid_from: string;
-      valid_to: string | null;
-      coefficient: number;
-    }>(
-      `SELECT cr.name        AS crane_name,
-              cc.operation_type AS operation_type,
-              cc.side        AS side,
-              cc.vessel_name AS vessel_name,
-              cc.valid_from  AS valid_from,
-              cc.valid_to    AS valid_to,
-              cc.coefficient AS coefficient
-         FROM crane_coefficients cc
-         JOIN cranes cr ON cr.id = cc.crane_id
-        ORDER BY cr.name, cc.operation_type, cc.valid_from DESC`,
+    header(1, ['Date', 'Mode', 'Crane', 'Scale Tons', 'Coefficient', 'Corrected Tons', 'Delta Tons', 'Operation', 'Note'], [3, 4, 5, 6]);
+
+    const shifts = new CraneShiftService(this.db);
+    const records = await shifts.listShiftRecords(voyage_id);
+    const cranes = new Map(
+      (await this.db.select<{ id: string; name: string }>(`SELECT id, name FROM cranes`)).map((c) => [c.id, c.name]),
     );
+    const operations = new Map((await shifts.listDischargeOperations(voyage_id)).map((o) => [o.id, o]));
 
     let rowNum = 2;
-    for (const r of rows) {
-      const row = sheet.getRow(rowNum);
-      row.getCell(1).value = r.crane_name;
-      row.getCell(2).value = r.operation_type;
-      row.getCell(3).value = r.side ?? '';
-      row.getCell(4).value = r.vessel_name ?? '';
-      row.getCell(5).value = r.valid_from;
-      row.getCell(6).value = r.valid_to ?? '';
-      row.getCell(7).value = r.coefficient;
-      row.getCell(7).numFmt = NUM_FMT;
-      row.getCell(7).alignment = { horizontal: 'right' };
-      rowNum++;
+    const writeTotal = (date: string, lines: CraneShiftRecord[]): void => {
+      const totals = summarizeShift(lines);
+      const row = sheet.getRow(rowNum++);
+      row.getCell(1).value = date;
+      row.getCell(2).value = 'TOTAL';
+      num(row, 4, totals.scale_tons);
+      num(row, 6, totals.corrected_tons);
+      num(row, 7, totals.delta_tons);
+      row.eachCell((c) => {
+        c.font = { bold: true };
+        c.fill = TOTAL_FILL;
+      });
+    };
+
+    let shiftLines: CraneShiftRecord[] = [];
+    for (const r of records) {
+      if (shiftLines.length > 0 && shiftLines[0]!.shift_date !== r.shift_date) {
+        writeTotal(shiftLines[0]!.shift_date, shiftLines);
+        shiftLines = [];
+      }
+      shiftLines.push(r);
+      const row = sheet.getRow(rowNum++);
+      row.getCell(1).value = r.shift_date;
+      row.getCell(2).value = CRANE_MODE_LABEL[r.mode];
+      row.getCell(3).value = cranes.get(r.crane_id) ?? '';
+      num(row, 4, r.scale_tons);
+      num(row, 5, r.coefficient);
+      num(row, 6, r.corrected_tons);
+      num(row, 7, r.corrected_tons - r.scale_tons);
+      const op = r.operation_id ? operations.get(r.operation_id) : undefined;
+      row.getCell(8).value = op
+        ? [op.event_date, op.time_from, op.hold_no === null ? null : `Hold ${op.hold_no}`].filter(Boolean).join(' · ')
+        : '';
+      row.getCell(9).value = r.note ?? '';
+    }
+    if (shiftLines.length > 0) writeTotal(shiftLines[0]!.shift_date, shiftLines);
+
+    // Working coefficients: one row per (crane, mode) value ever accepted, newest first.
+    rowNum += 1;
+    header(rowNum++, ['Crane', 'Mode', 'Coefficient', 'Valid From', 'Average', 'Measurements'], [2, 4, 5]);
+    const working = await shifts.listWorkingCoefficients();
+    const measurements = await shifts.listMeasurements();
+    const sortedWorking = [...working].sort(
+      (a, b) =>
+        (cranes.get(a.crane_id) ?? '').localeCompare(cranes.get(b.crane_id) ?? '') ||
+        CRANE_MODES.indexOf(a.mode) - CRANE_MODES.indexOf(b.mode) ||
+        b.valid_from.localeCompare(a.valid_from),
+    );
+    for (const w of sortedWorking) {
+      const own = measurements.filter((m) => m.crane_id === w.crane_id && m.mode === w.mode);
+      const avg = averageOfIncluded(own);
+      const row = sheet.getRow(rowNum++);
+      row.getCell(1).value = cranes.get(w.crane_id) ?? '';
+      row.getCell(2).value = CRANE_MODE_LABEL[w.mode];
+      num(row, 3, w.coefficient);
+      row.getCell(4).value = w.valid_from;
+      if (avg !== null) num(row, 5, avg);
+      row.getCell(6).value = `${own.filter((m) => !m.excluded).length} / ${own.length}`;
+      row.getCell(6).alignment = { horizontal: 'right' };
     }
   }
 }
+
+/** Operator terms of the crane modes (ui-kit § «Краны видны на рабочих экранах»). */
+const CRANE_MODE_LABEL: Record<CraneMode, string> = {
+  from_own: 'From own holds',
+  direct: 'Direct transfer',
+  into_own_port: 'Into own holds · port',
+  into_own_starboard: 'Into own holds · starboard',
+};
 
 /** Last-line defence: exports carry values only, never formulas (TZ §6 FR-22). */
 function assertNoFormulas(wb: ExcelJS.Workbook): void {

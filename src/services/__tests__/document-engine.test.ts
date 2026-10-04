@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CalculationService } from '../CalculationService';
 import { CargoLotService } from '../CargoLotService';
-import { CraneCorrectionService } from '../CraneCorrectionService';
+import { CraneShiftService } from '../CraneShiftService';
 import { DocumentEngine } from '../DocumentEngine';
 import { OgvService } from '../OgvService';
 import { SofService } from '../SofService';
@@ -262,53 +262,75 @@ describe('DocumentEngine — Load Plan XLSX export', () => {
     expect(sheet.getRow(4).getCell(1).value).toBeFalsy();
   });
 
-  it('CRANE CORR. sheet exists with header even when no coefficients seeded', async () => {
+  it('CRANE CORR. sheet keeps both header rows when nothing is recorded', async () => {
     const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
     const wb = await loadXlsx(bytes);
     const sheet = wb.getWorksheet('CRANE CORR.')!;
 
-    expect(sheet.getRow(1).getCell(1).value).toBe('Crane');
-    expect(sheet.getRow(1).getCell(2).value).toBe('Operation Type');
-    expect(sheet.getRow(1).getCell(3).value).toBe('Side');
-    expect(sheet.getRow(1).getCell(4).value).toBe('Vessel');
-    expect(sheet.getRow(1).getCell(5).value).toBe('Valid From');
-    expect(sheet.getRow(1).getCell(6).value).toBe('Valid To');
-    expect(sheet.getRow(1).getCell(7).value).toBe('Coefficient');
+    const labels = (n: number): unknown[] => Array.from({ length: 9 }, (_, i) => sheet.getRow(n).getCell(i + 1).value ?? null);
+    expect(labels(1)).toEqual([
+      'Date', 'Mode', 'Crane', 'Scale Tons', 'Coefficient', 'Corrected Tons', 'Delta Tons', 'Operation', 'Note',
+    ]);
     expect(sheet.getRow(1).getCell(1).font?.bold).toBe(true);
-
-    // No data rows.
     expect(sheet.getRow(2).getCell(1).value).toBeFalsy();
+    expect(labels(3).slice(0, 6)).toEqual(['Crane', 'Mode', 'Coefficient', 'Valid From', 'Average', 'Measurements']);
   });
 
-  it('CRANE CORR. sheet renders seeded coefficients with 0.000 format', async () => {
-    const craneId = crypto.randomUUID();
-    await db.execute(`INSERT INTO cranes (id, name) VALUES (?, ?)`, [
-      craneId,
-      'Liebherr-1',
-    ]);
-    await new CraneCorrectionService(db).create({
-      crane_id: craneId,
-      operation_type: 'discharging',
-      side: 'PORT',
-      vessel_name: 'KAVKAZ IV',
-      valid_from: '2026-01-01',
-      valid_to: '2026-12-31',
-      coefficient: 1.025,
+  it('CRANE CORR. sheet: shift lines with scale ÷ k = corrected, a shift total, then working coefficients', async () => {
+    const c1 = crypto.randomUUID();
+    const c2 = crypto.randomUUID();
+    await db.execute(`INSERT INTO cranes (id, name) VALUES (?, 'CRANE # 1'), (?, 'CRANE # 2')`, [c1, c2]);
+    const cranes = new CraneShiftService(db);
+    await cranes.setWorkingCoefficient({ crane_id: c1, mode: 'direct', coefficient: 1.13, valid_from: '2025-11-09' });
+    await cranes.setWorkingCoefficient({ crane_id: c2, mode: 'from_own', coefficient: 0.96, valid_from: '2025-11-17' });
+    await cranes.addMeasurement({ crane_id: c1, mode: 'direct', vessel_name: 'LYDIA V', measured_on: '2025-08-28', coefficient: 1.13 });
+    await cranes.addMeasurement({ crane_id: c1, mode: 'direct', vessel_name: 'GAMMA', measured_on: '2025-02-14', coefficient: 1.07 });
+    const outlier = await cranes.addMeasurement({ crane_id: c1, mode: 'direct', measured_on: '2025-10-19', coefficient: 1.39 });
+    await cranes.setMeasurementExcluded(outlier.id, true);
+    const [op] = await cranes.listDischargeOperations(voyageId);
+    await cranes.recordShift({
+      voyage_id: voyageId,
+      shift_date: '2026-05-01',
+      entries: [
+        { crane_id: c2, mode: 'from_own', scale_tons: 824, operation_id: op!.id },
+        { crane_id: c1, mode: 'direct', scale_tons: 2154, note: 'ALISA V' },
+      ],
     });
 
-    const bytes = await new DocumentEngine(db).generateLoadPlan(voyageId);
-    const wb = await loadXlsx(bytes);
+    const wb = await loadXlsx(await new DocumentEngine(db).generateLoadPlan(voyageId));
     const sheet = wb.getWorksheet('CRANE CORR.')!;
 
-    const r2 = sheet.getRow(2);
-    expect(r2.getCell(1).value).toBe('Liebherr-1');
-    expect(r2.getCell(2).value).toBe('discharging');
-    expect(r2.getCell(3).value).toBe('PORT');
-    expect(r2.getCell(4).value).toBe('KAVKAZ IV');
-    expect(r2.getCell(5).value).toBe('2026-01-01');
-    expect(r2.getCell(6).value).toBe('2026-12-31');
-    expect(r2.getCell(7).value).toBeCloseTo(1.025, 3);
-    expect(r2.getCell(7).numFmt).toBe('0.000');
+    const fromOwn = sheet.getRow(2);
+    expect(fromOwn.getCell(1).value).toBe('2026-05-01');
+    expect(fromOwn.getCell(2).value).toBe('From own holds');
+    expect(fromOwn.getCell(3).value).toBe('CRANE # 2');
+    expect(fromOwn.getCell(5).value).toBe(0.96);
+    expect(fromOwn.getCell(6).value).toBeCloseTo(858.333, 3);
+    expect(String(fromOwn.getCell(8).value)).toMatch(/^2026-05-01 · Hold \d$/);
+
+    const direct = sheet.getRow(3);
+    expect(direct.getCell(2).value).toBe('Direct transfer');
+    expect(direct.getCell(4).value).toBe(2154);
+    expect(direct.getCell(6).value).toBeCloseTo(1906.195, 3);
+    expect(direct.getCell(7).value).toBeCloseTo(-247.805, 3);
+    expect(direct.getCell(9).value).toBe('ALISA V');
+    for (const col of [4, 5, 6, 7]) expect(direct.getCell(col).numFmt).toBe('0.000');
+
+    const total = sheet.getRow(4);
+    expect(total.getCell(2).value).toBe('TOTAL');
+    expect(total.getCell(4).value).toBe(2978);
+    expect(total.getCell(6).value).toBeCloseTo(2764.528, 3);
+    expect(total.getCell(2).font?.bold).toBe(true);
+
+    expect(sheet.getRow(6).getCell(1).value).toBe('Crane');
+    const w1 = sheet.getRow(7);
+    expect([w1.getCell(1).value, w1.getCell(2).value, w1.getCell(3).value, w1.getCell(4).value]).toEqual([
+      'CRANE # 1', 'Direct transfer', 1.13, '2025-11-09',
+    ]);
+    expect(w1.getCell(5).value).toBeCloseTo(1.1, 9);
+    expect(w1.getCell(6).value).toBe('2 / 3');
+    expect(sheet.getRow(8).getCell(1).value).toBe('CRANE # 2');
+    expect(sheet.getRow(8).getCell(5).value).toBeFalsy();
   });
 
   it('throws on unknown voyage id', async () => {

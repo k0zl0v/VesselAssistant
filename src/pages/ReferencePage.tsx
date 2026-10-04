@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CraneCorrectionPanel } from '../components/CraneCorrectionPanel';
 import { CargoesTab, CranesTab, PortsTab } from '../components/reference/ListTabs';
 import { useReferenceData } from '../components/reference/useReferenceData';
 import { VesselsTab } from '../components/reference/VesselsTab';
@@ -70,20 +69,11 @@ export function ReferencePage() {
             holdsByVessel={load.data.holdsByVessel}
             voyage={voyage}
             onChanged={changed}
-          >
-            <CraneCorrectionPanel
-              cranes={load.data.cranes}
-              coefficients={load.data.coefficients}
-              vessels={load.data.vessels}
-              defaultVesselName={voyage?.vessel?.name ?? null}
-              onChanged={refresh}
-              onOpenCranes={() => setTab('cranes')}
-            />
-          </VesselsTab>
+          />
         )}
         {load.kind === 'ready' && tab === 'cargoes' && <CargoesTab cargoes={load.data.cargoes} onChanged={changed} />}
         {load.kind === 'ready' && tab === 'cranes' && (
-          <CranesTab cranes={load.data.cranes} coefficients={load.data.coefficients} onChanged={refresh} />
+          <CranesTab cranes={load.data.cranes} working={load.data.working} onChanged={changed} />
         )}
         {load.kind === 'ready' && tab === 'ports' && <PortsTab ports={load.data.ports} onChanged={changed} />}
       </div>

@@ -1,0 +1,634 @@
+/* Crane correction screen (docs/ui/artboards/CraneCorrection.dc.html). */
+
+:root {
+  /* ---- Экран: cranes ---- */
+  --cranes-modes-width: 744px;   /* left column with the four mode cards */
+  --cranes-name-width: 74px;     /* crane name in a mode row */
+  --cranes-scale-width: 104px;   /* scale weight field */
+  --cranes-k-width: 92px;        /* coefficient button */
+  --cranes-corr-width: 118px;    /* corrected weight */
+  --cranes-delta-width: 92px;    /* per-crane delta */
+  --cranes-badge: 22px;          /* mode icon badge */
+  --cranes-tag-width: 58px;      /* «выброс» tag in the history */
+  --cranes-op-ink: #9aa8b3;      /* ÷ and = between the numbers */
+  --cranes-row-line: #f4f6f8;    /* row divider inside a card */
+  --cranes-row-active: #f5fafa;  /* row of the crane whose history is open */
+  --cranes-shift-scale-width: 120px;
+  --cranes-shift-date-width: 180px;
+  --cranes-field: 32px;          /* scale field and coefficient button height */
+  --text-accepted: 17px;         /* accepted working coefficient */
+}
+
+.cranes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cranes-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cranes-date-select {
+  width: auto;
+  height: var(--control-md);
+}
+
+/* ---- Summary tiles ---------------------------------------------- */
+
+.cranes-tiles {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.cranes-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--space-3) 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.cranes-tile-label {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.cranes-tile-value {
+  margin-top: var(--space-1);
+  font-size: var(--text-metric);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.cranes-tile-unit {
+  margin-left: var(--space-1);
+  font-size: var(--text-small);
+  font-weight: 400;
+  opacity: 0.66;
+}
+
+.cranes-tile-note {
+  margin-top: 3px;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.cranes-tile-note.is-warn {
+  color: var(--warning-ink);
+}
+
+.cranes-tile.is-key {
+  background: var(--chrome);
+  border-color: var(--chrome);
+}
+
+.cranes-tile.is-key .cranes-tile-label,
+.cranes-tile.is-key .cranes-tile-note {
+  color: var(--chrome-ink-muted);
+}
+
+.cranes-tile.is-key .cranes-tile-value {
+  color: var(--accent-ink);
+}
+
+.cranes-tile.is-danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-soft-line);
+}
+
+.cranes-tile.is-danger .cranes-tile-label,
+.cranes-tile.is-danger .cranes-tile-note {
+  color: var(--danger-ink-soft);
+}
+
+.cranes-tile.is-danger .cranes-tile-value {
+  color: var(--danger);
+}
+
+.cranes-tile.is-positive {
+  background: var(--positive-soft);
+  border-color: var(--positive-soft-line);
+}
+
+.cranes-tile.is-positive .cranes-tile-value {
+  color: var(--positive);
+}
+
+/* ---- Columns ------------------------------------------------------ */
+
+.cranes-columns {
+  display: flex;
+  gap: var(--space-6);
+  align-items: flex-start;
+}
+
+.cranes-modes {
+  width: var(--cranes-modes-width);
+  max-width: 62%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+/* ---- Mode card ---------------------------------------------------- */
+
+.cranes-mode {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.cranes-mode.is-selected {
+  border-color: var(--accent-soft-line);
+}
+
+.cranes-mode-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cranes-mode.is-selected .cranes-mode-head {
+  background: var(--accent-soft);
+}
+
+.cranes-mode-badge {
+  width: var(--cranes-badge);
+  height: var(--cranes-badge);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  color: var(--accent-ink);
+}
+
+.cranes-badge-from_own {
+  background: var(--cargo-fallback);
+}
+
+.cranes-badge-direct {
+  background: var(--accent);
+}
+
+.cranes-badge-into_own_port {
+  background: var(--cargo-sfm);
+}
+
+.cranes-badge-into_own_starboard {
+  background: var(--cargo-wheat);
+}
+
+.cranes-mode-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cranes-mode-sub {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.cranes-mode-scale {
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.cranes-mode-corr {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cranes-delta-chip {
+  font-size: var(--text-caption);
+  border-radius: var(--radius-tag);
+  padding: 2px 7px;
+}
+
+.cranes-delta-chip.neg {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.cranes-delta-chip.pos {
+  color: var(--positive);
+  background: var(--positive-soft);
+}
+
+.cranes-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 15px;
+  border-bottom: 1px solid var(--cranes-row-line);
+  background: var(--surface);
+}
+
+.cranes-row:last-child {
+  border-bottom: 0;
+}
+
+.cranes-row.is-active {
+  background: var(--cranes-row-active);
+}
+
+.cranes-row-name {
+  width: var(--cranes-name-width);
+  flex-shrink: 0;
+  font-size: var(--text-small);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cranes-row.is-active .cranes-row-name {
+  color: var(--accent-press);
+}
+
+.cranes-row-label {
+  flex-shrink: 0;
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-faint);
+}
+
+.cranes-scale {
+  width: var(--cranes-scale-width);
+  flex-shrink: 0;
+  height: var(--cranes-field);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-readonly);
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+
+.cranes-op {
+  flex-shrink: 0;
+  font-size: var(--text-body);
+  color: var(--cranes-op-ink);
+}
+
+.cranes-k {
+  flex-shrink: 0;
+  height: var(--cranes-field);
+  min-width: var(--cranes-k-width);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cranes-k:hover {
+  border-color: var(--accent);
+}
+
+.cranes-k:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cranes-k.is-active {
+  background: var(--warning-soft);
+  border-color: var(--warning-soft-line);
+  color: var(--warning-ink);
+}
+
+.cranes-k.is-missing {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.cranes-corrected {
+  width: var(--cranes-corr-width);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--text-tile);
+  font-weight: 600;
+}
+
+.cranes-row-delta {
+  width: var(--cranes-delta-width);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--text-caption);
+}
+
+.cranes-row-delta.neg {
+  color: var(--danger);
+}
+
+.cranes-row-delta.pos {
+  color: var(--positive);
+}
+
+.cranes-row-link {
+  flex-grow: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cranes-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.cranes-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+/* ---- Coefficient history ------------------------------------------ */
+
+.cranes-history {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.cranes-history-head {
+  padding: 13px var(--space-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cranes-history-head .card-title {
+  margin: 0;
+}
+
+.cranes-history-sub {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.cranes-mode-tag {
+  padding: 2px 7px;
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--accent-soft);
+  color: var(--accent-press);
+  text-transform: uppercase;
+}
+
+.cranes-history-list {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+}
+
+.cranes-history-empty {
+  padding: var(--space-4);
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+}
+
+.cranes-measure {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--cranes-row-line);
+}
+
+.cranes-measure input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.cranes-measure-main {
+  flex-grow: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.cranes-measure-vessel {
+  display: block;
+  font-size: var(--text-small);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cranes-measure-date {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+}
+
+.cranes-measure-k {
+  flex-shrink: 0;
+  font-size: var(--text-card);
+  font-weight: 600;
+}
+
+.cranes-measure-tag {
+  width: var(--cranes-tag-width);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--text-micro);
+  color: var(--danger);
+}
+
+.cranes-measure.is-excluded {
+  background: var(--danger-soft);
+}
+
+.cranes-measure.is-excluded .cranes-measure-vessel {
+  color: var(--danger-ink-soft);
+}
+
+.cranes-measure.is-excluded .cranes-measure-k {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.cranes-history-foot {
+  margin-top: auto;
+  padding: 13px var(--space-4);
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-raised);
+}
+
+.cranes-avg {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.cranes-avg-value {
+  font-size: var(--text-tile);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cranes-accepted {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px 11px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft-line);
+  border-radius: var(--radius-panel);
+  color: var(--warning-ink);
+}
+
+.cranes-accepted-label {
+  flex-grow: 1;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.cranes-accepted-since {
+  margin-left: var(--space-2);
+  font-weight: 400;
+  font-size: var(--text-caption);
+}
+
+.cranes-accepted-value {
+  font-size: var(--text-accepted);
+  font-weight: 600;
+}
+
+.btn.cranes-accepted-edit {
+  color: var(--warning-ink);
+}
+
+.cranes-accepted-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  padding: 9px 11px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-soft-line);
+  border-radius: var(--radius-panel);
+}
+
+.cranes-span-2 {
+  grid-column: span 2;
+}
+
+.cranes-history-earlier,
+.cranes-history-explain {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.cranes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: 11px;
+}
+
+.cranes-accepted-form .cranes-actions {
+  margin-top: 0;
+}
+
+.cranes-grow {
+  flex-grow: 1;
+}
+
+.btn.cranes-add {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- Record shift dialog ------------------------------------------ */
+
+.cranes-shift-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cranes-shift-date {
+  max-width: var(--cranes-shift-date-width);
+}
+
+.cranes-shift-table td {
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.cranes-shift-label {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-small);
+}
+
+.cranes-shift-mode {
+  font-weight: 600;
+}
+
+.input.cranes-shift-scale {
+  width: var(--cranes-shift-scale-width);
+  text-align: right;
+}
+
+.input.cranes-shift-link {
+  width: 100%;
+  min-width: 0;
+}
+
+.cranes-shift-missing {
+  color: var(--danger);
+}

@@ -19,7 +19,7 @@
   gap: var(--space-3);
 }
 
-/* Outline accent «+ Судно / + Трюм / + Коэффициент». */
+/* Outline accent «+ Судно / + Трюм / + Кран». */
 .btn.refs-add {
   border-color: var(--accent);
   color: var(--accent);
@@ -33,10 +33,6 @@
 
 .refs-small {
   font-size: var(--text-small);
-}
-
-.refs-upper {
-  text-transform: uppercase;
 }
 
 .refs-card-head {
@@ -222,127 +218,6 @@
   font-weight: 600;
 }
 
-/* ===== Crane correction ============================================= */
-
-.refs-crane {
-  display: flex;
-  align-items: stretch;
-}
-
-.refs-crane-main {
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.refs-coef-table td {
-  height: 36px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.data-table td.refs-crane-name {
-  font-size: var(--text-small);
-  font-weight: 500;
-}
-
-.data-table td.refs-valid {
-  font-size: var(--text-caption);
-  color: var(--ink-faint);
-}
-
-.data-table tr.refs-picked td {
-  background: var(--accent-soft);
-}
-
-.data-table tr.refs-picked td.refs-k {
-  font-weight: 600;
-}
-
-.refs-calc {
-  width: var(--refs-calc-width);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  padding: 15px var(--space-4);
-  border-left: 1px solid var(--line-soft);
-  background: var(--surface-raised);
-}
-
-.refs-calc-row {
-  display: flex;
-  gap: 9px;
-}
-
-.refs-grow {
-  flex-grow: 1;
-}
-
-.refs-calc-narrow {
-  width: var(--refs-calc-narrow);
-  flex-shrink: 0;
-}
-
-.field-label.refs-micro-label {
-  font-size: var(--text-micro);
-}
-
-.refs-calc .input {
-  font-size: var(--text-small);
-}
-
-.refs-calc .input.num {
-  font-size: var(--text-body);
-}
-
-.input.refs-date {
-  padding: 0 6px;
-}
-
-.refs-calc-result {
-  padding: 12px 14px;
-  border-radius: 6px;
-  background: var(--chrome);
-}
-
-.refs-calc-result .metric-label {
-  letter-spacing: var(--tracking-col);
-  color: var(--chrome-ink-muted);
-}
-
-.refs-calc-value {
-  margin-top: 3px;
-  font-family: var(--font-mono);
-  font-size: var(--text-result);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-ink);
-}
-
-.refs-calc-value .metric-unit {
-  margin-left: 5px;
-  font-size: var(--text-body);
-  color: var(--chrome-ink-muted);
-}
-
-.refs-calc-formula {
-  margin-top: 5px;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  color: var(--chrome-ink-muted);
-}
-
-.refs-calc-note {
-  margin: 0;
-  font-size: var(--text-micro);
-  line-height: 1.55;
-  color: var(--ink-faint);
-}
-
-.refs-calc .state-error p {
-  font-size: var(--text-small);
-}
-
 /* ===== Cargoes / cranes / ports ===================================== */
 
 .refs-list-card .data-table .refs-col-wide {
@@ -351,6 +226,26 @@
 
 .refs-list-card .data-table .refs-col-unit {
   width: 120px;
+}
+
+.refs-list-card .data-table .refs-col-mode {
+  width: 15%;
+  white-space: nowrap;
+}
+
+/* Working coefficients are read here, set on the crane correction screen. */
+.refs-cranes-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--text-small);
+}
+
+.refs-cranes-foot .muted {
+  flex-grow: 1;
+  color: var(--ink-faint);
 }
 
 /* ===== Dialogs ====================================================== */
