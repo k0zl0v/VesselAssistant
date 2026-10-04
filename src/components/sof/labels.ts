@@ -29,9 +29,9 @@ export function shortDate(iso: string): string {
   return formatDate(iso).slice(0, 5);
 }
 
-/** `24.09 Чт` — the day label of the timeline. */
-export function dayLabel(iso: string): string {
-  return `${shortDate(iso)} ${t(`sof.weekday.${weekdayOf(iso)}` as StringKey)}`;
+/** `24.09 Чт` — the day label of the timeline; `24.09.2026 Чт` with `fullDate`. */
+export function dayLabel(iso: string, fullDate = false): string {
+  return `${fullDate ? formatDate(iso) : shortDate(iso)} ${t(`sof.weekday.${weekdayOf(iso)}` as StringKey)}`;
 }
 
 /** `Погода 11:20–13:05` — how the overlap card and the delete prompt name an event. */

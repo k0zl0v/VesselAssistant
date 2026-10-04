@@ -175,3 +175,69 @@ export function summarizeSof(events: readonly SofLikeEvent[]): SofSummary {
     overlapPairs: findOverlapPairs(events),
   };
 }
+
+/** Time milestones of the Standard Time Sheet header that the journal can supply. */
+export type TimeSheetMilestone =
+  | 'arrived'
+  | 'nor_tendered'
+  | 'nor_accepted'
+  | 'berthed'
+  | 'loading_commenced'
+  | 'loading_completed'
+  | 'discharging_commenced'
+  | 'discharging_completed'
+  | 'sailed';
+
+export interface SofMoment {
+  date: string;
+  time: string | null;
+}
+
+type Which = 'first' | 'last';
+type Edge = 'start' | 'end';
+
+const startOf = (e: IntervalEvent): SofMoment => ({ date: e.event_date, time: e.time_from ?? e.time_to });
+const endOf = (e: IntervalEvent): SofMoment => ({ date: e.event_date, time: e.time_to ?? e.time_from });
+
+/**
+ * Header milestones from the journal. Events are ordered here by (date, from),
+ * so the input order does not matter. Rules:
+ * - arrival, NOR tendered/accepted — start of the first event of the category;
+ * - berthed — end of the last «berthed» event on the first day with one (first line … all fast);
+ * - commenced — start of the first «…_commenced» event, else of the first event of the group;
+ * - completed — end of the last «…_completed» event, else of the last event of the group;
+ * - sailed — start of the last «departure» event.
+ */
+export function deriveTimeSheetMilestones(
+  events: readonly SofLikeEvent[],
+): Record<TimeSheetMilestone, SofMoment | null> {
+  const key = (e: IntervalEvent): string =>
+    `${e.event_date} ${String(timeToMinutes(e.time_from ?? e.time_to) ?? 9999).padStart(4, '0')}`;
+  const sorted = [...events].sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
+
+  const find = (test: (e: SofLikeEvent) => boolean, which: Which, edge: Edge): SofMoment | null => {
+    const list = sorted.filter(test);
+    const e = which === 'first' ? list[0] : list[list.length - 1];
+    if (!e) return null;
+    return edge === 'start' ? startOf(e) : endOf(e);
+  };
+  const byCategory = (c: string) => (e: SofLikeEvent) => e.category === c;
+  const byGroup = (g: SofGroup) => (e: SofLikeEvent) => categoryGroup(e.category) === g;
+  const commenced = (g: 'loading' | 'discharging') =>
+    find(byCategory(`${g}_commenced`), 'first', 'start') ?? find(byGroup(g), 'first', 'start');
+  const completed = (g: 'loading' | 'discharging') =>
+    find(byCategory(`${g}_completed`), 'last', 'end') ?? find(byGroup(g), 'last', 'end');
+  const firstBerthDay = find(byCategory('berthed'), 'first', 'start');
+
+  return {
+    arrived: find(byCategory('arrival'), 'first', 'start'),
+    nor_tendered: find(byCategory('nor_tendered'), 'first', 'start'),
+    nor_accepted: find(byCategory('nor_accepted'), 'first', 'start'),
+    berthed: firstBerthDay && find((e) => e.category === 'berthed' && e.event_date === firstBerthDay.date, 'last', 'end'),
+    loading_commenced: commenced('loading'),
+    loading_completed: completed('loading'),
+    discharging_commenced: commenced('discharging'),
+    discharging_completed: completed('discharging'),
+    sailed: find(byCategory('departure'), 'last', 'start'),
+  };
+}

@@ -1,6 +1,12 @@
 /* Statement of Facts (docs/ui/artboards/Sof.dc.html). */
 
 /* New tokens — to be moved into tokens.css by the lead. */
+:root {
+  --sof-sheet-no: #9aa8b3;
+  --sof-disch-col: 118px;
+  --sof-day-row: var(--surface-key);
+}
+
 .sof-g-loading { --sof-color: var(--sof-loading); }
 .sof-g-discharging { --sof-color: var(--sof-discharging); }
 .sof-g-weather { --sof-color: var(--sof-weather); }
@@ -11,6 +17,11 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* The page body scrolls; without this the table card (overflow: hidden) shrinks to fit the viewport. */
+.sof-page > * {
+  flex-shrink: 0;
 }
 
 /* ---- Summary tiles --------------------------------------------------- */
@@ -55,6 +66,146 @@
   color: var(--ink-faint);
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Standard Time Sheet header ------------------------------------ */
+
+.sof-sheet {
+  padding: 13px var(--space-4) 14px;
+}
+
+.sof-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: 10px;
+}
+
+.sof-sheet-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.sof-sheet-subtitle {
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.sof-sheet-spacer {
+  flex-grow: 1;
+}
+
+.sof-sheet-missing,
+.sof-sheet-complete {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--warning-soft-line);
+  border-radius: var(--radius-tag);
+  background: var(--warning-soft);
+  font-size: var(--text-caption);
+  color: var(--warning-ink);
+}
+
+.sof-sheet-complete {
+  border-color: var(--positive-soft-line);
+  background: var(--positive-soft);
+  color: var(--positive-ink);
+}
+
+.sof-sheet-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0 0 11px;
+  padding: 0 0 11px;
+  list-style: none;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.sof-sheet-no,
+.sof-milestone-no {
+  color: var(--sof-sheet-no);
+}
+
+.sof-sheet-strong {
+  color: var(--ink);
+}
+
+.sof-sheet-empty {
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+.sof-milestones {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.sof-milestone {
+  min-width: 0;
+  padding: var(--space-2) 10px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.sof-milestone.empty {
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.sof-milestone-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.sof-milestone-no {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
+.sof-milestone-title {
+  overflow: hidden;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sof-milestone.empty .sof-milestone-title {
+  color: var(--ink-faint);
+}
+
+.sof-milestone-value {
+  margin-top: var(--space-1);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sof-milestone-value.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.sof-milestone.empty .sof-milestone-value {
+  font-weight: 500;
+  color: var(--ink-faint);
+}
+
+.sof-milestone-note {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: var(--text-caption);
+  color: var(--ink-muted);
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
@@ -213,6 +364,45 @@
 .sof-table .col-dur { width: 84px; }
 .sof-table .col-cat { width: 210px; }
 .sof-table .col-actions { width: 132px; }
+.sof-table .col-disch { width: var(--sof-disch-col); text-align: right; }
+
+.sof-table .cell-disch {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sof-table .cell-total {
+  background: var(--surface-sunken);
+  font-weight: 600;
+}
+
+.sof-table tr.sof-day-row td {
+  height: auto;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: var(--sof-day-row);
+  border-bottom-color: var(--line);
+}
+
+.sof-table tr.sof-day-row .cell-day {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-muted);
+}
+
+.sof-table tr.sof-day-row .cell-disch {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sof-table tr.sof-day-row .cell-disch.zero {
+  font-weight: 400;
+  color: var(--ink-zero);
+}
 
 .sof-table td.num {
   text-align: left;

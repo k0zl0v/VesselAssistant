@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findOverlapping, normalizeTime, timeToMinutes } from '../time';
+import { dailyDischargeTotals, findOverlapping, normalizeTime, timeToMinutes } from '../time';
 
 describe('timeToMinutes', () => {
   it('parses HH:MM and zero-pads', () => {
@@ -89,5 +89,31 @@ describe('findOverlapping', () => {
       { event_date: '2026-05-01', time_from: '08:00', time_to: '10:00' },
     ];
     expect(findOverlapping(events)).toEqual(new Set());
+  });
+});
+
+describe('dailyDischargeTotals', () => {
+  it('sums operations per date and carries the running total in date order', () => {
+    const ops = [
+      { event_date: '2026-09-25', tons: 824 },
+      { event_date: '2026-09-24', tons: 1000.25 },
+      { event_date: '2026-09-24', tons: 176.75 },
+    ];
+    expect(dailyDischargeTotals(ops)).toEqual([
+      { date: '2026-09-24', tons: 1177, total: 1177 },
+      { date: '2026-09-25', tons: 824, total: 2001 },
+    ]);
+  });
+
+  it('keeps full precision (rounding belongs to the display)', () => {
+    const [day] = dailyDischargeTotals([
+      { event_date: '2026-05-01', tons: 0.0004 },
+      { event_date: '2026-05-01', tons: 0.0004 },
+    ]);
+    expect(day!.tons).toBeCloseTo(0.0008, 10);
+  });
+
+  it('returns an empty list without operations', () => {
+    expect(dailyDischargeTotals([])).toEqual([]);
   });
 });

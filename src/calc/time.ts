@@ -64,3 +64,33 @@ export function findOverlapping(events: IntervalEvent[]): Set<number> {
   }
   return overlapping;
 }
+
+export interface DatedTons {
+  event_date: string;
+  tons: number;
+}
+
+export interface DailyDischarge {
+  date: string;
+  /** Discharged on this date («Disch 24hrs»), full precision. */
+  tons: number;
+  /** Running total up to and including this date («Total disch»). */
+  total: number;
+}
+
+/**
+ * Daily discharged tons and the running total, one entry per date that has
+ * discharge operations, ascending. Rounding is left to the display.
+ */
+export function dailyDischargeTotals(ops: readonly DatedTons[]): DailyDischarge[] {
+  const byDate = new Map<string, number>();
+  for (const op of ops) byDate.set(op.event_date, (byDate.get(op.event_date) ?? 0) + op.tons);
+  let total = 0;
+  return Array.from(byDate.keys())
+    .sort()
+    .map((date) => {
+      const tons = byDate.get(date)!;
+      total += tons;
+      return { date, tons, total };
+    });
+}

@@ -3,6 +3,7 @@ import {
   calendarSpanDays,
   categoryGroup,
   coveredMinutes,
+  deriveTimeSheetMilestones,
   durationMinutes,
   eventDays,
   findOverlapPairs,
@@ -187,5 +188,57 @@ describe('summarizeSof', () => {
       weatherEventCount: 0,
       overlapPairs: [],
     });
+  });
+});
+
+describe('deriveTimeSheetMilestones', () => {
+  it('reads the mockup header from the mockup log', () => {
+    const m = deriveTimeSheetMilestones(MOCKUP_LOG);
+    expect(m).toEqual({
+      arrived: { date: '2026-09-22', time: '06:30' },
+      nor_tendered: { date: '2026-09-22', time: '07:00' },
+      nor_accepted: { date: '2026-09-22', time: '14:00' },
+      berthed: { date: '2026-09-23', time: '08:45' },
+      loading_commenced: { date: '2026-09-23', time: '09:00' },
+      loading_completed: { date: '2026-09-24', time: '11:20' },
+      discharging_commenced: { date: '2026-09-24', time: '12:40' },
+      discharging_completed: { date: '2026-09-25', time: '13:40' },
+      sailed: { date: '2026-09-27', time: '07:00' },
+    });
+  });
+
+  it('does not depend on the input order', () => {
+    const reversed = [...MOCKUP_LOG].reverse();
+    expect(deriveTimeSheetMilestones(reversed)).toEqual(deriveTimeSheetMilestones(MOCKUP_LOG));
+  });
+
+  it('prefers the explicit «completed» event over a later event of the group', () => {
+    const m = deriveTimeSheetMilestones([
+      ev('2026-04-19', '14:25', null, 'loading_commenced'),
+      ev('2026-04-20', '01:10', null, 'loading_completed'),
+      ev('2026-04-20', '02:00', '03:30', 'loading_commenced'),
+    ]);
+    expect(m.loading_commenced).toEqual({ date: '2026-04-19', time: '14:25' });
+    expect(m.loading_completed).toEqual({ date: '2026-04-20', time: '01:10' });
+  });
+
+  it('berthed is the last «berthed» entry of the first berthing day (first line … all fast)', () => {
+    const m = deriveTimeSheetMilestones([
+      ev('2026-05-01', '03:20', null, 'berthed'),
+      ev('2026-05-01', '04:00', null, 'berthed'),
+      ev('2026-05-03', '10:00', null, 'berthed'),
+    ]);
+    expect(m.berthed).toEqual({ date: '2026-05-01', time: '04:00' });
+  });
+
+  it('takes the last departure and leaves missing milestones empty', () => {
+    const m = deriveTimeSheetMilestones([
+      ev('2026-05-01', '10:00', null, 'departure'),
+      ev('2026-05-02', '06:00', null, 'departure'),
+    ]);
+    expect(m.sailed).toEqual({ date: '2026-05-02', time: '06:00' });
+    expect(m.arrived).toBeNull();
+    expect(m.loading_commenced).toBeNull();
+    expect(m.discharging_completed).toBeNull();
   });
 });
