@@ -148,7 +148,7 @@ scripts/
 
 .github/
   workflows/release.yml    # macOS arm64 + Windows x64 на тег v*.*.*, + cargo test
-  workflows/ci.yml         # push/PR/nightly/dispatch — см. «Пирамида тестов»
+  workflows/ci.yml         # push/PR/dispatch — см. «Пирамида тестов»
 ```
 
 ## Commands
@@ -184,7 +184,7 @@ git push origin main --tags
 | `rust` (`src-tauri/tests/`) | Миграции зарегистрированы и непрерывны, `execute_batch` атомарен на одном соединении | `npm run test:rust` | `common::fresh_db()` — те же файлы `src-tauri/migrations/` через `sqlx::Migrator` |
 
 - **Фикстуры — только коммиченные файлы**, никаких личных путей (`existsSync`/`console.warn`-скип запрещены — см. «What NOT to do»). `appendix-c-load-plan.xlsx` генерируется `scripts/generate-import-fixture.ts` из `src/fixtures/kavkaz-iv.ts` и коммитится; `import-fixture-freshness.test.ts` гейтит дрейф.
-- **CI (`«.github/workflows/ci.yml»`)** — `changes` (path-filter: **консервативный deny-list** — всё, кроме чистой документации `**/*.md`/`.claude/**`/`.vscode/**`/`.gitignore`; `predicate-quantifier: 'every'` обязателен — при умолчании `some` паттерн `'**'` совпадает с любым файлом и `!`-исключения не работают; `npm run build`, который вызывает `tauri build`, компилирует весь `src/**`, поэтому узкий allowlist дважды отставал от реальной зависимости джобы) → `web` (typecheck + Vitest json + Playwright json + `scripts/assert-no-skips.mjs`) → `rust`/`windows-smoke` (условно на `changes.rust` или `schedule`/`workflow_dispatch`). `assert-no-skips.mjs` — жёсткий гейт: `skipped`/`todo`/`pending`/`N ignored` > 0 роняет сборку, пропущенная джоба ничего не доказывает (`CLAUDE.md` уровня vault, § «Диагностика падений»).
+- **CI (`«.github/workflows/ci.yml»`)** — `changes` (path-filter: **консервативный deny-list** — всё, кроме чистой документации `**/*.md`/`.claude/**`/`.vscode/**`/`.gitignore`; `predicate-quantifier: 'every'` обязателен — при умолчании `some` паттерн `'**'` совпадает с любым файлом и `!`-исключения не работают; `npm run build`, который вызывает `tauri build`, компилирует весь `src/**`, поэтому узкий allowlist дважды отставал от реальной зависимости джобы) → `web` (typecheck + Vitest json + Playwright json + `scripts/assert-no-skips.mjs`) → `rust`/`windows-smoke` (условно на `changes.rust` или `workflow_dispatch`; расписания нет — без нового коммита CI не запускается). `assert-no-skips.mjs` — жёсткий гейт: `skipped`/`todo`/`pending`/`N ignored` > 0 роняет сборку, пропущенная джоба ничего не доказывает (`CLAUDE.md` уровня vault, § «Диагностика падений»).
 - **Пробел: macOS-webview не покрыт автотестом.** Нет headless-раннера для нативного WKWebView. Компенсация — ручной `npm run tauri dev` перед релизом + `cargo test` на `macos-14` внутри `release.yml` (проверяет Rust-слой, не сам webview).
 - **Node 22 в CI, Node 26 локально.** `.github/workflows/{ci,release}.yml` пинят `node-version: 22`; разработческая машина может стоять на более новом Node — расхождение известно, разрыва пока не наблюдалось.
 

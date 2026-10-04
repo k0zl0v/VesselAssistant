@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       capabilities_ref:
@@ -29,9 +27,9 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
     steps:
       - uses: actions/checkout@v4
-      # schedule/workflow_dispatch run rust/windows-smoke unconditionally; skipping the filter
-      # there keeps its schedule-payload error (dorny/paths-filter#100) from failing
-      # `changes`, which would skip both dependents via the implicit success().
+      # workflow_dispatch runs rust/windows-smoke unconditionally; skipping the filter there
+      # keeps it from failing on a payload with no base commit (dorny/paths-filter#100) and
+      # thereby skipping both dependents via the implicit success().
       # predicate-quantifier below must be 'every': the default 'some' matches a file if
       # ANY pattern does, so '**' alone always wins and the '!' lines never exclude it.
       - uses: dorny/paths-filter@v3
@@ -69,7 +67,7 @@ jobs:
 
   rust:
     needs: changes
-    if: needs.changes.outputs.rust == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +89,7 @@ jobs:
 
   windows-smoke:
     needs: changes
-    if: needs.changes.outputs.rust == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       # Full history + tags: `git fetch --depth=1 origin <sha>` rejects an abbreviated
@@ -124,8 +122,19 @@ jobs:
           workspaces: ./src-tauri -> target
       - run: npm ci
       - run: cargo install tauri-driver --locked
-      - run: cargo install msedgedriver-tool
-      - run: msedgedriver-tool
+      # msedgedriver-tool is not on crates.io; it downloads the msedgedriver.exe matching the
+      # runner's WebView2 into the working directory, which tauri-driver then finds via PATH.
+      - name: Install msedgedriver matching the runner's WebView2
+        shell: pwsh
+        run: |
+          cargo install --git https://github.com/chippers/msedgedriver-tool --rev 8c4b34f51b45f5cf08013366d703de464ab871d1
+          $dir = Join-Path $env:RUNNER_TEMP 'msedgedriver'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Push-Location $dir
+          msedgedriver-tool
+          Pop-Location
+          if (-not (Test-Path (Join-Path $dir 'msedgedriver.exe'))) { throw 'msedgedriver.exe was not downloaded' }
+          $dir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
       - run: npm run tauri build -- --debug --no-bundle
       - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: npm run test:smoke
